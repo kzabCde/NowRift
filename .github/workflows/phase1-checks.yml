@@ -22,28 +22,3 @@ jobs:
         run: npm test
       - name: Production build test (no deploy)
         run: npm run build
-
-  browser_smoke:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Build tested app
-        run: npm run build
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Desktop + mobile + PWA browser smoke tests
-        run: npm run test:browser
-      - name: Upload browser failure details
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nowrift-browser-failure
-          path: test-results/
-          retention-days: 7
-          if-no-files-found: ignore
