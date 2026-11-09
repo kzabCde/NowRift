@@ -108,7 +108,7 @@ test("swept collisions hit enemies between bullet endpoints", () => {
   updateGame(game, 0.02, 0, 0);
   assert.equal(game.kills, 1);
   assert.equal(game.bullets.length, 0);
-  assert.equal(game.drops.length, 1);
+  assert.ok(game.drops.some((drop) => drop.kind === "xp"));
 });
 
 test("swept collision picks the nearest enemy, regardless of array order", () => {
@@ -155,4 +155,16 @@ test("level-up freezes gameplay until selecting one of three upgrades", () => {
   assert.equal(game.time, frozenTime);
   assert.equal(chooseUpgrade(game, game.offers[0]), true);
   assert.equal(game.phase, "playing");
+});
+
+test("uncollected XP drops do not grow without limit", () => {
+  const game = makeGame(800, 500);
+  game.phase = "playing";
+  game.spawnCooldown = 999;
+  game.weapon.cooldown = 999;
+  for (let i = 0; i < 350; i++) {
+    game.drops.push({ x: 10, y: 10, r: 7, value: 12, kind: "xp" });
+  }
+  updateGame(game, 0.02, 0, 0);
+  assert.equal(game.drops.length, 240);
 });

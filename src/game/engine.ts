@@ -342,6 +342,13 @@ export function updateGame(game: Game, dt: number, inputX: number, inputY: numbe
     game.enemies.splice(i, 1);
   }
 
+  // Keep long survival runs bounded even when old XP crystals are never collected.
+  // Preserve the newest drops (including occasional healing) for the player.
+  const maxDrops = 240;
+  if (game.drops.length > maxDrops) {
+    game.drops.splice(0, game.drops.length - maxDrops);
+  }
+
   for (let i = game.drops.length - 1; i >= 0; i--) {
     const item = game.drops[i];
     const d = distance(item.x, item.y, p.x, p.y);
