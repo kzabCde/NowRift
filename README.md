@@ -72,3 +72,27 @@ Future online features will be designed separately. They are not simulated as wo
 - Installation downloads npm dependencies once. The gameplay itself doesn't make requests to game services.
 - Desktop and mobile browser input are supported, but actual cross-browser performance needs device testing.
 - This is an early gameplay prototype, not a security-hardened or production-ready online game.
+
+## Mobile PWA (Phase 1 responsive update)
+
+The mobile-first improvements live on `feat/phase-1-mobile-pwa`. This branch adds:
+
+- Full-screen-style **Focus mode** (CSS-based, works in browsers that do not support the Fullscreen API).
+- Responsive HUD, safe-area padding for notched phones, landscape adjustments and larger touch targets.
+- Installable PWA manifest, 192/512px app icons, maskable Android icon, iOS Apple touch icon.
+- In-app Install/Add to Home instructions for iOS Safari and Chromium browsers.
+- A same-origin service worker that caches the app shell and Next.js static assets. The game can run offline **after the first successful online load and caching**; this does not download on a device before that visit.
+- New worker version update button, online/offline indicator and installation state.
+
+**Important:** No database, accounts or synced progress are added. The best score stays in this browser's localStorage; active runs are memory-only and reset when the app is closed or refreshed.
+
+For realistic PWA testing, run `npm run build && npm run start` on localhost or use an HTTPS Vercel deployment. `npm run dev` does not register the service worker to avoid stale development assets.
+
+### Install
+
+- **iPhone / iPad:** Open in Safari → Share → Add to Home Screen.
+- **Android Chrome:** Use the INSTALL button if the browser provides it, or menu → Install app / Add to Home Screen.
+- **Desktop Chrome / Edge:** Use the Install icon in the address bar or the in-app INSTALL action.
+
+Offline behavior depends on browser storage/cache retention. First load must complete online; a private tab or cleared site data cannot guarantee cached assets. There is no background sync.
+

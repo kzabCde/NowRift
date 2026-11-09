@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import PwaControls from "@/components/PwaControls";
 import {
   UPGRADES,
   beginGame,
@@ -44,6 +45,12 @@ export default function NowRiftGame() {
   const recordedRef = useRef(false);
   const [hud, setHud] = useState<Snapshot>(initialHud);
   const [bestKills, setBestKills] = useState(0);
+  const [immersive, setImmersive] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle("nowrift-immersive", immersive);
+    return () => document.body.classList.remove("nowrift-immersive");
+  }, [immersive]);
 
   const syncHud = useCallback(() => setHud(snapshot(gameRef.current)), []);
 
@@ -212,7 +219,7 @@ export default function NowRiftGame() {
     .filter((upgrade): upgrade is (typeof UPGRADES)[number] => Boolean(upgrade));
 
   return (
-    <main className="site-shell">
+    <main className={immersive ? "site-shell immersive" : "site-shell"}>
       <header className="topbar">
         <div className="brand">
           <div className="brand-symbol" aria-hidden="true">N<span>✦</span></div>
@@ -220,7 +227,7 @@ export default function NowRiftGame() {
         </div>
         <div className="header-right">
           <span className="header-note">BROWSER RPG EXPERIMENT</span>
-          <span className="local-badge"><span className="online-dot" /> LOCAL BUILD</span>
+          <PwaControls />
         </div>
       </header>
 
@@ -246,6 +253,13 @@ export default function NowRiftGame() {
               <button className="action-button" onClick={pause} disabled={hud.phase !== "playing" && hud.phase !== "paused"} type="button">
                 {hud.phase === "paused" ? "▶ RESUME" : "Ⅱ PAUSE"}
               </button>
+              <button
+                className="action-button focus-button"
+                onClick={() => setImmersive((current) => !current)}
+                aria-pressed={immersive}
+                aria-label={immersive ? "Exit focus mode" : "Enter focus mode"}
+                type="button"
+              >{immersive ? "✕ EXIT" : "⛶ FOCUS"}</button>
               <button className="action-button restart-button" onClick={start} type="button">↻ RESTART</button>
             </div>
           </div>
@@ -285,7 +299,7 @@ export default function NowRiftGame() {
                 <h2>THE BREACH<br /><span>AWAITS.</span></h2>
                 <p>Defeat enemies, gather XP, and choose upgrades to survive escalating waves.</p>
                 <button className="primary-button" onClick={start} type="button">ENTER THE RIFT <span>↗</span></button>
-                <span className="overlay-hint">NO ACCOUNT NEEDED · FULLY OFFLINE GAMEPLAY</span>
+                <span className="overlay-hint">NO ACCOUNT · OFFLINE AFTER FIRST LOAD</span>
               </div>
             )}
 
@@ -325,7 +339,12 @@ export default function NowRiftGame() {
               </div>
             )}
 
-            {hud.phase === "playing" && <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>}
+            {hud.phase === "playing" && (
+              <>
+                <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>
+                <div className="touch-hint" aria-hidden="true">◎ DRAG TO MOVE</div>
+              </>
+            )}
           </div>
 
           <div className="arena-footer">

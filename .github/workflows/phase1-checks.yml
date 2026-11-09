@@ -2,9 +2,9 @@ name: Phase 1 demo checks
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/phase-1-local-demo]
   push:
-    branches: [feat/phase-1-local-demo]
+    branches: ['feat/**']
 
 jobs:
   validate:
