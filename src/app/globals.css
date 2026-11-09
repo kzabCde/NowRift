@@ -213,3 +213,226 @@ kbd { padding: 5px 7px; min-width: 22px; border: 1px solid #3a5363; font: bold 1
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+
+/* Mobile-first app refinements / safe-area layout */
+html { min-height: 100%; }
+body { min-width: 280px; overscroll-behavior-y: contain; }
+body.nowrift-immersive { overflow: hidden; }
+.game-canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.site-shell { isolation: isolate; }
+.topbar {
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+.header-right { min-width: 0; }
+.game-actions { flex-wrap: wrap; justify-content: flex-end; }
+.action-button { min-height: 38px; }
+.focus-button { border-color: rgba(129,229,245,.38); color: #a8f0fb; }
+.focus-button[aria-pressed="true"] { background: #274858; }
+.pwa-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.pwa-button, .installed-badge, .network-status {
+  white-space: nowrap;
+  font: 700 10px "Courier New", Courier, monospace;
+  letter-spacing: 1px;
+}
+.pwa-button {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid rgba(142,233,246,.5);
+  background: rgba(142,233,246,.12);
+  color: #bbf5ff;
+  transition: background .16s;
+}
+.pwa-button:hover { background: rgba(142,233,246,.23); }
+.pwa-button.update-button { color: #ffdb9d; border-color: rgba(255,212,147,.46); }
+.network-status { color: #a4eac6; }
+.network-status.is-offline { color: #ffbf9b; }
+.network-status.is-offline .online-dot { background: #ffb790; box-shadow: none; }
+.installed-badge { color: #b2e4cf; }
+.touch-hint {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  pointer-events: none;
+  border: 1px solid rgba(147,210,230,.2);
+  background: rgba(9,22,33,.66);
+  color: #badce8;
+  padding: 9px 12px;
+  font: bold 10px "Courier New", monospace;
+  letter-spacing: 1px;
+  display: none;
+}
+.install-modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(1, 8, 14, .85);
+  backdrop-filter: blur(8px);
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+}
+.install-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(100%, 420px);
+  max-height: 88dvh;
+  overflow-y: auto;
+  background: #101e2c;
+  border: 1px solid rgba(142,233,246,.35);
+  box-shadow: 0 24px 100px rgba(0,0,0,.55);
+  padding: clamp(22px, 5vw, 32px);
+  text-align: left;
+}
+.install-modal h2 { font-size: clamp(23px, 5vw, 32px); letter-spacing: -1px; margin: 17px 0 12px; }
+.install-modal p { color: #bdd0da; line-height: 1.65; font: normal 14px Arial, sans-serif; }
+.install-modal p strong { color: #e9faff; }
+.install-modal .install-footnote { font-size: 12px; color: #829baa; }
+.install-modal .primary-button { margin-top: 12px; align-self: stretch; }
+.modal-close {
+  position: absolute; top: 9px; right: 9px;
+  width: 42px; height: 42px;
+  border: 0; color: #d4f3f9;
+  background: transparent;
+}
+
+/* Focus mode is CSS fullscreen instead of relying on unavailable iOS Fullscreen APIs. */
+.site-shell.immersive {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: #08121c;
+}
+.immersive > .topbar,
+.immersive .hero,
+.immersive .below-game,
+.immersive .site-footer { display: none; }
+.immersive .content {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+}
+.immersive .game-card {
+  border: none;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.immersive .game-topbar,
+.immersive .hud-row,
+.immersive .arena-footer { flex: 0 0 auto; }
+.immersive .arena { flex: 1 1 auto; min-height: 0; height: auto; }
+.immersive .arena-overlay { min-height: 0; }
+.immersive .upgrade-overlay { justify-content: safe center; }
+
+/* Keep mobile gameplay legible, with large controls and fewer decorative panels. */
+@media (hover: none), (pointer: coarse) {
+  .touch-hint { display: block; }
+  .action-button, .pwa-button, .modal-close { min-height: 44px; }
+  .upgrade-card { min-height: 92px; }
+  .game-canvas { cursor: default; }
+}
+@media (max-width: 950px) {
+  .topbar { gap: 12px; }
+  .header-right { gap: 10px; }
+  .pwa-actions { gap: 8px; }
+  .game-topbar { flex-wrap: wrap; }
+  .game-actions { margin-left: auto; }
+}
+@media (max-width: 680px) {
+  .topbar {
+    height: 62px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .network-status { display: none; }
+  .pwa-button { padding: 0 10px; font-size: 9px; }
+  .installed-badge { font-size: 9px; }
+  .hero { gap: 10px; padding: 23px 5px 18px; }
+  .hero h1 { font-size: clamp(31px, 8.5vw, 48px); margin: 12px 0 8px; }
+  .hero p { font-size: 12px; line-height: 1.45; max-width: 350px; }
+  .hero-meta { gap: 8px; }
+  .game-card { margin-left: -3px; margin-right: -3px; }
+  .game-topbar { min-height: 48px; padding: 8px 11px; }
+  .game-actions { gap: 5px; }
+  .game-state { display: none; }
+  .action-button { font-size: 9px; padding: 8px 9px; }
+  .hud-row { padding: 10px 12px; }
+  .stat-label { margin-bottom: 4px; }
+  .bar-heading { font-size: 9px; }
+  .xp-heading { margin-top: 8px; }
+  .arena { height: clamp(460px, 63dvh, 660px); }
+  .arena-footer { padding: 11px 10px; }
+  .control-hint span:last-child { max-width: 140px; }
+  .touch-hint { right: 10px; bottom: 12px; padding: 7px; font-size: 8px; }
+  .in-game-hint { left: 10px; bottom: 12px; padding: 7px; font-size: 8px; }
+  .site-footer {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .immersive .hero { display: none; }
+  .immersive .hud-stats { grid-template-columns: repeat(4, 1fr); }
+  .immersive .arena { height: auto; }
+  .immersive .game-topbar { padding-top: 7px; padding-bottom: 7px; }
+  .immersive .arena-footer { min-height: 39px; }
+}
+@media (max-width: 360px) {
+  .brand-text { font-size: 14px; }
+  .brand-text small { display: none; }
+  .brand-symbol { width: 31px; height: 31px; }
+  .pwa-button span { display: none; }
+  .hero h1 { letter-spacing: -1px; font-size: 31px; }
+  .hero p { display: none; }
+  .game-topbar { justify-content: center; }
+  .sector-heading { width: 100%; justify-content: center; }
+  .game-actions { margin: 0 auto; }
+  .hud-stats { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .stat { min-width: 0; }
+  .stat-value { font-size: 15px; }
+}
+@media (orientation: landscape) and (max-height: 510px) {
+  .hero { padding: 12px 5px; flex-direction: row; align-items: center; }
+  .hero h1 { font-size: 28px; margin: 5px 0; }
+  .hero p, .hero .eyebrow, .hero-meta, .footer-info { display: none; }
+  .arena { height: max(260px, calc(100dvh - 205px)); min-height: 260px; }
+  .immersive .arena { height: auto; min-height: 0; }
+  .immersive .game-topbar { min-height: 38px; padding: 3px 10px; }
+  .immersive .hud-row {
+    padding: 6px 12px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .immersive .hud-stats { width: auto; grid-template-columns: repeat(4, 70px); padding: 0; }
+  .immersive .level-shape { flex-basis: 42px; min-height: 40px; }
+  .immersive .level-shape strong { font-size: 15px; }
+  .immersive .bars { max-width: 260px; flex: 1; }
+  .immersive .upgrade-overlay { justify-content: flex-start; padding-top: 8px; }
+  .immersive .upgrade-overlay h2 { font-size: 24px; margin: 4px 0; }
+  .immersive .upgrade-overlay p { margin: 0 0 9px; }
+  .immersive .upgrade-grid { grid-template-columns: repeat(3,minmax(0,1fr)); max-width: 700px; }
+  .immersive .upgrade-card {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    padding: 9px;
+    gap: 4px;
+  }
+  .immersive .upgrade-card strong,
+  .immersive .upgrade-card small { grid-column: auto; }
+  .immersive .upgrade-symbol { font-size: 19px; }
+  .immersive .arena-footer { display: none; }
+}

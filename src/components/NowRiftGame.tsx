@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import PwaControls from "@/components/PwaControls";
 import {
   UPGRADES,
+  advanceGame,
   beginGame,
   chooseUpgrade,
   drawGame,
   makeGame,
+  resizeGame,
   snapshot,
   togglePause,
   updateGame,
@@ -41,11 +44,31 @@ export default function NowRiftGame() {
   const keysRef = useRef<Set<string>>(new Set());
   const joystickRef = useRef<Joystick>(null);
   const pointerIdRef = useRef<number | null>(null);
+  const capturedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recordedRef = useRef(false);
   const [hud, setHud] = useState<Snapshot>(initialHud);
   const [bestKills, setBestKills] = useState(0);
+  const [immersive, setImmersive] = useState(false);
+  const [touchEngaged, setTouchEngaged] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle("nowrift-immersive", immersive);
+    return () => document.body.classList.remove("nowrift-immersive");
+  }, [immersive]);
 
   const syncHud = useCallback(() => setHud(snapshot(gameRef.current)), []);
+
+  const clearPointer = useCallback(() => {
+    const id = pointerIdRef.current;
+    const element = capturedCanvasRef.current;
+    pointerIdRef.current = null;
+    joystickRef.current = null;
+    capturedCanvasRef.current = null;
+    setTouchEngaged(false);
+    if (id !== null && element?.hasPointerCapture(id)) {
+      element.releasePointerCapture(id);
+    }
+  }, []);
 
   const start = useCallback(() => {
     const bounds = canvasRef.current?.getBoundingClientRect();
@@ -53,20 +76,27 @@ export default function NowRiftGame() {
     beginGame(game);
     gameRef.current = game;
     keysRef.current.clear();
-    joystickRef.current = null;
-    pointerIdRef.current = null;
+    clearPointer();
     recordedRef.current = false;
     setHud(snapshot(game));
-  }, []);
+  }, [clearPointer]);
 
   const pause = useCallback(() => {
     togglePause(gameRef.current);
+    if (gameRef.current.phase !== "playing") {
+      clearPointer();
+      keysRef.current.clear();
+    }
     syncHud();
-  }, [syncHud]);
+  }, [clearPointer, syncHud]);
 
   const selectUpgrade = useCallback((id: UpgradeId) => {
-    if (chooseUpgrade(gameRef.current, id)) syncHud();
-  }, [syncHud]);
+    if (chooseUpgrade(gameRef.current, id)) {
+      clearPointer();
+      keysRef.current.clear();
+      syncHud();
+    }
+  }, [clearPointer, syncHud]);
 
   useEffect(() => {
     try {
@@ -84,18 +114,22 @@ export default function NowRiftGame() {
     function resize() {
       if (!canvas) return;
       const bounds = canvas.getBoundingClientRect();
-      const width = Math.max(1, bounds.width);
-      const height = Math.max(1, bounds.height);
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+      if (bounds.width < 40 || bounds.height < 40) return;
       const game = gameRef.current;
-      const oldWidth = game.width;
-      const oldHeight = game.height;
-      game.width = width;
-      game.height = height;
-      game.player.x = (game.player.x / Math.max(1, oldWidth)) * width;
-      game.player.y = (game.player.y / Math.max(1, oldHeight)) * height;
+      const previousWidth = game.width;
+      const previousHeight = game.height;
+      const width = bounds.width;
+      const height = bounds.height;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const pixelWidth = Math.round(width * dpr);
+      const pixelHeight = Math.round(height * dpr);
+      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+      resizeGame(game, width, height);
+      if (joystickRef.current && previousWidth > 0 && previousHeight > 0) {
+        joystickRef.current.x *= width / previousWidth;
+        joystickRef.current.y *= height / previousHeight;
+      }
     }
 
     const observer = new ResizeObserver(resize);
@@ -103,26 +137,35 @@ export default function NowRiftGame() {
     resize();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       const key = event.key.toLowerCase();
-      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
-      keysRef.current.add(key);
       if (key === "escape" && !event.repeat) {
         togglePause(gameRef.current);
+        clearPointer();
+        keysRef.current.clear();
         syncHud();
+        return;
       }
+      if (gameRef.current.phase !== "playing") return;
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
+      keysRef.current.add(key);
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.key.toLowerCase());
-    const onBlur = () => {
+    const onInterruption = () => {
       keysRef.current.clear();
-      joystickRef.current = null;
+      clearPointer();
       if (gameRef.current.phase === "playing") {
         togglePause(gameRef.current);
         syncHud();
       }
     };
+    const onVisibilityChange = () => {
+      if (document.hidden) onInterruption();
+    };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
+    window.addEventListener("blur", onInterruption);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     let frameId = 0;
     let previousTime = performance.now();
@@ -130,7 +173,7 @@ export default function NowRiftGame() {
     let previousPhase = gameRef.current.phase;
 
     const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - previousTime) / 1000);
+      const dt = Math.max(0, (now - previousTime) / 1000);
       previousTime = now;
       const game = gameRef.current;
       const keys = keysRef.current;
@@ -140,7 +183,11 @@ export default function NowRiftGame() {
         dx += joystickRef.current.dx;
         dy += joystickRef.current.dy;
       }
-      updateGame(game, dt, dx, dy);
+      advanceGame(game, dt, dx, dy);
+      if (game.phase !== "playing" && pointerIdRef.current !== null) {
+        clearPointer();
+        keysRef.current.clear();
+      }
 
       if (game.phase === "gameover" && !recordedRef.current) {
         recordedRef.current = true;
@@ -170,9 +217,10 @@ export default function NowRiftGame() {
       observer.disconnect();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("blur", onInterruption);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [syncHud]);
+  }, [clearPointer, syncHud]);
 
   const getPoint = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -183,7 +231,9 @@ export default function NowRiftGame() {
     if (gameRef.current.phase !== "playing" || pointerIdRef.current !== null) return;
     const point = getPoint(event);
     pointerIdRef.current = event.pointerId;
+    capturedCanvasRef.current = event.currentTarget;
     joystickRef.current = { ...point, dx: 0, dy: 0 };
+    setTouchEngaged(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
@@ -200,11 +250,7 @@ export default function NowRiftGame() {
 
   const onPointerEnd = (event: PointerEvent<HTMLCanvasElement>) => {
     if (pointerIdRef.current !== event.pointerId) return;
-    pointerIdRef.current = null;
-    joystickRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
+    clearPointer();
   };
 
   const upgrades = hud.offers
@@ -212,7 +258,7 @@ export default function NowRiftGame() {
     .filter((upgrade): upgrade is (typeof UPGRADES)[number] => Boolean(upgrade));
 
   return (
-    <main className="site-shell">
+    <main className={immersive ? "site-shell immersive" : "site-shell"}>
       <header className="topbar">
         <div className="brand">
           <div className="brand-symbol" aria-hidden="true">N<span>✦</span></div>
@@ -220,7 +266,7 @@ export default function NowRiftGame() {
         </div>
         <div className="header-right">
           <span className="header-note">BROWSER RPG EXPERIMENT</span>
-          <span className="local-badge"><span className="online-dot" /> LOCAL BUILD</span>
+          <PwaControls />
         </div>
       </header>
 
@@ -246,6 +292,13 @@ export default function NowRiftGame() {
               <button className="action-button" onClick={pause} disabled={hud.phase !== "playing" && hud.phase !== "paused"} type="button">
                 {hud.phase === "paused" ? "▶ RESUME" : "Ⅱ PAUSE"}
               </button>
+              <button
+                className="action-button focus-button"
+                onClick={() => setImmersive((current) => !current)}
+                aria-pressed={immersive}
+                aria-label={immersive ? "Exit focus mode" : "Enter focus mode"}
+                type="button"
+              >{immersive ? "✕ EXIT" : "⛶ FOCUS"}</button>
               <button className="action-button restart-button" onClick={start} type="button">↻ RESTART</button>
             </div>
           </div>
@@ -270,11 +323,13 @@ export default function NowRiftGame() {
             <canvas
               ref={canvasRef}
               className="game-canvas"
+              data-touch-active={touchEngaged}
               aria-label="Game arena. Use WASD or arrow keys to move, or drag on a touch screen. Weapons fire automatically."
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerEnd}
               onPointerCancel={onPointerEnd}
+              onLostPointerCapture={onPointerEnd}
               onContextMenu={(event) => event.preventDefault()}
             />
 
@@ -285,7 +340,7 @@ export default function NowRiftGame() {
                 <h2>THE BREACH<br /><span>AWAITS.</span></h2>
                 <p>Defeat enemies, gather XP, and choose upgrades to survive escalating waves.</p>
                 <button className="primary-button" onClick={start} type="button">ENTER THE RIFT <span>↗</span></button>
-                <span className="overlay-hint">NO ACCOUNT NEEDED · FULLY OFFLINE GAMEPLAY</span>
+                <span className="overlay-hint">NO ACCOUNT · OFFLINE AFTER FIRST LOAD</span>
               </div>
             )}
 
@@ -325,7 +380,12 @@ export default function NowRiftGame() {
               </div>
             )}
 
-            {hud.phase === "playing" && <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>}
+            {hud.phase === "playing" && (
+              <>
+                <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>
+                <div className="touch-hint" aria-hidden="true">{touchEngaged ? "◆ MOVING" : "◎ DRAG TO MOVE"}</div>
+              </>
+            )}
           </div>
 
           <div className="arena-footer">

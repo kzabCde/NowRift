@@ -67,6 +67,46 @@ const random = (min: number, max: number) => min + Math.random() * (max - min);
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const distance = (ax: number, ay: number, bx: number, by: number) => Math.hypot(ax - bx, ay - by);
 
+/**
+ * Keep every world-space entity aligned with the resized arena.
+ * Used when rotating a device and entering/leaving immersive mode.
+ */
+export function resizeGame(game: Game, width: number, height: number) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 40 || height < 40) return;
+  if (Math.abs(width - game.width) < 0.5 && Math.abs(height - game.height) < 0.5) return;
+
+  const scaleX = width / Math.max(1, game.width);
+  const scaleY = height / Math.max(1, game.height);
+  game.width = width;
+  game.height = height;
+
+  const position = (entity: { x: number; y: number }) => {
+    entity.x *= scaleX;
+    entity.y *= scaleY;
+  };
+
+  position(game.player);
+  game.player.x = clamp(game.player.x, game.player.r + 9, Math.max(game.player.r + 9, width - game.player.r - 9));
+  game.player.y = clamp(game.player.y, game.player.r + 9, Math.max(game.player.r + 9, height - game.player.r - 9));
+  game.enemies.forEach(position);
+  game.bullets.forEach(position);
+  game.drops.forEach(position);
+  game.sparks.forEach(position);
+}
+
+/**
+ * Advance using bounded substeps so low-FPS devices don't run in slow motion.
+ * Cap large pauses to avoid sudden jumps after a suspended browser frame.
+ */
+export function advanceGame(game: Game, deltaSeconds: number, inputX: number, inputY: number) {
+  let remaining = Math.min(0.12, Math.max(0, Number.isFinite(deltaSeconds) ? deltaSeconds : 0));
+  while (remaining > 0.00001 && game.phase === "playing") {
+    const step = Math.min(0.02, remaining);
+    updateGame(game, step, inputX, inputY);
+    remaining -= step;
+  }
+}
+
 export function makeGame(width: number, height: number): Game {
   return {
     phase: "menu",
@@ -217,13 +257,13 @@ export function updateGame(game: Game, dt: number, inputX: number, inputY: numbe
   if (game.spawnCooldown <= 0 && game.enemies.length < 90) {
     spawnEnemy(game);
     if (game.wave > 2 && Math.random() > 0.7) spawnEnemy(game);
-    game.spawnCooldown = Math.max(0.3, 1.13 - (game.wave - 1) * 0.075) * random(0.75, 1.15);
+    game.spawnCooldown += Math.max(0.3, 1.13 - (game.wave - 1) * 0.075) * random(0.75, 1.15);
   }
 
   game.weapon.cooldown -= step;
   if (game.weapon.cooldown <= 0) {
     shoot(game);
-    game.weapon.cooldown = game.weapon.delay;
+    game.weapon.cooldown += game.weapon.delay;
   }
 
   for (const enemy of game.enemies) {
@@ -235,7 +275,8 @@ export function updateGame(game: Game, dt: number, inputX: number, inputY: numbe
       enemy.y += dy / d * enemy.speed * step;
     }
     enemy.contact -= step;
-    if (d < enemy.r + p.r && enemy.contact <= 0 && p.invincible <= 0) {
+    // Recheck after the enemy's movement, not its previous-frame position.
+    if (distance(enemy.x, enemy.y, p.x, p.y) < enemy.r + p.r && enemy.contact <= 0 && p.invincible <= 0) {
       p.hp -= enemy.kind === "brute" ? 21 : 12;
       p.invincible = 0.6;
       enemy.contact = 0.7;
@@ -251,20 +292,42 @@ export function updateGame(game: Game, dt: number, inputX: number, inputY: numbe
 
   for (let i = game.bullets.length - 1; i >= 0; i--) {
     const bullet = game.bullets[i];
-    bullet.x += bullet.vx * step;
-    bullet.y += bullet.vy * step;
+    const fromX = bullet.x;
+    const fromY = bullet.y;
+    const dx = bullet.vx * step;
+    const dy = bullet.vy * step;
+    bullet.x += dx;
+    bullet.y += dy;
     bullet.life -= step;
-    if (bullet.life <= 0 || bullet.x < -20 || bullet.x > game.width + 20 || bullet.y < -20 || bullet.y > game.height + 20) {
+
+    // Swept segment/circle collision prevents fast projectiles passing
+    // through small enemies between frames. Resolve nearest hit first.
+    let hit: Enemy | undefined;
+    let hitTime = Infinity;
+    const lengthSquared = dx * dx + dy * dy;
+    for (const enemy of game.enemies) {
+      if (enemy.hp <= 0) continue;
+      const t = lengthSquared > 0
+        ? clamp(((enemy.x - fromX) * dx + (enemy.y - fromY) * dy) / lengthSquared, 0, 1)
+        : 0;
+      const checkX = fromX + dx * t;
+      const checkY = fromY + dy * t;
+      const radius = enemy.r + bullet.r;
+      const offsetX = checkX - enemy.x;
+      const offsetY = checkY - enemy.y;
+      if (offsetX * offsetX + offsetY * offsetY <= radius * radius && t < hitTime) {
+        hit = enemy;
+        hitTime = t;
+      }
+    }
+    if (hit) {
+      hit.hp -= bullet.damage;
+      emit(game, fromX + dx * hitTime, fromY + dy * hitTime, hit.kind === "brute" ? "#ffa66b" : "#fb77a8", 5);
       game.bullets.splice(i, 1);
       continue;
     }
-    for (const enemy of game.enemies) {
-      if (enemy.hp > 0 && distance(bullet.x, bullet.y, enemy.x, enemy.y) <= bullet.r + enemy.r) {
-        enemy.hp -= bullet.damage;
-        emit(game, bullet.x, bullet.y, enemy.kind === "brute" ? "#ffa66b" : "#fb77a8", 5);
-        game.bullets.splice(i, 1);
-        break;
-      }
+    if (bullet.life <= 0 || bullet.x < -30 || bullet.x > game.width + 30 || bullet.y < -30 || bullet.y > game.height + 30) {
+      game.bullets.splice(i, 1);
     }
   }
 
@@ -279,13 +342,21 @@ export function updateGame(game: Game, dt: number, inputX: number, inputY: numbe
     game.enemies.splice(i, 1);
   }
 
+  // Keep long survival runs bounded even when old XP crystals are never collected.
+  // Preserve the newest drops (including occasional healing) for the player.
+  const maxDrops = 240;
+  if (game.drops.length > maxDrops) {
+    game.drops.splice(0, game.drops.length - maxDrops);
+  }
+
   for (let i = game.drops.length - 1; i >= 0; i--) {
     const item = game.drops[i];
     const d = distance(item.x, item.y, p.x, p.y);
     if (d < game.pickupRadius && d > 5) {
       const speed = Math.min(680, 175 + (game.pickupRadius - d) * 8);
-      item.x += (p.x - item.x) / d * speed * step;
-      item.y += (p.y - item.y) / d * speed * step;
+      const travel = Math.min(d, speed * step);
+      item.x += (p.x - item.x) / d * travel;
+      item.y += (p.y - item.y) / d * travel;
     }
     if (distance(item.x, item.y, p.x, p.y) < p.r + item.r + 7) {
       game.drops.splice(i, 1);
