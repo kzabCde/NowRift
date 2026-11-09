@@ -1,5 +1,5 @@
 /* NowRift Phase 1 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v1";
+const VERSION = "nowrift-pwa-v2";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png", "/icons/apple-touch-icon.png"];
