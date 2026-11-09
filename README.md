@@ -1,2 +1,115 @@
 # NowRift
-NowRift is a browser-based Roguelike Bullet Heaven RPG featuring auto-combat, character progression, loot farming, equipment upgrades, trading, PvP battles, and multiplayer social features.
+
+**NowRift** is a browser-based Roguelike / Bullet Heaven RPG. This repository currently contains **Phase 1: a playable, local-only demo**.
+
+> No Supabase, database, accounts, API keys, hosted game server or deployment is required for this phase.
+
+## Run locally
+
+Requires **Node.js 20.9+** and npm.
+
+```bash
+git clone https://github.com/kzabCde/NowRift.git
+cd NowRift
+npm install
+npm run dev
+```
+
+Open **http://localhost:3000**. If the changes are still in the Phase 1 pull request, check out its feature branch before running:
+
+```bash
+git fetch origin
+git switch feat/phase-1-local-demo
+npm install
+npm run dev
+```
+
+### Quality checks
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Gameplay (Phase 1)
+
+- Move with **WASD**, arrow keys or touch-and-drag.
+- Your weapon **automatically targets the closest enemy** in range.
+- Survive increasingly difficult waves of drones, stalkers and brutes.
+- Kill enemies to earn credits and collect dropped XP.
+- Choose **one of three upgrades** each time you level up.
+- Pause/resume (button or Escape), restart, or retry after defeat.
+- Your **best kill count** is stored only in the browser's `localStorage` under `nowrift-phase1-best-kills`.
+
+This is a single-player prototype: credits, levels and upgrades reset with every run. Reloading the page ends the current run. Clearing browser site data resets the personal best.
+
+## Architecture
+
+| Area | Technology | Persistence |
+| --- | --- | --- |
+| App shell | Next.js App Router + React + TypeScript | None |
+| Combat | Custom HTML5 Canvas 2D game loop | In-memory state |
+| UI | Plain CSS; responsive layout | None |
+| Best score | Browser `localStorage` | This device only |
+| Database / auth / multiplayer | Not included in Phase 1 | None |
+
+The combat engine lives in `src/game/engine.ts`, while `src/components/NowRiftGame.tsx` handles rendering, input and HUD state. No external images, fonts or API calls are needed during gameplay.
+
+## Planned phases (not in demo)
+
+1. **Foundation and combat loop** — playable local demo (this branch).
+2. **Stages, bosses, inventory and deeper progression**.
+3. **Optional accounts / guest profiles, persistence and daily rewards**.
+4. **Trade, friends, PvP, anti-cheat and online services**.
+5. **Balancing, testing and production beta**.
+
+Future online features will be designed separately. They are not simulated as working multiplayer features here.
+
+## Notes
+
+- Run on `localhost` only for this phase; no production deployment is configured.
+- Installation downloads npm dependencies once. The gameplay itself doesn't make requests to game services.
+- Desktop and mobile browser input are supported, but actual cross-browser performance needs device testing.
+- This is an early gameplay prototype, not a security-hardened or production-ready online game.
+
+## Mobile PWA (Phase 1 responsive update)
+
+The mobile-first improvements live on `feat/phase-1-mobile-pwa`. This branch adds:
+
+- Full-screen-style **Focus mode** (CSS-based, works in browsers that do not support the Fullscreen API).
+- Responsive HUD, safe-area padding for notched phones, landscape adjustments and larger touch targets.
+- Installable PWA manifest, 192/512px app icons, maskable Android icon, iOS Apple touch icon.
+- In-app Install/Add to Home instructions for iOS Safari and Chromium browsers.
+- A same-origin service worker that caches the app shell and Next.js static assets. The game can run offline **after the first successful online load and caching**; this does not download on a device before that visit.
+- New worker version update button, online/offline indicator and installation state.
+
+**Important:** No database, accounts or synced progress are added. The best score stays in this browser's localStorage; active runs are memory-only and reset when the app is closed or refreshed.
+
+For realistic PWA testing, run `npm run build && npm run start` on localhost or use an HTTPS Vercel deployment. `npm run dev` does not register the service worker to avoid stale development assets.
+
+### Install
+
+- **iPhone / iPad:** Open in Safari → Share → Add to Home Screen.
+- **Android Chrome:** Use the INSTALL button if the browser provides it, or menu → Install app / Add to Home Screen.
+- **Desktop Chrome / Edge:** Use the Install icon in the address bar or the in-app INSTALL action.
+
+Offline behavior depends on browser storage/cache retention. First load must complete online; a private tab or cleared site data cannot guarantee cached assets. There is no background sync.
+
+
+## Gameplay stability / regression suite
+
+The `fix/gameplay-stability-mobile` branch contains engine-level fixes for arena resize (all world entities), low-FPS timekeeping, swept projectile collisions, improved pickup movement, contact hits, and touch interruptions. It introduces browser smoke tests for desktop, small mobile screens, landscape Focus mode, touch input and cached PWA offline launch.
+
+Run:
+
+```bash
+npm install
+npm run typecheck
+npm test
+npm run build
+npx playwright install chromium
+npm run test:browser
+```
+
+The Playwright tests launch `next start` locally on port 3100. They do not deploy or use a database.

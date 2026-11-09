@@ -1,0 +1,24 @@
+name: Phase 1 game checks
+
+on:
+  pull_request:
+    branches: [main, feat/phase-1-mobile-pwa]
+  push:
+    branches: [fix/gameplay-stability-mobile]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript checks
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Production build test (no deploy)
+        run: npm run build
