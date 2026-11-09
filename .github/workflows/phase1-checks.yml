@@ -2,9 +2,12 @@ name: Phase 1 demo checks
 
 on:
   pull_request:
-    branches: [main, feat/phase-1-local-demo]
+    branches: [main, 'feat/**', 'fix/**']
   push:
-    branches: ['feat/**']
+    branches: ['feat/**', 'fix/**']
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -22,3 +25,16 @@ jobs:
         run: npm test
       - name: Production build test (no deploy)
         run: npm run build
+      - name: Install Chromium for browser smoke tests
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests (desktop + mobile + offline)
+        run: npm run test:browser
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nowrift-browser-failures
+          path: |
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore

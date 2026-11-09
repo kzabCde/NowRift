@@ -96,3 +96,20 @@ For realistic PWA testing, run `npm run build && npm run start` on localhost or 
 
 Offline behavior depends on browser storage/cache retention. First load must complete online; a private tab or cleared site data cannot guarantee cached assets. There is no background sync.
 
+
+## Gameplay stability / regression suite
+
+The `fix/gameplay-stability-mobile` branch contains engine-level fixes for arena resize (all world entities), low-FPS timekeeping, swept projectile collisions, improved pickup movement, contact hits, and touch interruptions. It introduces browser smoke tests for desktop, small mobile screens, landscape Focus mode, touch input and cached PWA offline launch.
+
+Run:
+
+```bash
+npm install
+npm run typecheck
+npm test
+npm run build
+npx playwright install chromium
+npm run test:browser
+```
+
+The Playwright tests launch `next start` locally on port 3100. They do not deploy or use a database.
