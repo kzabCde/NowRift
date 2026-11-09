@@ -38,7 +38,12 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export default function NowRiftGame() {
+type NowRiftGameProps = {
+  autoStart?: boolean;
+  onExitToMenu?: () => void;
+};
+
+export default function NowRiftGame({ autoStart = false, onExitToMenu }: NowRiftGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game>(makeGame(960, 540));
   const keysRef = useRef<Set<string>>(new Set());
@@ -50,6 +55,8 @@ export default function NowRiftGame() {
   const [bestKills, setBestKills] = useState(0);
   const [immersive, setImmersive] = useState(false);
   const [touchEngaged, setTouchEngaged] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const resumeAfterCancelRef = useRef(false);
 
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
@@ -89,6 +96,30 @@ export default function NowRiftGame() {
     }
     syncHud();
   }, [clearPointer, syncHud]);
+
+  const requestReturnToMenu = useCallback(() => {
+    if (!onExitToMenu) return;
+    const game = gameRef.current;
+    if (game.phase === "menu" || game.phase === "gameover") {
+      onExitToMenu();
+      return;
+    }
+    resumeAfterCancelRef.current = game.phase === "playing";
+    if (resumeAfterCancelRef.current) togglePause(game);
+    keysRef.current.clear();
+    clearPointer();
+    syncHud();
+    setConfirmLeave(true);
+  }, [clearPointer, onExitToMenu, syncHud]);
+
+  const cancelReturnToMenu = useCallback(() => {
+    setConfirmLeave(false);
+    if (resumeAfterCancelRef.current && gameRef.current.phase === "paused") {
+      togglePause(gameRef.current);
+    }
+    resumeAfterCancelRef.current = false;
+    syncHud();
+  }, [syncHud]);
 
   const selectUpgrade = useCallback((id: UpgradeId) => {
     if (chooseUpgrade(gameRef.current, id)) {
@@ -222,6 +253,10 @@ export default function NowRiftGame() {
     };
   }, [clearPointer, syncHud]);
 
+  useEffect(() => {
+    if (autoStart) start();
+  }, [autoStart, start]);
+
   const getPoint = (event: PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -300,6 +335,11 @@ export default function NowRiftGame() {
                 type="button"
               >{immersive ? "✕ EXIT" : "⛶ FOCUS"}</button>
               <button className="action-button restart-button" onClick={start} type="button">↻ RESTART</button>
+              {onExitToMenu && (
+                <button className="action-button nr-return-menu-button" onClick={requestReturnToMenu} type="button">
+                  ← MAIN MENU
+                </button>
+              )}
             </div>
           </div>
 
@@ -380,6 +420,20 @@ export default function NowRiftGame() {
               </div>
             )}
 
+            {confirmLeave && (
+              <div className="nr-game-exit-overlay">
+                <section className="nr-game-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="nr-exit-title">
+                  <span className="nr-kicker">RUN INTERRUPTION</span>
+                  <h2 id="nr-exit-title">RETURN TO <em>HUB?</em></h2>
+                  <p>Your current run will end. Only your best kill record stays on this browser.</p>
+                  <div className="nr-game-exit-actions">
+                    <button type="button" className="nr-exit-cancel" onClick={cancelReturnToMenu}>CONTINUE RUN</button>
+                    <button type="button" className="nr-exit-confirm" onClick={onExitToMenu}>EXIT TO HUB ↗</button>
+                  </div>
+                </section>
+              </div>
+            )}
+
             {hud.phase === "playing" && (
               <>
                 <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>
@@ -408,7 +462,7 @@ export default function NowRiftGame() {
           </div>
         </section>
       </div>
-      <footer className="site-footer"><span>© NOWRIFT / PHASE 01</span><span>CRAFTED FOR THE BROWSER · NO DATABASE</span><span>LOCAL DEMO BUILD</span></footer>
+      <footer className="site-footer"><span>© NOWRIFT / PHASE 01</span><span>CRAFTED FOR THE BROWSER · NO DATABASE</span><span>GUEST DEMO BUILD</span></footer>
     </main>
   );
 }

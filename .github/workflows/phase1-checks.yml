@@ -22,3 +22,15 @@ jobs:
         run: npm test
       - name: Production build test (no deploy)
         run: npm run build
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests (guest flow, gameplay, responsive and PWA)
+        run: npm run test:browser
+      - name: Upload failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nowrift-guest-menu-browser-tests
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

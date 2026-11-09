@@ -1,8 +1,8 @@
 # NowRift
 
-**NowRift** is a browser-based Roguelike / Bullet Heaven RPG. This repository currently contains **Phase 1: a playable, local-only demo**.
+**NowRift** is a browser-based Roguelike / Bullet Heaven RPG. The current build contains a guest-only entry menu, main hub, and playable Phase 1 single-player demo.
 
-> No Supabase, database, accounts, API keys, hosted game server or deployment is required for this phase.
+> No Supabase, database, accounts, API keys, or hosted game server is required to play. The browser app can run locally or on Vercel.
 
 ## Run locally
 
@@ -15,14 +15,7 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:3000**. If the changes are still in the Phase 1 pull request, check out its feature branch before running:
-
-```bash
-git fetch origin
-git switch feat/phase-1-local-demo
-npm install
-npm run dev
-```
+Open **http://localhost:3000**. For the new guest hub PR, switch to `feat/guest-main-menu` before installing dependencies.
 
 ### Quality checks
 
@@ -113,3 +106,19 @@ npm run test:browser
 ```
 
 The Playwright tests launch `next start` locally on port 3100. They do not deploy or use a database.
+
+## Pre-game main menu (Guest Only)
+
+The app now opens to a cinematic **access-mode selection**, then a **Guest Main Hub**, before launching the gameplay screen:
+
+1. Open the website or PWA → **CONTINUE AS GUEST** (the only usable access mode).
+2. Explore the Main Hub → review guest-local best kills and the Phase 2–3 roadmap.
+3. Select **START NEW RUN** to enter the existing playable solo demo.
+4. Use **MAIN MENU** in the game to return to the Hub. During an active run you must confirm that you want to abandon it.
+5. Use **CHANGE MODE** to return from the Hub to the Guest selection screen.
+
+Sign in and account creation are deliberately marked **COMING SOON** and have no active auth flow. Character, Inventory, Upgrades and Social/PvP areas are roadmap previews, not fake functional systems.
+
+**Guest session is UI-only**, not a persistent user profile. Individual runs stay in memory and are lost when you exit or refresh. The only persisted value is your local best kill count. There is no database, cloud save, trading, PvP, or real character inventory.
+
+This page is part of the PWA shell; the service-worker cache version was bumped to `nowrift-pwa-v3` so installed app users can update to the new entry flow.
