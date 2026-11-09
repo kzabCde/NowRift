@@ -1,10 +1,10 @@
-name: Phase 1 demo checks
+name: Phase 1 game checks
 
 on:
   pull_request:
-    branches: [main, feat/phase-1-local-demo]
+    branches: [main, feat/phase-1-mobile-pwa]
   push:
-    branches: ['feat/**']
+    branches: [fix/gameplay-stability-mobile]
 
 jobs:
   validate:
