@@ -2656,3 +2656,13 @@ button[aria-busy="true"] {
     sans-serif;
   color: var(--muted);
 }
+
+/* Native-sized, keyboard-accessible language controls; no Phaser remount. */
+.language-switcher{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid rgba(190,210,201,.35);border-radius:7px;background:rgba(4,16,18,.65);white-space:nowrap;flex-shrink:0}
+.language-switcher button{border:0;border-radius:4px;background:transparent;color:#c5d1c9;padding:5px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;min-width:32px;min-height:30px}
+.language-switcher button.active{background:#c8ddbb;color:#14231c}
+.language-switcher button:focus-visible{outline:2px solid #d8eac1;outline-offset:2px}
+.language-setting{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+html[lang="th"] body{font-family:Tahoma,"Noto Sans Thai","Leelawadee UI",system-ui,sans-serif;line-height:1.55}
+html[lang="th"] button,html[lang="th"] input,html[lang="th"] select{font-family:inherit}
+@media(max-width:600px){.language-switcher.compact button{min-width:28px;padding:5px}.topbar .header-right{flex-wrap:wrap;justify-content:flex-end;gap:6px}}

@@ -1,3 +1,4 @@
+import { useI18n } from "@/i18n/useI18n";
 "use client";
 import { useState } from "react";
 import { Modal, PixelIcon } from "./GameUi";
@@ -20,13 +21,13 @@ export function CharacterSelection({
   onSelect: (id: CharacterId) => void;
   onClose: () => void;
 }) {
+  const {t,text} = useI18n();
   const [preview, setPreview] = useState(selected);
   const c = CHARACTERS[preview];
   return (
-    <Modal title="Choose a wanderer" onClose={onClose}>
-      <span className="eyebrow">THREE SOULS / ONE BREACH</span>
-      <h2>
-        Choose a <em>wanderer.</em>
+    <Modal title={t("sanctuary","Choose a wanderer")} onClose={onClose}>
+      <span className="eyebrow">{t("sanctuary","THREE SOULS / ONE BREACH")}</span>
+      <h2>{t("sanctuary","Choose a")}{" "}<em>{t("sanctuary","wanderer.")}</em>
       </h2>
       <div
         className="character-stage"
@@ -36,15 +37,15 @@ export function CharacterSelection({
         <span
           className={`character-sprite character-${preview}`}
           role="img"
-          aria-label={`${c.name} idle preview`}
+          aria-label={`${text(c.name)} idle preview`}
         />
         <div>
-          <span className="eyebrow">{c.title}</span>
-          <h3>{c.name}</h3>
-          <p>{c.description}</p>
+          <span className="eyebrow">{text(c.title)}</span>
+          <h3>{text(c.name)}</h3>
+          <p>{text(c.description)}</p>
         </div>
       </div>
-      <div className="character-choices" aria-label="Character selection">
+      <div className="character-choices" aria-label={t("sanctuary","Character selection")}>
         {(Object.keys(CHARACTERS) as CharacterId[]).map((id) => (
           <button
             type="button"
@@ -54,7 +55,7 @@ export function CharacterSelection({
             aria-pressed={preview === id}
             onClick={() => setPreview(id)}
           >
-            {CHARACTERS[id].name}
+            {text(CHARACTERS[id].name)}
           </button>
         ))}
       </div>
@@ -64,16 +65,13 @@ export function CharacterSelection({
           ["MOVEMENT", c.speed],
           ["CRITICAL", `${Math.round(c.crit * 100)}%`],
         ].map(([label, value]) => (
-          <div key={label}>
+          <div key={text(label)}>
             <span>{label}</span>
             <strong>{value}</strong>
           </div>
         ))}
       </div>
-      <p className="muted">
-        Shared original wanderer sprite with class tint. Stats apply at the
-        start of each run. Choose any weapon in the sanctuary.
-      </p>
+      <p className="muted">{t("sanctuary","Shared original wanderer sprite with class tint. Stats apply at the start of each run. Choose any weapon in the sanctuary.")}{" "}</p>
       <button
         className="primary-button"
         data-sound="confirm"
@@ -82,9 +80,7 @@ export function CharacterSelection({
           onSelect(preview);
           onClose();
         }}
-      >
-        CONFIRM WANDERER →
-      </button>
+      >{t("sanctuary","CONFIRM WANDERER →")}{" "}</button>
     </Modal>
   );
 }
@@ -99,6 +95,7 @@ export function Inventory({
   onChange: (p: Progress) => void;
   onClose: () => void;
 }) {
+  const {t,text} = useI18n();
   const [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   async function change(action: "equip" | "enhance", id: RelicId | null) {
@@ -109,13 +106,13 @@ export function Inventory({
       onChange(p);
       setNotice(
         action === "equip"
-          ? "Equipment saved. Applies to your next run."
-          : "Relic enhanced. Saved on this device.",
+          ? t("sanctuary","Equipment saved. Applies to your next run.")
+          : t("sanctuary","Relic enhanced. Saved on this device."),
       );
       audio.play(action === "equip" ? "equip" : "upgrade");
     } catch (e) {
       setNotice(
-        e instanceof Error ? e.message : "Equipment could not be saved.",
+        e instanceof Error ? e.message : t("sanctuary","Equipment could not be saved."),
       );
       audio.play("error");
     } finally {
@@ -123,28 +120,20 @@ export function Inventory({
     }
   }
   return (
-    <Modal title="Inventory & equipment" onClose={onClose}>
-      <span className="eyebrow">RELICS OF THE SHATTERED WORLDS</span>
-      <h2>
-        Inventory & <em>equipment.</em>
+    <Modal title={t("sanctuary","Inventory & equipment")} onClose={onClose}>
+      <span className="eyebrow">{t("sanctuary","RELICS OF THE SHATTERED WORLDS")}</span>
+      <h2>{t("sanctuary","Inventory &")}{" "}<em>{t("sanctuary","equipment.")}</em>
       </h2>
       <p className="inventory-wallet">
-        {progress.gold} CAMPAIGN GOLD <span>· {progress.xp} PROFILE XP</span>
+        {progress.gold} {t("sanctuary","CAMPAIGN GOLD")} <span>· {progress.xp} {t("sanctuary","PROFILE XP")}</span>
       </p>
       {!ready && (
-        <p className="notice">
-          Campaign storage is unavailable or still loading. Play survival
-          freely; equipment requires readable local saves.
-        </p>
+        <p className="notice">{t("sanctuary","Campaign storage is unavailable or still loading. Play survival freely; equipment requires readable local saves.")}{" "}</p>
       )}
-      <h3>
-        Relic slot <span className="muted">/ one equipped</span>
+      <h3>{t("sanctuary","Relic slot")}{" "}<span className="muted">{t("sanctuary","/ one equipped")}</span>
       </h3>
       {!progress.candidates.length && (
-        <p className="inventory-empty">
-          Your relic pouch is empty. Defeat a campaign world guardian to earn
-          its relic.
-        </p>
+        <p className="inventory-empty">{t("sanctuary","Your relic pouch is empty. Defeat a campaign world guardian to earn its relic.")}{" "}</p>
       )}
       <div className="relic-list">
         {(Object.keys(RELICS) as RelicId[]).map((id) => {
@@ -164,15 +153,15 @@ export function Inventory({
               <PixelIcon index={r.icon} large />
               <div>
                 <strong>
-                  {r.name} {owned && <span className="gold">+{rank}</span>}
+                  {text(r.name)} {owned && <span className="gold">+{rank}</span>}
                 </strong>
-                <p>{r.detail}</p>
+                <p>{text(r.detail)}</p>
                 <small>
                   {owned
                     ? equipped
-                      ? "EQUIPPED"
-                      : "OWNED"
-                    : `Defeat the ${r.world} campaign guardian`}
+                      ? t("sanctuary","EQUIPPED")
+                      : t("sanctuary","OWNED")
+                    : t("sanctuary","Defeat the {world} campaign guardian",{world:text(r.world.toUpperCase())})}
                 </small>
               </div>
               {owned && (
@@ -184,7 +173,7 @@ export function Inventory({
                     type="button"
                     onClick={() => void change("equip", equipped ? null : id)}
                   >
-                    {equipped ? "UNEQUIP" : "EQUIP"}
+                    {equipped ? t("sanctuary","UNEQUIP") : t("sanctuary","EQUIP")}
                   </button>
                   <button
                     className="action-button"
@@ -193,11 +182,11 @@ export function Inventory({
                     type="button"
                     onClick={() => void change("enhance", id)}
                   >
-                    {rank >= 3 ? "MAX +3" : `ENHANCE · ${cost.gold}G`}
+                    {rank >= 3 ? t("sanctuary","MAX +3") : `${t("sanctuary","ENHANCE")} · ${cost.gold}G`}
                   </button>
                   <small>
                     {rank < 3 &&
-                      `${cost.material} ${r.material.replaceAll("-", " ")}`}
+                      `${cost.material} ${text(r.material)}`}
                   </small>
                 </div>
               )}
@@ -205,32 +194,25 @@ export function Inventory({
           );
         })}
       </div>
-      <h3>Materials</h3>
+      <h3>{t("sanctuary","Materials")}</h3>
       <div className="material-pouch">
         {Object.entries(progress.materials).filter(([, n]) => n > 0).length ? (
           Object.entries(progress.materials)
             .filter(([, n]) => n > 0)
             .map(([id, n]) => (
               <span key={id}>
-                {id.replaceAll("-", " ")} <b>×{n}</b>
+                {text(id)} <b>×{n}</b>
               </span>
             ))
         ) : (
-          <p className="muted">
-            Complete campaign encounters to gather materials.
-          </p>
+          <p className="muted">{t("sanctuary","Complete campaign encounters to gather materials.")}{" "}</p>
         )}
       </div>
       <p role="status" className="audio-status">
-        {busy ? "Saving equipment…" : notice}
+        {busy ? t("sanctuary","Saving equipment…") : notice}
       </p>
-      <p className="muted">
-        Campaign rewards and equipment are saved on this device. Enhancements
-        spend the displayed resources immediately. Run blessings are temporary.
-      </p>
-      <button className="primary-button" onClick={onClose} type="button">
-        DONE
-      </button>
+      <p className="muted">{t("sanctuary","Campaign rewards and equipment are saved on this device. Enhancements spend the displayed resources immediately. Run blessings are temporary.")}{" "}</p>
+      <button className="primary-button" onClick={onClose} type="button">{t("sanctuary","DONE")}{" "}</button>
     </Modal>
   );
 }
