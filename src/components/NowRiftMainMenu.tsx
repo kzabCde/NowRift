@@ -188,7 +188,7 @@ export default function NowRiftMainMenu() {
           <Atmosphere />
           <div className="gateway-content">
             <Image
-              src="/branding/nowrift-logo-black.png"
+              src="/branding/nowrift-logo-transparent.png"
               width={384}
               height={384}
               className="gateway-official-logo"

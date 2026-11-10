@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { inflateSync, deflateSync } from "node:zlib";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BRAND_MASTERS } from "./branding-data.mjs";
@@ -59,7 +59,8 @@ function save(relative, size, pixelAt) {
   writeFileSync(file, png(size, size, pixelAt));
 }
 const black = [0, 0, 0, 255];
-save("branding/nowrift-logo-black.png", 384, (x,y) => sample(opened.full, x, y, 384));
+// Delete legacy artwork if the generator runs in a previously built workspace.
+rmSync(resolve(root, "public/branding/nowrift-logo-black.png"), { force: true });
 save("branding/nowrift-logo-transparent.png", 384, (x,y) => sample(opened.transparent, x, y, 384));
 for (const [path, size, artworkSize] of [
   ["icons/icon-192.png", 192, 174],

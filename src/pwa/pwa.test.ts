@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import manifest from "../app/manifest";
 
 test("manifest meets installation requirements", () => {
@@ -25,7 +25,6 @@ test("service worker caches app shell but does not intercept API calls", () => {
 
 test("official NowRift brand assets have accurate PNG sizes and maskable safe padding", () => {
   for (const [file, expected] of [
-    ["public/branding/nowrift-logo-black.png", 384],
     ["public/branding/nowrift-logo-transparent.png", 384],
     ["public/icons/icon-192.png", 192],
     ["public/icons/icon-512.png", 512],
@@ -39,7 +38,5 @@ test("official NowRift brand assets have accurate PNG sizes and maskable safe pa
     assert.equal(bytes.readUInt32BE(20), expected, file);
     assert.equal(bytes[25], 6, "Brand assets use RGBA color channels");
   }
-  const black = readFileSync("public/branding/nowrift-logo-black.png");
-  const transparent = readFileSync("public/branding/nowrift-logo-transparent.png");
-  assert.notDeepEqual(black, transparent, "Both supplied logos remain distinct");
+  assert.equal(existsSync("public/branding/nowrift-logo-black.png"), false, "Legacy black logo must not be generated");
 });
