@@ -8,6 +8,8 @@ import type { PlayerProfile, SaveData, SlotState } from "./model";
 import { emptyMetrics } from "./model";
 import { gameDay, reconcile, QUESTS, ACHIEVEMENTS } from "./daily";
 import { validCheckpoint } from "./checkpoint";
+import { defaultWorld, validWorld } from "../world/save";
+import { calculateStats } from "../rpg/stats";
 export const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 export const count = (v: unknown, max = Number.MAX_SAFE_INTEGER): v is number =>
@@ -156,6 +158,7 @@ export function validPlayer(v: unknown): v is PlayerProfile {
 export function validLocal(v: unknown): v is SlotState {
   if (!record(v)) return false;
   const s = v as unknown as SlotState;
+  if (s.world !== undefined && !validWorld(s.world)) return false;
   if (
     s.schema !== 2 ||
     typeof s.id !== "string" ||
@@ -264,6 +267,14 @@ export function migrateSave(
       throw new Error(
         "Character save metadata is damaged or belongs to another slot. Original data was preserved.",
       );
+    if (!p.local.world) {
+      p.local.world = defaultWorld();
+      p.local.world.hp = calculateStats(
+        p,
+        p.local.weapon,
+        p.local.character,
+      ).maxHp;
+    }
     return p;
   }
   p.local = {
@@ -299,5 +310,7 @@ export function migrateSave(
     (h) => h.kind === "dismantle",
   ).length;
   reconcile(p, at);
+  p.local.world = defaultWorld();
+  p.local.world.hp = calculateStats(p, p.local.weapon, p.local.character).maxHp;
   return p;
 }

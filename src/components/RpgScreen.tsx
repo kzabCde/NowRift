@@ -142,16 +142,20 @@ export default function RpgScreen({
   onBack,
   weapon = "arcane",
   character = "wanderer",
+  initialTab = "inventory",
+  focusRecipes = false,
 }: {
   onBack: () => void;
   weapon?: WeaponId;
   character?: CharacterId;
+  initialTab?: Tab;
+  focusRecipes?: boolean;
 }) {
   const { text } = useI18n();
   const [profile, setProfile] = useState<Progress | null>(null),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
-    [tab, setTab] = useState<Tab>("inventory"),
+    [tab, setTab] = useState<Tab>(initialTab),
     [selection, setSelection] = useState("starter-weapon"),
     [filter, setFilter] = useState("all"),
     [sort, setSort] = useState("rarity"),
@@ -162,6 +166,16 @@ export default function RpgScreen({
     [flash, setFlash] = useState("");
   const details = useRef<HTMLElement | null>(null),
     bagPanel = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (focusRecipes && profile) {
+      const frame = requestAnimationFrame(() =>
+        document
+          .querySelector(".rpg-recipes")
+          ?.scrollIntoView({ block: "center" }),
+      );
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [focusRecipes, !!profile]);
   function inspect(id: string) {
     setSelection(id);
     setFlash("");

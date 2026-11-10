@@ -13,6 +13,10 @@ import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
 import { CombatVfx } from "./combat-vfx";
 import { audio } from "../audio/engine";
 import type { SoundId } from "../audio/palette";
+import { FARM } from "../world/content";
+import { onSceneEnd } from "./lifecycle";
+import { farmPrompt } from "../world/farming";
+import { ITEMS } from "../rpg/content";
 import { drainFeedback, type Feedback } from "../feedback";
 import { WORLDS } from "../campaign/content";
 import { loadStage, type StageSelection } from "../campaign/loader";
@@ -59,6 +63,35 @@ export class PreloadScene extends Phaser.Scene {
   }
   preload() {
     const bridge = this.registry.get("bridge") as GameBridge;
+    for (const outfit of ["moss", "ember", "tide"])
+      this.load.spritesheet(
+        "haven-player-" + outfit,
+        "/assets/haven/player-" + outfit + ".png",
+        { frameWidth: 32, frameHeight: 32 },
+      );
+    this.load.image("haven-rift", "/assets/haven/portal.png");
+    if (this.registry.get("world") === "haven") {
+      for (const asset of [
+        "terrain",
+        "fountain",
+        "forge",
+        "workshop",
+        "wardrobe",
+        "market",
+        "inn",
+        "store",
+        "board",
+        "portal",
+        "dummy",
+        "chest",
+        "tree",
+      ])
+        this.load.image("haven-" + asset, "/assets/haven/" + asset + ".png");
+      this.load.spritesheet("haven-npc", "/assets/haven/npc.png", {
+        frameWidth: 32,
+        frameHeight: 32,
+      });
+    }
     this.load.on("progress", (value: number) => bridge.emit("loading", value));
     this.load.on("loaderror", (file: Phaser.Loader.File) =>
       bridge.emit(
@@ -137,7 +170,9 @@ export class PreloadScene extends Phaser.Scene {
         texture.refresh();
         for (let i = 0; i < 10; i++) texture.add(i, 0, 0, 0, 32, 32);
       }
-    this.scene.start("MainMenuScene");
+    this.scene.start(
+      this.registry.get("world") === "haven" ? "HavenScene" : "MainMenuScene",
+    );
   }
 }
 /** Recycled Phaser images/texts: no GameObject allocation in the update loop after warmup. */
@@ -224,7 +259,12 @@ class ForestRenderer {
     border.strokeRect(9, 9, FOREST.width - 18, FOREST.height - 18);
     this.aura = scene.add.graphics();
     this.gear = scene.add.image(0, 0, "items", 0).setVisible(false);
-    this.player = scene.add.image(900, 700, "player").setScale(2);
+    const outfit = scene.registry.get("outfit"),
+      skin =
+        outfit && scene.textures.exists("haven-player-" + outfit)
+          ? "haven-player-" + outfit
+          : "player";
+    this.player = scene.add.image(900, 700, skin).setScale(2);
     this.health = scene.add.graphics();
     this.telegraphs = scene.add.graphics().setDepth(8500);
     this.joystick = scene.add.graphics().setScrollFactor(0).setDepth(9000);
@@ -658,7 +698,7 @@ export class MainMenuScene extends Phaser.Scene {
           checkpoint: command.checkpoint,
         });
     });
-    this.events.once("shutdown", off);
+    onSceneEnd(this, off);
     bridge.emit("ready", true);
   }
 }
@@ -682,6 +722,7 @@ export class GameScene extends Phaser.Scene {
   loadout?: Loadout;
   lastCheckpoint = 0;
   storageBlocked = false;
+  farmNodes: Phaser.GameObjects.Image[] = [];
   tonicPending = false;
   tonicReceipts = new Set<string>();
   constructor() {
@@ -700,6 +741,7 @@ export class GameScene extends Phaser.Scene {
       crypto.getRandomValues(new Uint32Array(1))[0];
     this.run = data.run;
     this.stage = data.checkpoint?.stage ?? data.stage;
+    this.registry.set("outfit", this.stage?.outfit);
     this.loadout = data.checkpoint?.loadout ?? data.loadout;
     this.lastCheckpoint = 0;
     this.storageBlocked = false;
@@ -730,6 +772,21 @@ export class GameScene extends Phaser.Scene {
     this.bridge = this.registry.get("bridge");
     const g = this.simulation;
     this.visuals = new ForestRenderer(this, g);
+    this.farmNodes = [];
+    if (this.stage?.activity === "farming") {
+      this.add
+        .image(FARM.portal.x, FARM.portal.y, "haven-rift")
+        .setScale(1.1)
+        .setOrigin(0.5, 0.8)
+        .setDepth(FARM.portal.y - 10);
+      for (const node of FARM.nodes)
+        this.farmNodes.push(
+          this.add
+            .image(node.x, node.y, "items", ITEMS[node.item].icon)
+            .setScale(1.7)
+            .setDepth(node.y),
+        );
+    }
     if (g.phase === "menu") beginGame(g);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, FOREST.width, FOREST.height);
@@ -746,6 +803,8 @@ export class GameScene extends Phaser.Scene {
       this.publish();
     };
     this.keys?.ESC.on("down", escape);
+    const farmInteract = () => this.command({ type: "expedition-interact" });
+    this.input.keyboard?.on("keydown-E", farmInteract);
     const interrupt = () => {
       if (g.phase === "playing") togglePause(g);
       this.clearInput();
@@ -838,11 +897,12 @@ export class GameScene extends Phaser.Scene {
       if (next.zoom !== previous.zoom) this.resize();
       if (next.quality !== previous.quality) setQuality();
     });
-    this.events.once("shutdown", () => {
+    onSceneEnd(this, () => {
       off();
       unsubSettings();
       this.clearInput();
       this.keys?.ESC.off("down", escape);
+      this.input.keyboard?.off("keydown-E", farmInteract);
       window.removeEventListener("keydown", preventScroll);
       window.removeEventListener("blur", interrupt);
       window.removeEventListener("pagehide", pagehide);
@@ -973,6 +1033,32 @@ export class GameScene extends Phaser.Scene {
     }
   }
   command(command: Command) {
+    if (command.type === "expedition-interact") {
+      const g = this.simulation;
+      if (
+        this.stage?.activity !== "farming" ||
+        g.phase !== "playing" ||
+        this.storageBlocked ||
+        this.tonicPending
+      )
+        return;
+      const prompt = farmPrompt(
+        g.player,
+        g.time,
+        g.kills,
+        g.campaign?.harvested ?? [],
+      );
+      if (prompt.target === "extract" && prompt.ready) {
+        g.phase = "victory";
+        audio.play("launch");
+      } else if (prompt.target && prompt.target !== "extract") {
+        g.campaign!.harvested!.push(prompt.target);
+        audio.play("pickup");
+        this.checkpoint();
+      }
+      this.publish();
+      return;
+    }
     if (command.type === "checkpoint") {
       this.checkpoint();
       return;
@@ -1052,6 +1138,17 @@ export class GameScene extends Phaser.Scene {
   }
   publish() {
     this.bridge.emit("hud", snapshot(this.simulation));
+    if (this.stage?.activity === "farming") {
+      const g = this.simulation;
+      this.bridge.emit(
+        "expedition",
+        farmPrompt(g.player, g.time, g.kills, g.campaign?.harvested ?? []),
+      );
+      for (let i = 0; i < this.farmNodes.length; i++)
+        this.farmNodes[i].setVisible(
+          !g.campaign?.harvested?.includes(FARM.nodes[i].id),
+        );
+    }
   }
   update(_time: number, _delta: number) {
     // Phaser smooths and accumulates delta when FPS-limited. Combat uses elapsed
@@ -1127,6 +1224,13 @@ export class GameScene extends Phaser.Scene {
           weapon: g.weaponId,
           campaign: g.campaign
             ? {
+                ...(this.stage?.activity === "farming"
+                  ? {
+                      activity: "farming" as const,
+                      harvested: g.campaign.harvested ?? [],
+                      hp: g.player.hp,
+                    }
+                  : {}),
                 id: this.runId,
                 run: this.run ? { ...this.run } : undefined,
                 stageId: g.campaign.definition.id,
@@ -1171,7 +1275,7 @@ export class ResultsScene extends Phaser.Scene {
         });
       if (command.type === "exit") this.scene.start("MainMenuScene");
     });
-    this.events.once("shutdown", off);
+    onSceneEnd(this, off);
   }
 }
 declare global {

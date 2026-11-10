@@ -53,6 +53,7 @@ export type ActiveRun = RunOwner & {
   metrics: Pick<Metrics, "kills" | "bosses" | "seconds">;
 };
 export type SlotState = {
+  world?: import("../world/save").WorldSave;
   schema: 2;
   id: string;
   name: string;

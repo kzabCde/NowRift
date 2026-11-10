@@ -862,9 +862,12 @@ export function updateGame(
     bullet: (b) => addBullet(g, b),
   });
   if (p.hp <= 0) return;
-  const duration = g.campaign
-    ? g.campaign.definition.clear.seconds * g.campaign.difficulty.duration
-    : FOREST.duration;
+  const duration =
+    g.campaign?.activity === "farming"
+      ? Infinity
+      : g.campaign
+        ? g.campaign.definition.clear.seconds * g.campaign.difficulty.duration
+        : FOREST.duration;
   if (
     g.campaign &&
     g.time >= duration &&
@@ -1099,7 +1102,7 @@ export function updateGame(
       0,
       e.kind === "boss",
     );
-    if (e.kind === "boss") {
+    if (e.kind === "boss" && g.campaign?.activity !== "farming") {
       g.phase = "victory";
       if (!g.campaign) g.gold += 150;
     }

@@ -30,6 +30,9 @@ import {
   grantGift,
 } from "./daily";
 import { validCheckpoint, type RunCheckpoint } from "./checkpoint";
+import { applyWorldCommand } from "../world/actions";
+import type { WorldCommand } from "../world/save";
+import { HAVEN } from "../world/content";
 let selected: string | null = null,
   writerId: string | null = null;
 const listeners = new Set<() => void>();
@@ -252,6 +255,13 @@ async function update<T>(
   return value;
 }
 export const profileRepository = {
+  async world(slotId: string, command: WorldCommand) {
+    return update((p, root, store, _, at) => {
+      applyWorldCommand(p, command, at);
+      put(store, root, p, at);
+      return p;
+    }, slotId);
+  },
   subscribe: subscribeSaves,
   async view(): Promise<PlayerView> {
     return transact((records, store) => {
@@ -646,6 +656,10 @@ export const profileRepository = {
       if (run) assertOwner(p, run);
       p.local.checkpoint = null;
       p.local.activeRun = null;
+      if (p.local.world?.location === "expedition") {
+        p.local.world.location = "haven";
+        p.local.world.position = { ...HAVEN.return };
+      }
       put(store, root, p, at);
       return p;
     }, slotId);
@@ -682,7 +696,7 @@ export const profileRepository = {
                 seconds: result.seconds,
               }
             : {}),
-          stages: result.victory ? 1 : 0,
+          stages: result.victory && !result.activity ? 1 : 0,
           goldEarned: settled.reward?.gold ?? 0,
           materials: Object.values(settled.reward?.materials ?? {}).reduce(
             (a, b) => a + b,
@@ -694,6 +708,16 @@ export const profileRepository = {
       );
       next.local.checkpoint = null;
       next.local.activeRun = null;
+      if (result.activity === "farming" && next.local.world) {
+        const w = next.local.world;
+        w.location = "haven";
+        w.position = { ...HAVEN.return };
+        w.hp = Math.max(1, Math.min(5000, result.hp ?? 1));
+        if (result.victory) {
+          w.extractions++;
+          if (w.quest === "active") w.quest = "completed";
+        }
+      }
       put(store, root, next, at);
       return { ...settled, progress: next };
     }, result.run?.slotId);

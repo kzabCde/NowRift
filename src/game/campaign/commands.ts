@@ -5,6 +5,7 @@ import { RELICS, type RelicId } from "../loadout";
 import { lockedReason, clearKey, type Progress } from "./progression";
 import { resolveRewards, type CampaignResult } from "./rewards";
 import { DIFFICULTIES, stageById } from "./content";
+import { farmingRewards } from "../world/farming";
 export function applyResult(progress: Progress, run: CampaignResult) {
   if (
     typeof run.id !== "string" ||
@@ -27,12 +28,23 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   if (reason) throw new Error(reason);
   if (
     run.victory &&
+    !run.activity &&
     (run.seconds <
       stage.clear.seconds * DIFFICULTIES[run.difficulty].duration ||
       (stage.clear.kind === "boss" && run.bosses < 1))
   )
     throw new Error("Clear condition not met");
   if (progress.receipts.includes(run.id)) return { progress, reward: null };
+  if (run.activity !== undefined && run.activity !== "farming")
+    throw new Error("Invalid expedition.");
+  if (run.activity === "farming") {
+    const { eligible, reward } = farmingRewards(run),
+      settled = settleRpg(progress, eligible, reward);
+    settled.progress.receipts.push(run.id);
+    reward.equipmentCount = settled.equipmentCount;
+    reward.overflow = settled.overflow;
+    return { progress: settled.progress, reward };
+  }
   const key = clearKey(run.stageId, run.difficulty),
     reward = resolveRewards(run, !progress.clears.includes(key));
   const settled = settleRpg(progress, run, reward),

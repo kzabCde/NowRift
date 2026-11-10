@@ -4,9 +4,11 @@ import type { GameBridge } from "@/game/bridge";
 export default function PhaserHost({
   bridge,
   world = "forest",
+  haven,
 }: {
   bridge: GameBridge;
   world?: string;
+  haven?: import("@/game/world/bridge").HavenStart;
 }) {
   const parent = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -15,7 +17,7 @@ export default function PhaserHost({
     import("@/game/phaser/create-game")
       .then(({ createGame }) => {
         if (cancelled || !parent.current) return;
-        const game = createGame(parent.current, bridge, world);
+        const game = createGame(parent.current, bridge, world, haven);
         destroy = () => {
           game.destroy(true);
         };
@@ -31,7 +33,7 @@ export default function PhaserHost({
       cancelled = true;
       destroy?.();
     };
-  }, [bridge, world]);
+  }, [bridge, world, haven]);
   return (
     <div
       ref={parent}
