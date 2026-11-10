@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import { advanceGame, beginGame, chooseUpgrade, makeGame, resizeGame, snapshot, togglePause, updateGame } from "./engine";
+import { test } from "vitest";
+import {
+  advanceGame,
+  beginGame,
+  chooseUpgrade,
+  makeGame,
+  resizeGame,
+  snapshot,
+  togglePause,
+  updateGame,
+} from "./engine";
 
 test("a new run starts with local-only, in-memory defaults", () => {
   const game = makeGame(800, 500);
@@ -41,8 +50,15 @@ test("auto-fire targets enemies without pressing an attack key", () => {
   game.phase = "playing";
   game.spawnCooldown = 999;
   game.enemies.push({
-    id: 1, x: game.player.x + 120, y: game.player.y, r: 15,
-    hp: 58, maxHp: 58, speed: 0, contact: 0, kind: "drone",
+    id: 1,
+    x: game.player.x + 120,
+    y: game.player.y,
+    r: 15,
+    hp: 58,
+    maxHp: 58,
+    speed: 0,
+    contact: 0,
+    kind: "slime",
   });
   game.weapon.cooldown = 0;
   updateGame(game, 0.016, 0, 0);
@@ -56,7 +72,7 @@ test("upgrades require an offered option and change player stats", () => {
   game.offers = ["power", "rapid", "vitality"];
   assert.equal(chooseUpgrade(game, "magnet"), false);
   assert.equal(chooseUpgrade(game, "power"), true);
-  assert.equal(game.weapon.damage, 40);
+  assert.equal(game.weapon.damage, 12.5);
   assert.equal(game.phase, "playing");
   assert.deepEqual(game.offers, []);
   assert.equal(snapshot(game).level, 1);
@@ -66,10 +82,38 @@ test("resize preserves every world entity's relative position", () => {
   const game = makeGame(600, 400);
   game.player.x = 150;
   game.player.y = 100;
-  game.enemies.push({ id: 1, x: 420, y: 200, r: 15, hp: 25, maxHp: 25, speed: 0, contact: 0, kind: "drone" });
-  game.bullets.push({ x: 90, y: 300, vx: 200, vy: 0, r: 5, life: 1, damage: 1, color: "#fff" });
+  game.enemies.push({
+    id: 1,
+    x: 420,
+    y: 200,
+    r: 15,
+    hp: 25,
+    maxHp: 25,
+    speed: 0,
+    contact: 0,
+    kind: "slime",
+  });
+  game.bullets.push({
+    x: 90,
+    y: 300,
+    vx: 200,
+    vy: 0,
+    r: 5,
+    life: 1,
+    damage: 1,
+    color: "#fff",
+  });
   game.drops.push({ x: 200, y: 300, r: 7, value: 12, kind: "xp" });
-  game.sparks.push({ x: 500, y: 100, vx: 0, vy: 0, age: 0, life: 1, color: "#fff", size: 2 });
+  game.sparks.push({
+    x: 500,
+    y: 100,
+    vx: 0,
+    vy: 0,
+    age: 0,
+    life: 1,
+    color: "#fff",
+    size: 2,
+  });
 
   resizeGame(game, 300, 800);
   assert.equal(game.width, 300);
@@ -90,11 +134,14 @@ test("low frame rate advances time and movement without slow-motion", () => {
   game.spawnCooldown = 999;
   game.weapon.cooldown = 999;
   const startX = game.player.x;
-  advanceGame(game, 0.10, 1, 0);
-  assert.ok(Math.abs(game.player.x - startX - 22.5) < 0.001);
-  assert.ok(Math.abs(game.time - 0.10) < 0.001);
+  advanceGame(game, 0.1, 1, 0);
+  assert.ok(Math.abs(game.player.x - startX - 18) < 0.001);
+  assert.ok(Math.abs(game.time - 0.1) < 0.001);
   advanceGame(game, 10, 0, 0);
-  assert.ok(game.time <= 0.221, "large tab resume must not simulate ten seconds at once");
+  assert.ok(
+    game.time <= 0.221,
+    "large tab resume must not simulate ten seconds at once",
+  );
 });
 
 test("swept collisions hit enemies between bullet endpoints", () => {
@@ -102,8 +149,27 @@ test("swept collisions hit enemies between bullet endpoints", () => {
   game.phase = "playing";
   game.spawnCooldown = 999;
   game.weapon.cooldown = 999;
-  game.enemies.push({ id: 1, x: 116, y: 100, r: 3, hp: 10, maxHp: 10, speed: 0, contact: 0, kind: "stalker" });
-  game.bullets.push({ x: 100, y: 100, vx: 1600, vy: 0, r: 2, life: 1, damage: 15, color: "#fff" });
+  game.enemies.push({
+    id: 1,
+    x: 116,
+    y: 100,
+    r: 3,
+    hp: 10,
+    maxHp: 10,
+    speed: 0,
+    contact: 0,
+    kind: "wolf",
+  });
+  game.bullets.push({
+    x: 100,
+    y: 100,
+    vx: 1600,
+    vy: 0,
+    r: 2,
+    life: 1,
+    damage: 15,
+    color: "#fff",
+  });
 
   updateGame(game, 0.02, 0, 0);
   assert.equal(game.kills, 1);
@@ -117,10 +183,39 @@ test("swept collision picks the nearest enemy, regardless of array order", () =>
   game.spawnCooldown = 999;
   game.weapon.cooldown = 999;
   game.enemies.push(
-    { id: 1, x: 145, y: 100, r: 3, hp: 20, maxHp: 20, speed: 0, contact: 0, kind: "stalker" },
-    { id: 2, x: 115, y: 100, r: 3, hp: 20, maxHp: 20, speed: 0, contact: 0, kind: "stalker" },
+    {
+      id: 1,
+      x: 145,
+      y: 100,
+      r: 3,
+      hp: 20,
+      maxHp: 20,
+      speed: 0,
+      contact: 0,
+      kind: "wolf",
+    },
+    {
+      id: 2,
+      x: 115,
+      y: 100,
+      r: 3,
+      hp: 20,
+      maxHp: 20,
+      speed: 0,
+      contact: 0,
+      kind: "wolf",
+    },
   );
-  game.bullets.push({ x: 100, y: 100, vx: 3000, vy: 0, r: 2, life: 1, damage: 10, color: "#fff" });
+  game.bullets.push({
+    x: 100,
+    y: 100,
+    vx: 3000,
+    vy: 0,
+    r: 2,
+    life: 1,
+    damage: 10,
+    color: "#fff",
+  });
 
   updateGame(game, 0.02, 0, 0);
   assert.equal(game.enemies.find((e) => e.id === 1)?.hp, 20);
@@ -133,7 +228,17 @@ test("contact damage checks enemy position after movement", () => {
   game.spawnCooldown = 999;
   game.weapon.cooldown = 999;
   const p = game.player;
-  game.enemies.push({ id: 1, x: p.x + 48, y: p.y, r: 15, hp: 100, maxHp: 100, speed: 1400, contact: 0, kind: "drone" });
+  game.enemies.push({
+    id: 1,
+    x: p.x + 48,
+    y: p.y,
+    r: 15,
+    hp: 100,
+    maxHp: 100,
+    speed: 1400,
+    contact: 0,
+    kind: "slime",
+  });
   updateGame(game, 0.02, 0, 0);
   assert.equal(game.player.hp, 88);
   assert.ok(game.player.invincible > 0);
@@ -145,7 +250,13 @@ test("level-up freezes gameplay until selecting one of three upgrades", () => {
   game.spawnCooldown = 999;
   game.weapon.cooldown = 999;
   game.xp = game.xpToNext - 2;
-  game.drops.push({ x: game.player.x + 5, y: game.player.y, r: 7, value: 12, kind: "xp" });
+  game.drops.push({
+    x: game.player.x + 5,
+    y: game.player.y,
+    r: 7,
+    value: 12,
+    kind: "xp",
+  });
   updateGame(game, 0.02, 0, 0);
   assert.equal(game.phase, "upgrade");
   assert.equal(game.offers.length, 3);

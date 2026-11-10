@@ -1,31 +1,99 @@
-export type GamePhase = "menu" | "playing" | "paused" | "upgrade" | "gameover";
-export type UpgradeId = "rapid" | "power" | "stride" | "vitality" | "multishot" | "magnet";
-
-export type Upgrade = {
-  id: UpgradeId;
-  name: string;
-  description: string;
-  symbol: string;
-  accent: string;
+import {
+  environmentStep,
+  campaignBossAttack,
+  type StageRuntime,
+} from "./campaign/runtime";
+import {
+  ENEMIES,
+  FOREST,
+  OBSTACLES,
+  UPGRADES,
+  WEAPONS,
+  type EnemyKind,
+  type UpgradeId,
+  type WeaponId,
+  type Obstacle,
+} from "./content/forest";
+export { UPGRADES } from "./content/forest";
+export type { UpgradeId } from "./content/forest";
+export type GamePhase =
+  | "menu"
+  | "playing"
+  | "paused"
+  | "upgrade"
+  | "gameover"
+  | "victory";
+export type Enemy = {
+  pattern?: number;
+  charge?: { delay: number; left: number; vx: number; vy: number };
+  id: number;
+  x: number;
+  y: number;
+  r: number;
+  hp: number;
+  maxHp: number;
+  speed: number;
+  contact: number;
+  kind: EnemyKind;
+  attack?: number;
+  slow?: number;
+  hit?: number;
+  age?: number;
 };
-
-export const UPGRADES: Upgrade[] = [
-  { id: "rapid", name: "Overclock", description: "Fire 20% faster", symbol: "⚡", accent: "#65e4fa" },
-  { id: "power", name: "Core Surge", description: "+10 projectile damage", symbol: "✦", accent: "#ffb168" },
-  { id: "stride", name: "Phase Step", description: "+12% movement speed", symbol: "➤", accent: "#a6a0ff" },
-  { id: "vitality", name: "Reinforce", description: "+25 max HP and heal 25 HP", symbol: "♥", accent: "#fc7b9b" },
-  { id: "multishot", name: "Split Shot", description: "Fire one additional projectile", symbol: "✳", accent: "#a8ec86" },
-  { id: "magnet", name: "Gravitation", description: "Increase pickup radius by 38", symbol: "◎", accent: "#f0cb78" },
-];
-
-type EnemyKind = "drone" | "stalker" | "brute";
-type Enemy = { id: number; x: number; y: number; r: number; hp: number; maxHp: number; speed: number; contact: number; kind: EnemyKind };
-type Bullet = { x: number; y: number; vx: number; vy: number; r: number; life: number; damage: number; color: string };
-type Drop = { x: number; y: number; r: number; value: number; kind: "xp" | "heal" };
-type Spark = { x: number; y: number; vx: number; vy: number; age: number; life: number; color: string; size: number };
-
-export type Joystick = { x: number; y: number; dx: number; dy: number } | null;
+export type Bullet = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  life: number;
+  damage: number;
+  color: string;
+  hostile?: boolean;
+  blast?: number;
+  critical?: boolean;
+  sprite?: number;
+};
+export type Drop = {
+  x: number;
+  y: number;
+  r: number;
+  value: number;
+  kind: "xp" | "heal";
+};
+export type Spark = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  age: number;
+  life: number;
+  color: string;
+  size: number;
+};
+export type CombatText = {
+  x: number;
+  y: number;
+  value: string;
+  critical: boolean;
+  age: number;
+  life: number;
+  kind: "damage" | "death" | "pulse";
+  color?: string;
+};
+export type Hazard = {
+  slow?: number;
+  burn?: number;
+  color?: number;
+  x: number;
+  y: number;
+  r: number;
+  age: number;
+  delay: number;
+  damage: number;
+};
 export type Game = {
+  campaign?: StageRuntime;
   phase: GamePhase;
   width: number;
   height: number;
@@ -36,19 +104,54 @@ export type Game = {
   level: number;
   xp: number;
   xpToNext: number;
-  player: { x: number; y: number; r: number; hp: number; maxHp: number; speed: number; angle: number; invincible: number };
-  weapon: { damage: number; delay: number; projectiles: number; cooldown: number; range: number };
+  weaponId: WeaponId;
+  rng: () => number;
+  player: {
+    x: number;
+    y: number;
+    r: number;
+    hp: number;
+    maxHp: number;
+    speed: number;
+    angle: number;
+    invincible: number;
+    moving: boolean;
+    hit: number;
+  };
+  weapon: {
+    damage: number;
+    delay: number;
+    projectiles: number;
+    cooldown: number;
+    range: number;
+    speed: number;
+    area: number;
+    crit: number;
+    critDamage: number;
+  };
+  regen: number;
   pickupRadius: number;
   enemies: Enemy[];
   bullets: Bullet[];
   drops: Drop[];
   sparks: Spark[];
+  texts: CombatText[];
+  hazards: Hazard[];
+  obstacles: Obstacle[];
   spawnCooldown: number;
   nextId: number;
   offers: UpgradeId[];
+  stacks: Partial<Record<UpgradeId, number>>;
+  bossSpawned: boolean;
+  pools: {
+    enemies: Enemy[];
+    bullets: Bullet[];
+    sparks: Spark[];
+    drops: Drop[];
+  };
 };
-
 export type Snapshot = {
+  statuses: string[];
   phase: GamePhase;
   hp: number;
   maxHp: number;
@@ -61,53 +164,24 @@ export type Snapshot = {
   time: number;
   enemies: number;
   offers: UpgradeId[];
+  weaponId: WeaponId;
+  damage: number;
+  interval: number;
+  crit: number;
+  boss: { hp: number; maxHp: number; phase: number } | null;
+  stacks: Partial<Record<UpgradeId, number>>;
 };
-
-const random = (min: number, max: number) => min + Math.random() * (max - min);
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const distance = (ax: number, ay: number, bx: number, by: number) => Math.hypot(ax - bx, ay - by);
-
-/**
- * Keep every world-space entity aligned with the resized arena.
- * Used when rotating a device and entering/leaving immersive mode.
- */
-export function resizeGame(game: Game, width: number, height: number) {
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 40 || height < 40) return;
-  if (Math.abs(width - game.width) < 0.5 && Math.abs(height - game.height) < 0.5) return;
-
-  const scaleX = width / Math.max(1, game.width);
-  const scaleY = height / Math.max(1, game.height);
-  game.width = width;
-  game.height = height;
-
-  const position = (entity: { x: number; y: number }) => {
-    entity.x *= scaleX;
-    entity.y *= scaleY;
-  };
-
-  position(game.player);
-  game.player.x = clamp(game.player.x, game.player.r + 9, Math.max(game.player.r + 9, width - game.player.r - 9));
-  game.player.y = clamp(game.player.y, game.player.r + 9, Math.max(game.player.r + 9, height - game.player.r - 9));
-  game.enemies.forEach(position);
-  game.bullets.forEach(position);
-  game.drops.forEach(position);
-  game.sparks.forEach(position);
-}
-
-/**
- * Advance using bounded substeps so low-FPS devices don't run in slow motion.
- * Cap large pauses to avoid sudden jumps after a suspended browser frame.
- */
-export function advanceGame(game: Game, deltaSeconds: number, inputX: number, inputY: number) {
-  let remaining = Math.min(0.12, Math.max(0, Number.isFinite(deltaSeconds) ? deltaSeconds : 0));
-  while (remaining > 0.00001 && game.phase === "playing") {
-    const step = Math.min(0.02, remaining);
-    updateGame(game, step, inputX, inputY);
-    remaining -= step;
-  }
-}
-
-export function makeGame(width: number, height: number): Game {
+const clamp = (v: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, v));
+const dist2 = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+export function makeGame(
+  width = FOREST.width,
+  height = FOREST.height,
+  weaponId: WeaponId = "arcane",
+  rng: () => number = Math.random,
+): Game {
+  const w = WEAPONS[weaponId];
   return {
     phase: "menu",
     width,
@@ -118,415 +192,852 @@ export function makeGame(width: number, height: number): Game {
     gold: 0,
     level: 1,
     xp: 0,
-    xpToNext: 35,
-    player: { x: width / 2, y: height / 2, r: 16, hp: 100, maxHp: 100, speed: 225, angle: 0, invincible: 0 },
-    weapon: { damage: 30, delay: 0.5, projectiles: 1, cooldown: 0.3, range: 470 },
+    xpToNext: 25,
+    weaponId,
+    rng,
+    player: {
+      x: width / 2,
+      y: height / 2,
+      r: 12,
+      hp: 100,
+      maxHp: 100,
+      speed: 180,
+      angle: 0,
+      invincible: 0,
+      moving: false,
+      hit: 0,
+    },
+    weapon: {
+      damage: w.damage,
+      delay: w.interval,
+      projectiles: weaponId === "daggers" ? 2 : 1,
+      cooldown: 0.3,
+      range: w.range,
+      speed: w.speed,
+      area: 1,
+      crit: 0.05,
+      critDamage: 1.5,
+    },
+    regen: 0,
     pickupRadius: 72,
     enemies: [],
     bullets: [],
     drops: [],
     sparks: [],
+    texts: [],
+    hazards: [],
+    obstacles:
+      width === FOREST.width && height === FOREST.height
+        ? OBSTACLES.map((o) => ({ ...o }))
+        : [],
     spawnCooldown: 0.8,
     nextId: 1,
     offers: [],
+    stacks: {},
+    bossSpawned: false,
+    pools: { enemies: [], bullets: [], sparks: [], drops: [] },
   };
 }
-
-export function beginGame(game: Game) {
-  game.phase = "playing";
-  for (let i = 0; i < 4; i++) spawnEnemy(game);
+export function beginGame(g: Game) {
+  if (g.phase !== "menu") return;
+  g.phase = "playing";
+  for (let i = 0; i < 4; i++) spawnEnemy(g, "slime");
 }
-
-export function togglePause(game: Game) {
-  if (game.phase === "playing") game.phase = "paused";
-  else if (game.phase === "paused") game.phase = "playing";
+export function togglePause(g: Game) {
+  if (g.phase === "playing") g.phase = "paused";
+  else if (g.phase === "paused") g.phase = "playing";
 }
-
-export function chooseUpgrade(game: Game, id: UpgradeId): boolean {
-  if (game.phase !== "upgrade" || !game.offers.includes(id)) return false;
-  switch (id) {
-    case "rapid": game.weapon.delay = Math.max(0.13, game.weapon.delay * 0.8); break;
-    case "power": game.weapon.damage += 10; break;
-    case "stride": game.player.speed *= 1.12; break;
-    case "vitality":
-      game.player.maxHp += 25;
-      game.player.hp = Math.min(game.player.maxHp, game.player.hp + 25);
-      break;
-    case "multishot": game.weapon.projectiles = Math.min(6, game.weapon.projectiles + 1); break;
-    case "magnet": game.pickupRadius += 38; break;
+export function snapshot(g: Game): Snapshot {
+  const boss = g.enemies.find((e) => e.kind === "boss");
+  return {
+    statuses: g.campaign
+      ? [
+          ...(g.campaign.slow > 0
+            ? [g.campaign.world.hazard.kind === "ice" ? "CHILLED" : "HINDERED"]
+            : []),
+          ...(g.campaign.burn > 0 ? ["BURNING"] : []),
+          ...(g.campaign.exposure > 0 && g.campaign.exposure < 0.8
+            ? [
+                g.campaign.world.id === "infernal"
+                  ? "MOLTEN FLOOR · MOVE"
+                  : "THIN ICE · MOVE",
+              ]
+            : []),
+        ]
+      : [],
+    phase: g.phase,
+    hp: Math.ceil(g.player.hp),
+    maxHp: g.player.maxHp,
+    level: g.level,
+    xp: Math.floor(g.xp),
+    xpToNext: g.xpToNext,
+    gold: g.gold,
+    kills: g.kills,
+    wave: g.wave,
+    time: Math.floor(g.time),
+    enemies: g.enemies.length,
+    offers: [...g.offers],
+    weaponId: g.weaponId,
+    damage: g.weapon.damage,
+    interval: g.weapon.delay,
+    crit: g.weapon.crit,
+    stacks: { ...g.stacks },
+    boss: boss
+      ? {
+          hp: Math.ceil(boss.hp),
+          maxHp: boss.maxHp,
+          phase: boss.hp <= boss.maxHp / 2 ? 2 : 1,
+        }
+      : null,
+  };
+}
+// Retained utility for small simulation fixtures. Browser resizing changes camera, never world coordinates.
+export function resizeGame(g: Game, width: number, height: number) {
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width < 40 ||
+    height < 40
+  )
+    return;
+  const sx = width / g.width,
+    sy = height / g.height;
+  for (const list of [
+    [g.player],
+    g.enemies,
+    g.bullets,
+    g.drops,
+    g.sparks,
+    g.obstacles,
+    g.hazards,
+    g.texts,
+  ])
+    for (const e of list) {
+      e.x *= sx;
+      e.y *= sy;
+    }
+  g.width = width;
+  g.height = height;
+}
+export function advanceGame(g: Game, seconds: number, x: number, y: number) {
+  let remaining = Math.min(
+    0.12,
+    Math.max(0, Number.isFinite(seconds) ? seconds : 0),
+  );
+  while (remaining > 0.00001 && g.phase === "playing") {
+    const dt = Math.min(0.02, remaining);
+    updateGame(g, dt, x, y);
+    remaining -= dt;
   }
-  game.offers = [];
-  game.phase = "playing";
+}
+export function chooseUpgrade(g: Game, id: UpgradeId) {
+  const def = UPGRADES.find((u) => u.id === id);
+  if (
+    g.phase !== "upgrade" ||
+    !g.offers.includes(id) ||
+    !def ||
+    (g.stacks[id] ?? 0) >= def.max
+  )
+    return false;
+  g.stacks[id] = (g.stacks[id] ?? 0) + 1;
+  const w = g.weapon;
+  switch (id) {
+    case "power":
+      w.damage += WEAPONS[g.weaponId].damage * 0.25;
+      break;
+    case "rapid":
+      w.delay *= 0.88;
+      break;
+    case "stride":
+      g.player.speed += 18;
+      break;
+    case "vitality":
+      g.player.maxHp += 25;
+      g.player.hp = Math.min(g.player.maxHp, g.player.hp + 25);
+      break;
+    case "critical":
+      w.crit = Math.min(0.5, w.crit + 0.05);
+      break;
+    case "fury":
+      w.critDamage += 0.25;
+      break;
+    case "multishot":
+      w.projectiles++;
+      break;
+    case "velocity":
+      w.speed += WEAPONS[g.weaponId].speed * 0.2;
+      break;
+    case "area":
+      w.area += 0.2;
+      w.range += WEAPONS[g.weaponId].range * 0.08;
+      break;
+    case "regen":
+      g.regen += 0.5;
+      break;
+    case "magnet":
+      g.pickupRadius += 30;
+      break;
+  }
+  g.offers = [];
+  g.phase = "playing";
+  emit(g, g.player.x, g.player.y, "#e9cf82", 30);
+  checkLevel(g);
   return true;
 }
-
-export function snapshot(game: Game): Snapshot {
-  return {
-    phase: game.phase,
-    hp: Math.ceil(game.player.hp),
-    maxHp: game.player.maxHp,
-    level: game.level,
-    xp: Math.round(game.xp),
-    xpToNext: game.xpToNext,
-    gold: game.gold,
-    kills: game.kills,
-    wave: game.wave,
-    time: Math.floor(game.time),
-    enemies: game.enemies.length,
-    offers: [...game.offers],
-  };
+function checkLevel(g: Game) {
+  if (g.xp < g.xpToNext) return;
+  const available = UPGRADES.filter((u) => (g.stacks[u.id] ?? 0) < u.max);
+  if (!available.length) return;
+  g.xp -= g.xpToNext;
+  g.level++;
+  g.xpToNext = Math.floor(g.xpToNext * 1.19 + 6);
+  for (let i = available.length - 1; i > 0; i--) {
+    const j = Math.floor(g.rng() * (i + 1));
+    [available[i], available[j]] = [available[j], available[i]];
+  }
+  g.offers = available.slice(0, 3).map((u) => u.id);
+  g.phase = "upgrade";
 }
-
-function spawnEnemy(game: Game) {
-  const side = Math.floor(random(0, 4));
-  const inset = 22;
-  const x = side === 0 ? -inset : side === 1 ? game.width + inset : random(0, game.width);
-  const y = side === 2 ? -inset : side === 3 ? game.height + inset : random(0, game.height);
-  const roll = Math.random();
-  const kind: EnemyKind = game.wave > 1 && roll > 0.88 ? "brute" : roll > 0.72 ? "stalker" : "drone";
-  const healthMultiplier = 1 + (game.wave - 1) * 0.19;
-  const baseHp = kind === "brute" ? 145 : kind === "stalker" ? 36 : 58;
-  const speed = kind === "brute" ? 44 : kind === "stalker" ? 111 : 67;
-  game.enemies.push({
-    id: game.nextId++, x, y, r: kind === "brute" ? 23 : kind === "stalker" ? 11 : 15,
-    hp: baseHp * healthMultiplier, maxHp: baseHp * healthMultiplier,
-    speed: speed + (game.wave - 1) * 4, contact: 0, kind,
+export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
+  if (g.enemies.length >= FOREST.maxEnemies) {
+    if (kind !== "boss") return;
+    // The scripted encounter must still spawn when lesser enemies fill the cap.
+    const lesser = g.enemies.findIndex((e) => e.kind !== "boss");
+    if (lesser < 0) return;
+    g.pools.enemies.push(g.enemies.splice(lesser, 1)[0]);
+  }
+  const d = ENEMIES[kind],
+    angle = g.rng() * Math.PI * 2,
+    radius = 520;
+  let ex = clamp(x ?? g.player.x + Math.cos(angle) * radius, 30, g.width - 30),
+    ey = clamp(y ?? g.player.y + Math.sin(angle) * radius, 30, g.height - 30);
+  // Clamping an outward spawn near a world edge must not put it on the player.
+  if (
+    x === undefined &&
+    y === undefined &&
+    (ex - g.player.x) ** 2 + (ey - g.player.y) ** 2 < 320 ** 2
+  ) {
+    ex = clamp(g.player.x - Math.cos(angle) * radius, 30, g.width - 30);
+    ey = clamp(g.player.y - Math.sin(angle) * radius, 30, g.height - 30);
+  }
+  const scale = kind === "boss" ? 1 : 1 + g.time / 960;
+  const e = g.pools.enemies.pop() ?? ({} as Enemy);
+  Object.assign(e, {
+    id: g.nextId++,
+    x: ex,
+    y: ey,
+    r: d.radius,
+    hp: d.hp * scale,
+    maxHp: d.hp * scale,
+    speed: d.speed,
+    contact: 0,
+    kind,
+    attack: kind === "boss" ? 2 : 1 + g.rng() * 2,
+    slow: 0,
+    hit: 0,
+    age: 0,
   });
-}
-
-function emit(game: Game, x: number, y: number, color: string, count: number) {
-  for (let i = 0; i < count; i++) {
-    const angle = random(0, Math.PI * 2);
-    const speed = random(28, 165);
-    game.sparks.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, age: 0, life: random(0.19, 0.6), color, size: random(1.4, 3.8) });
+  if (g.campaign) {
+    const c = g.campaign,
+      def = c.world.enemies.find((d) => d.kind === kind);
+    e.hp = e.maxHp =
+      (kind === "boss" ? c.world.boss.hp : def!.hp) *
+      c.definition.modifiers.health *
+      c.difficulty.hp;
+    e.speed = (def?.speed ?? d.speed) * c.difficulty.speed;
+    e.pattern = 0;
+    e.charge = undefined;
   }
-  if (game.sparks.length > 240) game.sparks.splice(0, game.sparks.length - 240);
+  g.enemies.push(e);
+  return e;
 }
-
-function shoot(game: Game) {
-  const player = game.player;
-  let closest: Enemy | undefined;
-  let closestDistance = game.weapon.range;
-  for (const enemy of game.enemies) {
-    const d = distance(enemy.x, enemy.y, player.x, player.y);
-    if (d < closestDistance) { closest = enemy; closestDistance = d; }
+function emit(g: Game, x: number, y: number, color: string, count: number) {
+  for (let i = 0; i < count && g.sparks.length < FOREST.maxParticles; i++) {
+    const a = g.rng() * Math.PI * 2,
+      s = 30 + g.rng() * 100;
+    const p = g.pools.sparks.pop() ?? ({} as Spark);
+    Object.assign(p, {
+      x,
+      y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s,
+      age: 0,
+      life: 0.25 + g.rng() * 0.35,
+      color,
+      size: 2 + g.rng() * 2,
+    });
+    g.sparks.push(p);
   }
-  if (!closest) return;
-  const base = Math.atan2(closest.y - player.y, closest.x - player.x);
-  player.angle = base;
-  const shots = game.weapon.projectiles;
-  for (let i = 0; i < shots; i++) {
-    const angle = base + (i - (shots - 1) / 2) * 0.16;
-    const speed = 565;
-    game.bullets.push({
-      x: player.x + Math.cos(angle) * 19,
-      y: player.y + Math.sin(angle) * 19,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      r: 5, life: 1.05, damage: game.weapon.damage, color: "#72e7ff",
+}
+function text(
+  g: Game,
+  x: number,
+  y: number,
+  value: string,
+  critical = false,
+  kind: CombatText["kind"] = "damage",
+  color = "#dbbf8b",
+) {
+  if (g.texts.length < 60)
+    g.texts.push({
+      x,
+      y,
+      value,
+      critical,
+      color,
+      kind,
+      age: 0,
+      life: kind === "death" ? 0.5 : 0.65,
+    });
+}
+function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
+  if (e.hp <= 0) return;
+  e.hp -= amount;
+  e.hit = 0.14;
+  text(g, e.x, e.y - e.r, String(Math.round(amount)), critical);
+  emit(g, e.x, e.y, critical ? "#ffe09b" : "#b7edcb", 4);
+}
+function hurt(g: Game, amount: number, from: { x: number; y: number }) {
+  const p = g.player;
+  if (p.invincible > 0 || g.phase !== "playing") return;
+  p.hp = Math.max(0, p.hp - amount);
+  p.invincible = 0.7;
+  p.hit = 0.2;
+  const dx = p.x - from.x,
+    dy = p.y - from.y,
+    d = Math.max(1, Math.hypot(dx, dy));
+  p.x += (dx / d) * 16;
+  p.y += (dy / d) * 16;
+  resolveObstacles(g, p);
+  text(g, p.x, p.y - 20, "−" + amount, true);
+  emit(g, p.x, p.y, "#f19a8b", 14);
+  if (p.hp <= 0) {
+    g.phase = "gameover";
+    text(g, p.x, p.y, "player", false, "death");
+    emit(g, p.x, p.y, "#a2bcd3", 30);
+  }
+}
+function addBullet(g: Game, b: Bullet) {
+  if (g.bullets.length >= FOREST.maxBullets) return;
+  const pooled = g.pools.bullets.pop() ?? ({} as Bullet);
+  Object.assign(
+    pooled,
+    { hostile: false, blast: 0, critical: false, sprite: 0 },
+    b,
+  );
+  if (b.hostile && g.campaign) pooled.damage *= g.campaign.difficulty.damage;
+  g.bullets.push(pooled);
+}
+function shoot(g: Game) {
+  const w = g.weapon,
+    p = g.player;
+  let target: Enemy | undefined,
+    min = (w.range * (g.weaponId === "frost" ? w.area : 1)) ** 2;
+  for (const e of g.enemies) {
+    const d = dist2(e, p);
+    if (e.hp > 0 && d < min) {
+      min = d;
+      target = e;
+    }
+  }
+  if (!target) return;
+  p.angle = Math.atan2(target.y - p.y, target.x - p.x);
+  if (g.weaponId === "frost") {
+    const radius = w.range * w.area;
+    text(g, p.x, p.y, String(radius), false, "pulse", "#b5f1ec");
+    for (const e of g.enemies)
+      if (dist2(e, p) < radius * radius) {
+        const crit = g.rng() < w.crit;
+        damage(
+          g,
+          e,
+          w.damage *
+            (1 + (w.projectiles - 1) * 0.15) *
+            (crit ? w.critDamage : 1),
+          crit,
+        );
+        e.slow = 2 + (g.stacks.velocity ?? 0) * 0.4;
+      }
+    emit(g, p.x, p.y, "#b5f1ec", 20);
+    return;
+  }
+  for (let i = 0; i < w.projectiles; i++) {
+    const a = p.angle + (i - (w.projectiles - 1) / 2) * 0.12,
+      crit = g.rng() < w.crit;
+    addBullet(g, {
+      x: p.x + Math.cos(a) * 16,
+      y: p.y + Math.sin(a) * 16,
+      vx: Math.cos(a) * w.speed,
+      vy: Math.sin(a) * w.speed,
+      r: g.weaponId === "fire" ? 7 : 4,
+      life: w.range / w.speed,
+      damage: w.damage * (crit ? w.critDamage : 1),
+      color: WEAPONS[g.weaponId].color,
+      blast: g.weaponId === "fire" ? 64 * w.area : 0,
+      critical: crit,
+      sprite: WEAPONS[g.weaponId].icon,
     });
   }
-  emit(game, player.x + Math.cos(base) * 21, player.y + Math.sin(base) * 21, "#79e5ff", 3);
+  emit(
+    g,
+    p.x + Math.cos(p.angle) * 16,
+    p.y + Math.sin(p.angle) * 16,
+    WEAPONS[g.weaponId].color,
+    3,
+  );
 }
-
-function grantExperience(game: Game, amount: number) {
-  game.xp += amount;
-  if (game.xp < game.xpToNext) return;
-  game.xp -= game.xpToNext;
-  game.level += 1;
-  game.xpToNext = Math.floor(game.xpToNext * 1.28 + 9);
-  game.offers = [...UPGRADES].sort(() => Math.random() - 0.5).slice(0, 3).map((u) => u.id);
-  game.phase = "upgrade";
+function resolveObstacles(g: Game, e: { x: number; y: number; r: number }) {
+  e.x = clamp(e.x, e.r + 9, g.width - e.r - 9);
+  e.y = clamp(e.y, e.r + 9, g.height - e.r - 9);
+  for (const o of g.obstacles) {
+    const dx = e.x - o.x,
+      dy = e.y - o.y,
+      d = Math.hypot(dx, dy),
+      r = e.r + o.r;
+    if (d < r && d > 0.001) {
+      e.x = o.x + (dx / d) * r;
+      e.y = o.y + (dy / d) * r;
+    }
+  }
 }
-
-export function updateGame(game: Game, dt: number, inputX: number, inputY: number) {
-  if (game.phase !== "playing") return;
+// Reused spatial buckets avoid all-pairs projectile and separation work.
+class SpatialGrid {
+  buckets = new Map<number, Enemy[]>();
+  used: Enemy[][] = [];
+  cell = 80;
+  key(x: number, y: number) {
+    return Math.floor(x / this.cell) + Math.floor(y / this.cell) * 65536;
+  }
+  build(enemies: Enemy[]) {
+    for (const b of this.used) b.length = 0;
+    this.used.length = 0;
+    for (const e of enemies) {
+      const key = this.key(e.x, e.y);
+      let b = this.buckets.get(key);
+      if (!b) {
+        b = [];
+        this.buckets.set(key, b);
+      }
+      if (!b.length) this.used.push(b);
+      b.push(e);
+    }
+  }
+  each(x: number, y: number, r: number, fn: (e: Enemy) => void) {
+    for (
+      let cy = Math.floor((y - r) / this.cell);
+      cy <= Math.floor((y + r) / this.cell);
+      cy++
+    )
+      for (
+        let cx = Math.floor((x - r) / this.cell);
+        cx <= Math.floor((x + r) / this.cell);
+        cx++
+      ) {
+        const b = this.buckets.get(cx + cy * 65536);
+        if (b) for (const e of b) fn(e);
+      }
+  }
+}
+// Each run has its own index; no cross-run mutable simulation state.
+const grids = new WeakMap<Game, SpatialGrid>();
+function enemyAttacks(g: Game, e: Enemy, dt: number) {
+  e.attack = (e.attack ?? 2) - dt;
+  if (e.attack > 0) return;
+  const angle = Math.atan2(g.player.y - e.y, g.player.x - e.x);
+  if (e.kind === "boss" && g.campaign) {
+    campaignBossAttack(g, e, {
+      hurt: (amount, from) => hurt(g, amount, from),
+      spawn: (kind, x, y) => spawnEnemy(g, kind, x, y),
+      bullet: (b) => addBullet(g, b),
+    });
+    return;
+  }
+  const behavior = g.campaign?.world.enemies.find(
+    (d) => d.kind === e.kind,
+  )?.behavior;
+  if (g.campaign && behavior === "denial") {
+    g.hazards.push({
+      x: g.player.x,
+      y: g.player.y,
+      r: 40,
+      age: 0,
+      delay: 1.5,
+      damage: 12,
+      slow: g.campaign.world.hazard.slow,
+      color: g.campaign.world.hazard.color,
+    });
+    e.attack = 5;
+    return;
+  }
+  if (behavior === "ranged" || (!g.campaign && e.kind === "caster")) {
+    addBullet(g, {
+      x: e.x,
+      y: e.y,
+      vx: Math.cos(angle) * 155,
+      vy: Math.sin(angle) * 155,
+      r: 6,
+      life: 4,
+      damage: 10,
+      color: "#cd90e2",
+      hostile: true,
+      sprite: 4,
+    });
+    if (g.campaign && g.campaign.difficulty.projectiles > 1) {
+      for (let i = 1; i < g.campaign.difficulty.projectiles; i++) {
+        const a = angle + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.17;
+        addBullet(g, {
+          x: e.x,
+          y: e.y,
+          vx: Math.cos(a) * 155,
+          vy: Math.sin(a) * 155,
+          r: 6,
+          life: 4,
+          damage: 10,
+          color: g.campaign.world.colors[2],
+          hostile: true,
+          sprite: 4,
+        });
+      }
+    }
+    e.attack = 2.8;
+  }
+  if (e.kind === "boss") {
+    const enraged = e.hp <= e.maxHp * 0.5;
+    // Root eruptions lock the player's current position, leaving time to move away.
+    for (let i = 0; i < (enraged ? 3 : 1); i++)
+      g.hazards.push({
+        x: clamp(
+          g.player.x + (i ? Math.cos(angle + i * 2) * 95 : 0),
+          40,
+          g.width - 40,
+        ),
+        y: clamp(
+          g.player.y + (i ? Math.sin(angle + i * 2) * 95 : 0),
+          40,
+          g.height - 40,
+        ),
+        r: enraged ? 65 : 55,
+        age: 0,
+        delay: 1.3,
+        damage: 25,
+      });
+    const n = enraged ? 12 : 8;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (e.age ?? 0) * 0.25;
+      addBullet(g, {
+        x: e.x,
+        y: e.y,
+        vx: Math.cos(a) * (enraged ? 150 : 115),
+        vy: Math.sin(a) * (enraged ? 150 : 115),
+        r: 7,
+        life: 5,
+        damage: 18,
+        color: "#e4b97a",
+        hostile: true,
+        sprite: 4,
+      });
+    }
+    e.attack = enraged ? 2.5 : 3.8;
+  }
+}
+export function updateGame(
+  g: Game,
+  dt: number,
+  inputX: number,
+  inputY: number,
+) {
+  if (g.phase !== "playing") return;
   const step = Math.min(0.05, Math.max(0, dt));
-  const p = game.player;
-  game.time += step;
-  game.wave = 1 + Math.floor(game.time / 35);
+  if (!step) return;
+  const p = g.player;
+  g.time += step;
+  g.wave = 1 + Math.floor(g.time / 60);
   p.invincible = Math.max(0, p.invincible - step);
-
-  const magnitude = Math.hypot(inputX, inputY);
-  const moveX = magnitude > 1 ? inputX / magnitude : inputX;
-  const moveY = magnitude > 1 ? inputY / magnitude : inputY;
-  p.x = clamp(p.x + moveX * p.speed * step, p.r + 9, Math.max(p.r + 9, game.width - p.r - 9));
-  p.y = clamp(p.y + moveY * p.speed * step, p.r + 9, Math.max(p.r + 9, game.height - p.r - 9));
-
-  game.spawnCooldown -= step;
-  if (game.spawnCooldown <= 0 && game.enemies.length < 90) {
-    spawnEnemy(game);
-    if (game.wave > 2 && Math.random() > 0.7) spawnEnemy(game);
-    game.spawnCooldown += Math.max(0.3, 1.13 - (game.wave - 1) * 0.075) * random(0.75, 1.15);
+  p.hit = Math.max(0, p.hit - step);
+  p.hp = Math.min(p.maxHp, p.hp + g.regen * step);
+  const mag = Math.max(1, Math.hypot(inputX, inputY));
+  const movement =
+    g.campaign && g.campaign.slow > 0 ? g.campaign.world.hazard.slow : 1;
+  const mx = (inputX / mag) * movement,
+    my = (inputY / mag) * movement;
+  p.moving = Math.abs(mx) + Math.abs(my) > 0.01;
+  p.x += mx * p.speed * step;
+  p.y += my * p.speed * step;
+  if (p.moving) p.angle = Math.atan2(my, mx);
+  resolveObstacles(g, p);
+  environmentStep(g, step, {
+    hurt: (amount, from) => hurt(g, amount, from),
+    spawn: (kind, x, y) => spawnEnemy(g, kind, x, y),
+    bullet: (b) => addBullet(g, b),
+  });
+  if (p.hp <= 0) return;
+  const duration = g.campaign
+    ? g.campaign.definition.clear.seconds * g.campaign.difficulty.duration
+    : FOREST.duration;
+  if (
+    g.campaign &&
+    g.time >= duration &&
+    g.campaign.definition.clear.kind === "survive"
+  ) {
+    g.phase = "victory";
+    return;
   }
-
-  game.weapon.cooldown -= step;
-  if (game.weapon.cooldown <= 0) {
-    shoot(game);
-    game.weapon.cooldown += game.weapon.delay;
+  if (g.time >= duration && !g.bossSpawned) {
+    g.bossSpawned = true;
+    spawnEnemy(g, "boss");
   }
-
-  for (const enemy of game.enemies) {
-    const dx = p.x - enemy.x;
-    const dy = p.y - enemy.y;
-    const d = Math.max(0.001, Math.hypot(dx, dy));
-    if (d > enemy.r + p.r - 2) {
-      enemy.x += dx / d * enemy.speed * step;
-      enemy.y += dy / d * enemy.speed * step;
+  g.spawnCooldown -= step;
+  if (g.spawnCooldown <= 0) {
+    if (!g.bossSpawned) {
+      const kinds = g.campaign
+        ? g.campaign.definition.spawn.composition
+        : (Object.keys(ENEMIES) as EnemyKind[]).filter(
+            (k) => k !== "boss" && ENEMIES[k].from <= g.time,
+          );
+      const kind =
+        g.campaign && g.rng() < g.campaign.difficulty.elites
+          ? "elite"
+          : kinds[Math.floor(g.rng() * kinds.length)];
+      spawnEnemy(g, kind);
+      if (g.time > 360)
+        spawnEnemy(g, kinds[Math.floor(g.rng() * kinds.length)]);
     }
-    enemy.contact -= step;
-    // Recheck after the enemy's movement, not its previous-frame position.
-    if (distance(enemy.x, enemy.y, p.x, p.y) < enemy.r + p.r && enemy.contact <= 0 && p.invincible <= 0) {
-      p.hp -= enemy.kind === "brute" ? 21 : 12;
-      p.invincible = 0.6;
-      enemy.contact = 0.7;
-      emit(game, p.x, p.y, "#ff667e", 11);
-      if (p.hp <= 0) {
-        p.hp = 0;
-        game.phase = "gameover";
-        emit(game, p.x, p.y, "#86e7ff", 24);
-        return;
+    g.spawnCooldown += g.campaign
+      ? (Math.max(0.18, g.campaign.definition.spawn.interval - g.time * 0.001) *
+          g.campaign.difficulty.spawn) /
+        g.campaign.definition.modifiers.pressure
+      : Math.max(0.22, 1.3 - g.time * 0.0021);
+  }
+  g.weapon.cooldown -= step;
+  if (g.weapon.cooldown <= 0) {
+    shoot(g);
+    g.weapon.cooldown += g.weapon.delay;
+  }
+  let grid = grids.get(g);
+  if (!grid) {
+    grid = new SpatialGrid();
+    grids.set(g, grid);
+  }
+  grid.build(g.enemies);
+  for (const e of g.enemies) {
+    if (e.hp <= 0) continue;
+    e.age = (e.age ?? 0) + step;
+    e.hit = Math.max(0, (e.hit ?? 0) - step);
+    e.slow = Math.max(0, (e.slow ?? 0) - step);
+    const dx = p.x - e.x,
+      dy = p.y - e.y,
+      d = Math.max(0.001, Math.hypot(dx, dy));
+    const behavior = g.campaign?.world.enemies.find(
+      (d) => d.kind === e.kind,
+    )?.behavior;
+    const ranged =
+      behavior === "ranged" || (!g.campaign && e.kind === "caster");
+    const stop = ranged ? 225 : e.r + p.r - 2;
+    const burst =
+      (behavior === "charge" || (!g.campaign && e.kind === "wolf")) &&
+      e.age % 3 < 0.65
+        ? 2.1
+        : 1;
+    const speed = e.speed * burst * ((e.slow ?? 0) > 0 ? 0.45 : 1);
+    if (e.charge) {
+      e.charge.delay -= step;
+      if (e.charge.delay <= 0) {
+        e.x += e.charge.vx * step;
+        e.y += e.charge.vy * step;
+        e.charge.left -= step;
+        if (e.charge.left <= 0) e.charge = undefined;
       }
+    } else if (d > stop) {
+      e.x += (dx / d) * speed * step;
+      e.y += (dy / d) * speed * step;
+    } else if (ranged && d < 150) {
+      e.x -= (dx / d) * speed * 0.6 * step;
+      e.y -= (dy / d) * speed * 0.6 * step;
     }
+    grid.each(e.x, e.y, 60, (other) => {
+      if (other.id >= e.id) return;
+      const ax = e.x - other.x,
+        ay = e.y - other.y,
+        dd = Math.hypot(ax, ay),
+        r = e.r + other.r;
+      if (dd < r && dd > 0.01) {
+        const push = Math.min(1.5, (r - dd) * 0.12);
+        e.x += (ax / dd) * push;
+        e.y += (ay / dd) * push;
+        other.x -= (ax / dd) * push;
+        other.y -= (ay / dd) * push;
+      }
+    });
+    resolveObstacles(g, e);
+    e.contact -= step;
+    if (dist2(e, p) < (e.r + p.r) ** 2 && e.contact <= 0) {
+      hurt(
+        g,
+        g.campaign
+          ? Math.round(
+              (g.campaign.world.enemies.find((d) => d.kind === e.kind)
+                ?.damage ?? 25) * g.campaign.difficulty.damage,
+            )
+          : ENEMIES[e.kind].damage,
+        e,
+      );
+      e.contact = 0.7;
+    }
+    enemyAttacks(g, e, step);
+    if (g.player.hp <= 0) return;
   }
-
-  for (let i = game.bullets.length - 1; i >= 0; i--) {
-    const bullet = game.bullets[i];
-    const fromX = bullet.x;
-    const fromY = bullet.y;
-    const dx = bullet.vx * step;
-    const dy = bullet.vy * step;
-    bullet.x += dx;
-    bullet.y += dy;
-    bullet.life -= step;
-
-    // Swept segment/circle collision prevents fast projectiles passing
-    // through small enemies between frames. Resolve nearest hit first.
-    let hit: Enemy | undefined;
-    let hitTime = Infinity;
-    const lengthSquared = dx * dx + dy * dy;
-    for (const enemy of game.enemies) {
-      if (enemy.hp <= 0) continue;
-      const t = lengthSquared > 0
-        ? clamp(((enemy.x - fromX) * dx + (enemy.y - fromY) * dy) / lengthSquared, 0, 1)
+  grid.build(g.enemies);
+  for (let i = g.bullets.length - 1; i >= 0; i--) {
+    const b = g.bullets[i],
+      fx = b.x,
+      fy = b.y,
+      dx = b.vx * step,
+      dy = b.vy * step;
+    b.x += dx;
+    b.y += dy;
+    b.life -= step;
+    let hit: Enemy | undefined,
+      hitT = Infinity;
+    const len = dx * dx + dy * dy;
+    if (b.hostile) {
+      const t = len
+        ? clamp(((p.x - fx) * dx + (p.y - fy) * dy) / len, 0, 1)
         : 0;
-      const checkX = fromX + dx * t;
-      const checkY = fromY + dy * t;
-      const radius = enemy.r + bullet.r;
-      const offsetX = checkX - enemy.x;
-      const offsetY = checkY - enemy.y;
-      if (offsetX * offsetX + offsetY * offsetY <= radius * radius && t < hitTime) {
-        hit = enemy;
-        hitTime = t;
+      if (
+        (fx + dx * t - p.x) ** 2 + (fy + dy * t - p.y) ** 2 <
+        (p.r + b.r) ** 2
+      ) {
+        hurt(g, b.damage, b);
+        if (g.campaign?.world.id === "frozen") g.campaign.slow = 1.5;
+        if (g.campaign?.world.id === "infernal") g.campaign.burn = 2;
+        b.life = 0;
+      }
+    } else {
+      grid.each(
+        (fx + b.x) / 2,
+        (fy + b.y) / 2,
+        Math.hypot(dx, dy) / 2 + 45,
+        (e) => {
+          if (e.hp <= 0) return;
+          const t = len
+            ? clamp(((e.x - fx) * dx + (e.y - fy) * dy) / len, 0, 1)
+            : 0;
+          if (
+            (fx + dx * t - e.x) ** 2 + (fy + dy * t - e.y) ** 2 <=
+              (e.r + b.r) ** 2 &&
+            t < hitT
+          ) {
+            hit = e;
+            hitT = t;
+          }
+        },
+      );
+      if (hit) {
+        const target = hit as Enemy;
+        damage(g, target, b.damage, b.critical ?? false);
+        if (b.blast) {
+          emit(g, target.x, target.y, "#ffb369", 20);
+          text(g, target.x, target.y, String(b.blast), false, "pulse");
+          grid.each(target.x, target.y, b.blast + 40, (e) => {
+            if (e !== target && dist2(e, target) < (b.blast ?? 0) ** 2)
+              damage(g, e, b.damage * 0.7, b.critical ?? false);
+          });
+        }
+        b.life = 0;
       }
     }
-    if (hit) {
-      hit.hp -= bullet.damage;
-      emit(game, fromX + dx * hitTime, fromY + dy * hitTime, hit.kind === "brute" ? "#ffa66b" : "#fb77a8", 5);
-      game.bullets.splice(i, 1);
-      continue;
-    }
-    if (bullet.life <= 0 || bullet.x < -30 || bullet.x > game.width + 30 || bullet.y < -30 || bullet.y > game.height + 30) {
-      game.bullets.splice(i, 1);
+    if (b.life <= 0 || b.x < 0 || b.x > g.width || b.y < 0 || b.y > g.height) {
+      g.pools.bullets.push(b);
+      g.bullets.splice(i, 1);
     }
   }
-
-  for (let i = game.enemies.length - 1; i >= 0; i--) {
-    const enemy = game.enemies[i];
-    if (enemy.hp > 0) continue;
-    game.kills++;
-    game.gold += enemy.kind === "brute" ? 5 : 1;
-    game.drops.push({ x: enemy.x, y: enemy.y, r: 7, value: enemy.kind === "brute" ? 20 : 12, kind: "xp" });
-    if (Math.random() < 0.035) game.drops.push({ x: enemy.x + 10, y: enemy.y + 8, r: 8, value: 20, kind: "heal" });
-    emit(game, enemy.x, enemy.y, "#a4e2ff", 12);
-    game.enemies.splice(i, 1);
-  }
-
-  // Keep long survival runs bounded even when old XP crystals are never collected.
-  // Preserve the newest drops (including occasional healing) for the player.
-  const maxDrops = 240;
-  if (game.drops.length > maxDrops) {
-    game.drops.splice(0, game.drops.length - maxDrops);
-  }
-
-  for (let i = game.drops.length - 1; i >= 0; i--) {
-    const item = game.drops[i];
-    const d = distance(item.x, item.y, p.x, p.y);
-    if (d < game.pickupRadius && d > 5) {
-      const speed = Math.min(680, 175 + (game.pickupRadius - d) * 8);
-      const travel = Math.min(d, speed * step);
-      item.x += (p.x - item.x) / d * travel;
-      item.y += (p.y - item.y) / d * travel;
-    }
-    if (distance(item.x, item.y, p.x, p.y) < p.r + item.r + 7) {
-      game.drops.splice(i, 1);
-      if (item.kind === "heal") p.hp = Math.min(p.maxHp, p.hp + item.value);
-      else grantExperience(game, item.value);
-      emit(game, item.x, item.y, item.kind === "heal" ? "#ff829e" : "#9df9df", 5);
-      if (game.phase !== "playing") break;
+  for (let i = g.hazards.length - 1; i >= 0; i--) {
+    const h = g.hazards[i];
+    h.age += step;
+    if (h.age >= h.delay) {
+      if (dist2(h, p) < (h.r + p.r) ** 2) {
+        if (h.damage > 0) hurt(g, h.damage, h);
+        if (g.campaign) {
+          if ((h.slow ?? 1) < 1) g.campaign.slow = 3;
+          if (h.burn) g.campaign.burn = h.burn;
+        }
+      }
+      emit(g, h.x, h.y, "#d2b47b", 20);
+      text(g, h.x, h.y, String(h.r), false, "pulse");
+      g.hazards.splice(i, 1);
     }
   }
-
-  for (let i = game.sparks.length - 1; i >= 0; i--) {
-    const spark = game.sparks[i];
-    spark.x += spark.vx * step;
-    spark.y += spark.vy * step;
-    spark.vx *= 0.95;
-    spark.vy *= 0.95;
-    spark.age += step;
-    if (spark.age >= spark.life) game.sparks.splice(i, 1);
+  // Defeat takes precedence over a simultaneous boss kill; dead players cannot heal.
+  if (g.player.hp <= 0) return;
+  for (let i = g.enemies.length - 1; i >= 0; i--) {
+    const e = g.enemies[i];
+    if (e.hp > 0) continue;
+    g.kills++;
+    if (g.campaign) {
+      if (e.kind === "boss") g.campaign.bosses++;
+      else if (e.kind === "elite") g.campaign.elites++;
+      else g.campaign.enemies++;
+    }
+    g.gold += ENEMIES[e.kind].gold;
+    const drop = g.pools.drops.pop() ?? ({} as Drop);
+    Object.assign(drop, {
+      x: e.x,
+      y: e.y,
+      r: 6,
+      value: ENEMIES[e.kind].xp,
+      kind: "xp",
+    });
+    g.drops.push(drop);
+    if (g.rng() < 0.06)
+      g.drops.push({ x: e.x + 8, y: e.y, r: 7, value: 18, kind: "heal" });
+    emit(g, e.x, e.y, "#bbd397", 12);
+    text(g, e.x, e.y, e.kind, false, "death");
+    g.pools.enemies.push(e);
+    g.enemies.splice(i, 1);
+    if (e.kind === "boss") {
+      g.phase = "victory";
+      g.gold += 150;
+    }
   }
+  while (g.drops.length > FOREST.maxDrops) {
+    const d = g.drops.shift();
+    if (d) g.pools.drops.push(d);
+  }
+  for (let i = g.drops.length - 1; i >= 0; i--) {
+    const d = g.drops[i],
+      dx = p.x - d.x,
+      dy = p.y - d.y,
+      dist = Math.hypot(dx, dy);
+    if (dist < g.pickupRadius && dist > 1) {
+      const travel = Math.min(dist, (150 + (g.pickupRadius - dist) * 8) * step);
+      d.x += (dx / dist) * travel;
+      d.y += (dy / dist) * travel;
+    }
+    if (dist2(d, p) < (p.r + d.r + 7) ** 2) {
+      g.pools.drops.push(d);
+      g.drops.splice(i, 1);
+      if (d.kind === "heal") p.hp = Math.min(p.maxHp, p.hp + d.value);
+      else g.xp += d.value;
+      emit(g, d.x, d.y, "#bbefd4", 3);
+    }
+  }
+  if (g.phase === "playing") checkLevel(g);
+  advanceEffects(g, step);
 }
-
-function polygon(ctx: CanvasRenderingContext2D, sides: number, radius: number, rotation = 0) {
-  ctx.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const a = rotation + (i * Math.PI * 2) / sides;
-    const x = Math.cos(a) * radius;
-    const y = Math.sin(a) * radius;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
-  ctx.closePath();
-}
-
-export function drawGame(ctx: CanvasRenderingContext2D, game: Game, joystick: Joystick = null) {
-  const { width: w, height: h, time } = game;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#08111f";
-  ctx.fillRect(0, 0, w, h);
-
-  const light = ctx.createRadialGradient(w * 0.54, h * 0.42, 20, w * 0.54, h * 0.42, Math.max(w, h) * 0.72);
-  light.addColorStop(0, "#13263b");
-  light.addColorStop(0.52, "#0b1929");
-  light.addColorStop(1, "#07101d");
-  ctx.fillStyle = light;
-  ctx.fillRect(0, 0, w, h);
-
-  const grid = 48;
-  const drift = (time * 4) % grid;
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(127,175,208,.075)";
-  for (let x = drift; x < w; x += grid) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-  for (let y = drift; y < h; y += grid) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-
-  ctx.save();
-  ctx.translate(w / 2, h / 2);
-  ctx.rotate(-0.32);
-  ctx.shadowColor = "#4c9cb9";
-  ctx.shadowBlur = 24;
-  ctx.strokeStyle = "rgba(83,174,206,.19)";
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    ctx.ellipse(0, 0, Math.min(w * 0.38, 325) + i * 36, Math.min(h * 0.29, 170) + i * 26, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ctx.shadowBlur = 0;
-  ctx.restore();
-
-  ctx.fillStyle = "rgba(191,226,255,.14)";
-  ctx.font = "600 10px monospace";
-  ctx.fillText("RIFT / SECTOR 01", 22, 29);
-  ctx.textAlign = "right";
-  ctx.fillText("SIMULATION // LOCAL", w - 22, 29);
-  ctx.textAlign = "left";
-
-  for (const drop of game.drops) {
-    const isHeal = drop.kind === "heal";
-    ctx.save();
-    ctx.translate(drop.x, drop.y);
-    ctx.rotate(time * 1.8);
-    ctx.shadowColor = isHeal ? "#ff6b9b" : "#75eec9";
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = isHeal ? "#ff87a3" : "#98f5d7";
-    polygon(ctx, 4, drop.r, Math.PI / 4);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  for (const bullet of game.bullets) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(107,218,255,.35)";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(bullet.x, bullet.y);
-    ctx.lineTo(bullet.x - bullet.vx * 0.028, bullet.y - bullet.vy * 0.028);
-    ctx.stroke();
-    ctx.fillStyle = bullet.color;
-    ctx.shadowColor = bullet.color;
-    ctx.shadowBlur = 19;
-    ctx.beginPath(); ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-
-  for (const enemy of game.enemies) {
-    const color = enemy.kind === "brute" ? "#ffab65" : enemy.kind === "stalker" ? "#d5a1ff" : "#f17d9d";
-    ctx.save();
-    ctx.translate(enemy.x, enemy.y);
-    ctx.rotate(Math.atan2(game.player.y - enemy.y, game.player.x - enemy.x));
-    ctx.shadowColor = color;
-    ctx.shadowBlur = enemy.kind === "brute" ? 23 : 13;
-    ctx.fillStyle = enemy.kind === "brute" ? "#653c36" : "#442d47";
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    polygon(ctx, enemy.kind === "brute" ? 6 : 4, enemy.r, Math.PI / 4);
-    ctx.fill(); ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = color;
-    ctx.fillRect(-2, -4, 9, 8);
-    ctx.restore();
-    if (enemy.hp < enemy.maxHp) {
-      ctx.fillStyle = "rgba(0,0,0,.6)";
-      ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 13, enemy.r * 2, 3);
-      ctx.fillStyle = color;
-      ctx.fillRect(enemy.x - enemy.r, enemy.y - enemy.r - 13, enemy.r * 2 * Math.max(0, enemy.hp / enemy.maxHp), 3);
+export function advanceEffects(g: Game, step: number) {
+  for (let i = g.sparks.length - 1; i >= 0; i--) {
+    const s = g.sparks[i];
+    s.age += step;
+    s.x += s.vx * step;
+    s.y += s.vy * step;
+    if (s.age > s.life) {
+      g.pools.sparks.push(s);
+      g.sparks.splice(i, 1);
     }
   }
-
-  const p = game.player;
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  if (p.invincible > 0 && Math.floor(time * 20) % 2 === 0) ctx.globalAlpha = 0.55;
-  ctx.strokeStyle = "rgba(105,221,254,.22)";
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(0, 0, 29 + Math.sin(time * 4) * 2, 0, Math.PI * 2); ctx.stroke();
-  ctx.rotate(p.angle);
-  ctx.shadowBlur = 26;
-  ctx.shadowColor = "#64daff";
-  ctx.fillStyle = "#0d405b";
-  ctx.strokeStyle = "#9ff1ff";
-  ctx.lineWidth = 2.5;
-  polygon(ctx, 6, 16, Math.PI / 6);
-  ctx.fill(); ctx.stroke();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = "#c5f8ff";
-  ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#72e7ff";
-  ctx.fillRect(13, -3, 11, 6);
-  ctx.restore();
-
-  for (const spark of game.sparks) {
-    ctx.globalAlpha = 1 - spark.age / spark.life;
-    ctx.fillStyle = spark.color;
-    ctx.fillRect(spark.x, spark.y, spark.size, spark.size);
+  for (let i = g.texts.length - 1; i >= 0; i--) {
+    const t = g.texts[i];
+    t.age += step;
+    if (t.age > t.life) g.texts.splice(i, 1);
   }
-  ctx.globalAlpha = 1;
-
-  if (joystick) {
-    ctx.save();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(160,230,255,.44)";
-    ctx.fillStyle = "rgba(56,157,198,.12)";
-    ctx.beginPath(); ctx.arc(joystick.x, joystick.y, 49, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "rgba(120,227,255,.6)";
-    ctx.beginPath(); ctx.arc(joystick.x + joystick.dx * 40, joystick.y + joystick.dy * 40, 19, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-
-  const vignette = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.18, w / 2, h / 2, Math.max(w, h) * 0.78);
-  vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,.48)");
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, w, h);
 }
