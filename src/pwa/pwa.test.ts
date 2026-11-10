@@ -8,7 +8,7 @@ test("manifest meets installation requirements", () => {
   assert.equal(meta.start_url, "/");
   assert.equal(meta.scope, "/");
   assert.equal(meta.display, "standalone");
-  assert.equal(meta.background_color, "#080e16");
+  assert.equal(meta.background_color, "#000000");
   assert.ok(meta.icons?.some((icon) => icon.sizes === "192x192" && icon.purpose === "any"));
   assert.ok(meta.icons?.some((icon) => icon.sizes === "512x512" && icon.purpose === "any"));
   assert.ok(meta.icons?.some((icon) => icon.sizes === "512x512" && icon.purpose === "maskable"));
