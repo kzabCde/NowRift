@@ -1,3 +1,5 @@
+import type { CharacterId } from "./loadout";
+import { feedback, type FeedbackQueue } from "./feedback";
 import {
   environmentStep,
   campaignBossAttack,
@@ -24,6 +26,7 @@ export type GamePhase =
   | "gameover"
   | "victory";
 export type Enemy = {
+  enraged?: boolean;
   pattern?: number;
   charge?: { delay: number; left: number; vx: number; vy: number };
   id: number;
@@ -92,7 +95,8 @@ export type Hazard = {
   delay: number;
   damage: number;
 };
-export type Game = {
+export type Game = FeedbackQueue & {
+  character: CharacterId;
   campaign?: StageRuntime;
   phase: GamePhase;
   width: number;
@@ -148,6 +152,7 @@ export type Game = {
     bullets: Bullet[];
     sparks: Spark[];
     drops: Drop[];
+    texts: CombatText[];
   };
 };
 export type Snapshot = {
@@ -183,6 +188,9 @@ export function makeGame(
 ): Game {
   const w = WEAPONS[weaponId];
   return {
+    character: "wanderer",
+    feedback: [],
+    feedbackPool: [],
     phase: "menu",
     width,
     height,
@@ -235,7 +243,7 @@ export function makeGame(
     offers: [],
     stacks: {},
     bossSpawned: false,
-    pools: { enemies: [], bullets: [], sparks: [], drops: [] },
+    pools: { enemies: [], bullets: [], sparks: [], drops: [], texts: [] },
   };
 }
 export function beginGame(g: Game) {
@@ -381,6 +389,7 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
   g.offers = [];
   g.phase = "playing";
   emit(g, g.player.x, g.player.y, "#e9cf82", 30);
+  feedback(g, "level", g.player.x, g.player.y, 0xe9cf82, 64, 0, true);
   checkLevel(g);
   return true;
 }
@@ -397,6 +406,7 @@ function checkLevel(g: Game) {
   }
   g.offers = available.slice(0, 3).map((u) => u.id);
   g.phase = "upgrade";
+  feedback(g, "level", g.player.x, g.player.y, 0xe9cf82, 80, 0, true);
 }
 export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
   if (g.enemies.length >= FOREST.maxEnemies) {
@@ -436,6 +446,9 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
     slow: 0,
     hit: 0,
     age: 0,
+    enraged: false,
+    pattern: 0,
+    charge: undefined,
   });
   if (g.campaign) {
     const c = g.campaign,
@@ -449,6 +462,8 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
     e.charge = undefined;
   }
   g.enemies.push(e);
+  if (kind === "boss")
+    feedback(g, "bossSpawn", e.x, e.y, 0xe2b781, 125, 0, true);
   return e;
 }
 function emit(g: Game, x: number, y: number, color: string, count: number) {
@@ -478,28 +493,49 @@ function text(
   kind: CombatText["kind"] = "damage",
   color = "#dbbf8b",
 ) {
-  if (g.texts.length < 60)
-    g.texts.push({
-      x,
-      y,
-      value,
-      critical,
-      color,
-      kind,
-      age: 0,
-      life: kind === "death" ? 0.5 : 0.65,
-    });
+  if (g.texts.length >= 60) return;
+  const entry = g.pools.texts.pop() ?? ({} as CombatText);
+  Object.assign(entry, {
+    x,
+    y,
+    value,
+    critical,
+    color,
+    kind,
+    age: 0,
+    life: kind === "death" ? 0.5 : 0.65,
+  });
+  g.texts.push(entry);
 }
 function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
   if (e.hp <= 0) return;
   e.hp -= amount;
   e.hit = 0.14;
+  const angle = Math.atan2(e.y - g.player.y, e.x - g.player.x);
+  if (g.weaponId === "daggers" && e.kind !== "boss") {
+    e.x += Math.cos(angle) * (critical ? 7 : 3);
+    e.y += Math.sin(angle) * (critical ? 7 : 3);
+  }
+  feedback(
+    g,
+    "spark",
+    e.x,
+    e.y,
+    critical ? 0xffdf9b : 0xb7edcb,
+    critical ? 28 : 15,
+    angle,
+    critical,
+  );
   text(g, e.x, e.y - e.r, String(Math.round(amount)), critical);
   emit(g, e.x, e.y, critical ? "#ffe09b" : "#b7edcb", 4);
 }
 function hurt(g: Game, amount: number, from: { x: number; y: number }) {
   const p = g.player;
-  if (p.invincible > 0 || g.phase !== "playing") return;
+  if (g.phase !== "playing") return;
+  if (p.invincible > 0) {
+    feedback(g, "shield", p.x, p.y, 0x9bbdcc, 22);
+    return;
+  }
   p.hp = Math.max(0, p.hp - amount);
   p.invincible = 0.7;
   p.hit = 0.2;
@@ -509,10 +545,12 @@ function hurt(g: Game, amount: number, from: { x: number; y: number }) {
   p.x += (dx / d) * 16;
   p.y += (dy / d) * 16;
   resolveObstacles(g, p);
-  text(g, p.x, p.y - 20, "−" + amount, true);
+  text(g, p.x, p.y - 20, "−" + Math.round(amount), false, "damage", "#ffab98");
+  feedback(g, "damage", p.x, p.y, 0xf19a8b, 42, 0, true);
   emit(g, p.x, p.y, "#f19a8b", 14);
   if (p.hp <= 0) {
     g.phase = "gameover";
+    feedback(g, "death", p.x, p.y, 0x9aaec2, 70, 0, true);
     text(g, p.x, p.y, "player", false, "death");
     emit(g, p.x, p.y, "#a2bcd3", 30);
   }
@@ -542,6 +580,22 @@ function shoot(g: Game) {
   }
   if (!target) return;
   p.angle = Math.atan2(target.y - p.y, target.x - p.x);
+  const color = Number.parseInt(WEAPONS[g.weaponId].color.slice(1), 16);
+  feedback(
+    g,
+    g.weaponId === "daggers"
+      ? "slash"
+      : g.weaponId === "fire"
+        ? "burn"
+        : g.weaponId === "frost"
+          ? "freeze"
+          : "magic",
+    p.x,
+    p.y,
+    color,
+    g.weaponId === "frost" ? w.range * w.area : 36,
+    p.angle,
+  );
   if (g.weaponId === "frost") {
     const radius = w.range * w.area;
     text(g, p.x, p.y, String(radius), false, "pulse", "#b5f1ec");
@@ -641,9 +695,15 @@ class SpatialGrid {
 // Each run has its own index; no cross-run mutable simulation state.
 const grids = new WeakMap<Game, SpatialGrid>();
 function enemyAttacks(g: Game, e: Enemy, dt: number) {
+  if (e.kind === "boss" && e.hp <= e.maxHp / 2 && !e.enraged) {
+    e.enraged = true;
+    feedback(g, "phase", e.x, e.y, 0xefb689, 100, 0, true);
+  }
   e.attack = (e.attack ?? 2) - dt;
   if (e.attack > 0) return;
   const angle = Math.atan2(g.player.y - e.y, g.player.x - e.x);
+  if (e.kind === "boss")
+    feedback(g, "telegraph", e.x, e.y, 0xf1c795, 50, 0, true);
   if (e.kind === "boss" && g.campaign) {
     campaignBossAttack(g, e, {
       hurt: (amount, from) => hurt(g, amount, from),
@@ -780,6 +840,7 @@ export function updateGame(
     g.campaign.definition.clear.kind === "survive"
   ) {
     g.phase = "victory";
+    feedback(g, "rare", p.x, p.y, 0xe9cf82, 90, 0, true);
     return;
   }
   if (g.time >= duration && !g.bossSpawned) {
@@ -936,6 +997,7 @@ export function updateGame(
         const target = hit as Enemy;
         damage(g, target, b.damage, b.critical ?? false);
         if (b.blast) {
+          feedback(g, "explosion", target.x, target.y, 0xffb369, b.blast);
           emit(g, target.x, target.y, "#ffb369", 20);
           text(g, target.x, target.y, String(b.blast), false, "pulse");
           grid.each(target.x, target.y, b.blast + 40, (e) => {
@@ -962,6 +1024,7 @@ export function updateGame(
           if (h.burn) g.campaign.burn = h.burn;
         }
       }
+      feedback(g, "shockwave", h.x, h.y, h.color ?? 0xe7b28c, h.r);
       emit(g, h.x, h.y, "#d2b47b", 20);
       text(g, h.x, h.y, String(h.r), false, "pulse");
       g.hazards.splice(i, 1);
@@ -994,6 +1057,16 @@ export function updateGame(
     text(g, e.x, e.y, e.kind, false, "death");
     g.pools.enemies.push(e);
     g.enemies.splice(i, 1);
+    feedback(
+      g,
+      e.kind === "boss" ? "bossDeath" : "death",
+      e.x,
+      e.y,
+      0xc5d3a0,
+      e.kind === "boss" ? 150 : 28,
+      0,
+      e.kind === "boss",
+    );
     if (e.kind === "boss") {
       g.phase = "victory";
       g.gold += 150;
@@ -1016,8 +1089,23 @@ export function updateGame(
     if (dist2(d, p) < (p.r + d.r + 7) ** 2) {
       g.pools.drops.push(d);
       g.drops.splice(i, 1);
-      if (d.kind === "heal") p.hp = Math.min(p.maxHp, p.hp + d.value);
-      else g.xp += d.value;
+      if (d.kind === "heal") {
+        const healed = Math.min(p.maxHp - p.hp, d.value);
+        p.hp += healed;
+        text(
+          g,
+          p.x,
+          p.y - 25,
+          "+" + Math.round(healed),
+          false,
+          "damage",
+          "#a8e3bb",
+        );
+        feedback(g, "heal", p.x, p.y, 0xa8e3bb, 30, 0, true);
+      } else {
+        g.xp += d.value;
+        feedback(g, "pickup", d.x, d.y, 0xb5dfc6, 12);
+      }
       emit(g, d.x, d.y, "#bbefd4", 3);
     }
   }
@@ -1038,6 +1126,9 @@ export function advanceEffects(g: Game, step: number) {
   for (let i = g.texts.length - 1; i >= 0; i--) {
     const t = g.texts[i];
     t.age += step;
-    if (t.age > t.life) g.texts.splice(i, 1);
+    if (t.age > t.life) {
+      g.pools.texts.push(t);
+      g.texts.splice(i, 1);
+    }
   }
 }

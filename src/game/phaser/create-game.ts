@@ -8,7 +8,11 @@ import {
 } from "./scenes";
 import type { GameBridge } from "../bridge";
 /** This module is imported dynamically only after a React browser mount. */
-export function createGame(parent: HTMLElement, bridge: GameBridge) {
+export function createGame(
+  parent: HTMLElement,
+  bridge: GameBridge,
+  world = "forest",
+) {
   const game = new Phaser.Game({
     // Canvas2D avoids software WebGL overhead for this sprite-only pixel-art stage.
     type: Phaser.CANVAS,
@@ -21,10 +25,14 @@ export function createGame(parent: HTMLElement, bridge: GameBridge) {
     antialias: false,
     scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
+    audio: { noAudio: true },
     fps: { target: 60, forceSetTimeOut: false },
     scene: [BootScene, PreloadScene, MainMenuScene, GameScene, ResultsScene],
     callbacks: {
-      preBoot: (instance) => instance.registry.set("bridge", bridge),
+      preBoot: (instance) => {
+        instance.registry.set("bridge", bridge);
+        instance.registry.set("world", world);
+      },
     },
   });
   return game;

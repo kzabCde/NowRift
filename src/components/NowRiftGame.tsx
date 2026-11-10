@@ -1,7 +1,15 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CHARACTERS, RELICS, type RelicId, type Loadout } from "@/game/loadout";
 import PhaserHost from "./PhaserHost";
-import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
+import {
+  Brand,
+  DialogSurface,
+  Modal,
+  PixelIcon,
+  Settings,
+  clock,
+} from "./GameUi";
 import { GameBridge } from "@/game/bridge";
 import { makeGame, snapshot, type Snapshot } from "@/game/engine";
 import {
@@ -18,6 +26,7 @@ import { runRepository } from "@/game/services/saves";
 import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 
 type Props = {
+  loadout?: Loadout;
   stage?: StageSelection;
   autoStart?: boolean;
   onExitToMenu?: () => void;
@@ -25,6 +34,7 @@ type Props = {
 };
 export default function NowRiftGame({
   stage,
+  loadout,
   autoStart = true,
   onExitToMenu,
   weapon = "arcane",
@@ -56,7 +66,7 @@ export default function NowRiftGame({
       bridge.on("ready", (value) => {
         setReady(value);
         if (value && autoStart)
-          bridge.emit("command", { type: "start", weapon, stage });
+          bridge.emit("command", { type: "start", weapon, stage, loadout });
       }),
       bridge.on("result", (run) => {
         if (run.campaign)
@@ -92,16 +102,19 @@ export default function NowRiftGame({
     return () => {
       off.forEach((fn) => fn());
     };
-  }, [autoStart, bridge, weapon, stage]);
+  }, [autoStart, bridge, weapon, stage, loadout]);
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
   }, [immersive]);
-  const pause = () => bridge.emit("command", { type: "pause" });
+  const pause = useCallback(
+    () => bridge.emit("command", { type: "pause" }),
+    [bridge],
+  );
   const start = () => {
     setSave("");
     setReward(null);
-    bridge.emit("command", { type: "start", weapon, stage });
+    bridge.emit("command", { type: "start", weapon, stage, loadout });
   };
   const requestLeave = () => {
     if (["gameover", "victory", "menu"].includes(hud.phase)) {
@@ -229,7 +242,11 @@ export default function NowRiftGame({
             </div>
             <div className="bars">
               <div className="bar-heading">
-                <span>RIFT WANDERER</span>
+                <span>
+                  {CHARACTERS[
+                    loadout?.character ?? "wanderer"
+                  ].name.toUpperCase()}
+                </span>
                 <strong>
                   {hud.hp} <small>/ {hud.maxHp} HP</small>
                 </strong>
@@ -271,7 +288,7 @@ export default function NowRiftGame({
                 {hud.statuses.join(" · ")}
               </span>
             )}
-            <PhaserHost bridge={bridge} />
+            <PhaserHost bridge={bridge} world={world?.id} />
             {!ready && (
               <div className="arena-overlay">
                 <span className="eyebrow">ENTERING THE FOREST</span>
@@ -330,7 +347,11 @@ export default function NowRiftGame({
               </>
             )}
             {hud.phase === "paused" && !confirmLeave && !settings && (
-              <div className="arena-overlay">
+              <DialogSurface
+                className="arena-overlay"
+                title="Paused"
+                onClose={pause}
+              >
                 <span className="eyebrow">TAKE A BREATH</span>
                 <h2>Paused</h2>
                 <p>The forest will wait.</p>
@@ -355,14 +376,12 @@ export default function NowRiftGame({
                 >
                   Return to main menu
                 </button>
-              </div>
+              </DialogSurface>
             )}
             {hud.phase === "upgrade" && !confirmLeave && !settings && (
-              <div
+              <DialogSurface
                 className="arena-overlay upgrade-overlay"
-                role="dialog"
-                aria-label="Choose an upgrade"
-                aria-modal="true"
+                title="Choose an upgrade"
               >
                 <span className="eyebrow">
                   LEVEL {hud.level} / A NEW AWAKENING
@@ -394,10 +413,13 @@ export default function NowRiftGame({
                     );
                   })}
                 </div>
-              </div>
+              </DialogSurface>
             )}
             {terminal && (
-              <div className="arena-overlay results-overlay">
+              <DialogSurface
+                className="arena-overlay results-overlay"
+                title={hud.phase === "victory" ? "Victory" : "Defeat"}
+              >
                 <span className="eyebrow">
                   {hud.phase === "victory"
                     ? "THE FOREST REMEMBERS"
@@ -427,6 +449,17 @@ export default function NowRiftGame({
                       .join(" · ")}
                   </p>
                 )}
+                {reward?.candidates.map((id, index) => (
+                  <div className="earned-relic" key={`${id}-${index}`}>
+                    <PixelIcon index={RELICS[id as RelicId]?.icon ?? 7} />
+                    <span>
+                      <small>GUARDIAN RELIC EARNED</small>
+                      <strong>
+                        {RELICS[id as RelicId]?.name ?? id.replaceAll("-", " ")}
+                      </strong>
+                    </span>
+                  </div>
+                ))}
                 <div className="result-row">
                   <span>
                     <strong>{clock(hud.time)}</strong>SURVIVED
@@ -456,10 +489,11 @@ export default function NowRiftGame({
                   RETURN TO MAIN MENU
                 </button>
                 <small className="muted">
-                  Run gold is a score in Phase 1; it has no permanent spending
-                  system.
+                  {definition
+                    ? "Campaign gold can enhance relics at the sanctuary."
+                    : "Survival gold is a run score. Play campaign stages to bank rewards."}
                 </small>
-              </div>
+              </DialogSurface>
             )}
           </div>
           <div className="arena-footer">

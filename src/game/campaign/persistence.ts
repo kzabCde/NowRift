@@ -1,4 +1,10 @@
 import {
+  RELICS,
+  emptyEquipment,
+  enhancementCost,
+  type RelicId,
+} from "../loadout";
+import {
   emptyProgress,
   validProgress,
   lockedReason,
@@ -9,6 +15,8 @@ import { resolveRewards, type CampaignResult, type Rewards } from "./rewards";
 import { DIFFICULTIES, stageById } from "./content";
 export interface CampaignRepository {
   load(): Promise<Progress>;
+  equip(id: RelicId | null): Promise<Progress>;
+  enhance(id: RelicId): Promise<Progress>;
   settle(
     run: CampaignResult,
   ): Promise<{ progress: Progress; reward: Rewards | null }>;
@@ -66,7 +74,70 @@ export function applyResult(progress: Progress, run: CampaignResult) {
     next.materials[id] = (next.materials[id] ?? 0) + n;
   return { progress: next, reward };
 }
+export function changeEquipment(
+  progress: Progress,
+  action: "equip" | "enhance",
+  id: RelicId | null,
+): Progress {
+  if (
+    id !== null &&
+    (!Object.hasOwn(RELICS, id) || !progress.candidates.includes(id))
+  )
+    throw new Error("Earn this relic by defeating its world guardian first.");
+  const equipment = progress.equipment ?? emptyEquipment();
+  const next: Progress = {
+    ...progress,
+    materials: { ...progress.materials },
+    equipment: { ...equipment, ranks: { ...equipment.ranks } },
+  };
+  if (action === "equip") {
+    next.equipment!.equipped = id;
+    return next;
+  }
+  if (!id) throw new Error("Choose a relic to enhance.");
+  const rank = equipment.ranks[id] ?? 0;
+  if (rank >= 3) throw new Error("This relic is fully enhanced.");
+  const cost = enhancementCost(rank),
+    material = RELICS[id].material;
+  if (next.gold < cost.gold || (next.materials[material] ?? 0) < cost.material)
+    throw new Error("Not enough campaign gold or materials.");
+  next.gold -= cost.gold;
+  next.materials[material] -= cost.material;
+  next.equipment!.ranks[id] = rank + 1;
+  return next;
+}
+async function updateEquipment(
+  action: "equip" | "enhance",
+  id: RelicId | null,
+): Promise<Progress> {
+  const db = await open();
+  try {
+    return await new Promise((resolve, reject) => {
+      const t = db.transaction("progress", "readwrite"),
+        store = t.objectStore("progress"),
+        r = store.get("profile");
+      let next: Progress;
+      r.onsuccess = () => {
+        try {
+          next = changeEquipment(read(r.result), action, id);
+          store.put(next, "profile");
+        } catch (e) {
+          t.abort();
+          reject(e);
+        }
+      };
+      t.oncomplete = () => resolve(next);
+      t.onerror = () => reject(t.error);
+      t.onabort = () =>
+        reject(t.error ?? new Error("Equipment save interrupted"));
+    });
+  } finally {
+    db.close();
+  }
+}
 export const campaignRepository: CampaignRepository = {
+  equip: (id) => updateEquipment("equip", id),
+  enhance: (id) => updateEquipment("enhance", id),
   async load() {
     const db = await open();
     try {

@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { GameBridge } from "@/game/bridge";
-export default function PhaserHost({ bridge }: { bridge: GameBridge }) {
+export default function PhaserHost({
+  bridge,
+  world = "forest",
+}: {
+  bridge: GameBridge;
+  world?: string;
+}) {
   const parent = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let cancelled = false;
@@ -9,7 +15,7 @@ export default function PhaserHost({ bridge }: { bridge: GameBridge }) {
     import("@/game/phaser/create-game")
       .then(({ createGame }) => {
         if (cancelled || !parent.current) return;
-        const game = createGame(parent.current, bridge);
+        const game = createGame(parent.current, bridge, world);
         destroy = () => {
           game.destroy(true);
         };
@@ -25,7 +31,7 @@ export default function PhaserHost({ bridge }: { bridge: GameBridge }) {
       cancelled = true;
       destroy?.();
     };
-  }, [bridge]);
+  }, [bridge, world]);
   return (
     <div
       ref={parent}

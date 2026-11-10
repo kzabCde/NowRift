@@ -2126,3 +2126,533 @@ body.nowrift-immersive {
   font: 11px var(--mono);
   letter-spacing: 2px;
 }
+/* NowRift presentation tokens: restrained gold, moss, bone, and warm danger. */
+:root {
+  --danger: #f1aa95;
+  --heal: #b5dfbd;
+  --frost: #b4dce8;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 20px;
+  --motion-fast: 140ms;
+  --motion-screen: 320ms;
+  --motion-ambient: 14s;
+  --panel-shadow: 0 20px 70px #020b0b70;
+}
+.nr-main {
+  isolation: isolate;
+}
+.wordmark {
+  animation: rune-reveal 850ms ease-out both;
+}
+.gateway-art {
+  animation: forest-breathe 24s ease-in-out infinite alternate;
+  transform-origin: 65% 55%;
+}
+.gateway-content {
+  z-index: 2;
+  animation: veil-enter 900ms ease-out both;
+}
+.hub-layout,
+.world-map {
+  animation: veil-enter var(--motion-screen) ease-out both;
+}
+.gateway-content h1 {
+  text-shadow: 0 3px 32px #07120f80;
+}
+.menu-atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  --mote: #c4d9ad;
+}
+.menu-atmosphere i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--mote);
+  opacity: 0;
+  box-shadow: 0 0 7px #c9dfae44;
+  animation: mote-drift 11s ease-in-out infinite;
+}
+.mist-layer {
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(ellipse at 70% 75%, #b3d5c112, transparent 50%),
+    radial-gradient(ellipse at 30% 90%, #9eb7b115, transparent 44%);
+  animation: mist-drift var(--motion-ambient) ease-in-out infinite alternate;
+}
+.rune-halo {
+  position: absolute;
+  left: 51%;
+  top: 40%;
+  width: 16%;
+  height: 32%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #a3e9cf15, transparent 65%);
+  animation: rune-breathe 5s ease-in-out infinite alternate;
+}
+.expedition-card > :not(.expedition-art):not(.menu-atmosphere) {
+  z-index: 2;
+}
+.world-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.world-card > span,
+.world-card > small,
+.world-card > strong {
+  position: relative;
+  z-index: 2;
+}
+.world-card:hover,
+.character-choice:hover {
+  border-color: #b9b794;
+}
+.world-card .rune-halo {
+  display: none;
+}
+.atmosphere-desert {
+  --mote: #e3bd7c;
+}
+.atmosphere-desert .mist-layer {
+  background: radial-gradient(ellipse at 60% 80%, #e4bc7630, transparent 60%);
+}
+.atmosphere-frozen {
+  --mote: #c3e2ed;
+}
+.atmosphere-frozen i {
+  width: 2px;
+  height: 2px;
+}
+.atmosphere-infernal {
+  --mote: #f4a56e;
+}
+.atmosphere-infernal .mist-layer {
+  background: radial-gradient(ellipse at 50% 90%, #e27a381e, transparent 60%);
+}
+.primary-button:hover:not(:disabled) {
+  box-shadow:
+    0 0 24px #d4ba7e18,
+    inset 0 0 0 1px #fff3;
+}
+button[aria-busy="true"] {
+  cursor: progress;
+}
+.settings-panel {
+  width: min(100%, 800px);
+}
+.settings-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin: 24px 0;
+}
+.settings-columns h3,
+.modal-panel:has(.relic-list) h3 {
+  font: 20px var(--serif);
+  color: #ddd6b8;
+  margin-bottom: 20px;
+}
+.settings-columns .setting-row {
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+  padding: 12px 0;
+  gap: 12px;
+}
+.setting-row select {
+  min-height: 44px;
+  max-width: 180px;
+}
+.setting-row input[type="checkbox"] {
+  min-width: 24px;
+  height: 24px;
+}
+.volume-row {
+  display: block;
+  margin: 18px 0;
+  font-size: 12px;
+  color: #c1cbb9;
+}
+.volume-row > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.volume-row output {
+  font: 10px var(--mono);
+  color: var(--gold);
+}
+.volume-row input {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.audio-status {
+  min-height: 26px;
+  margin: 12px 0;
+  font: 11px/1.6 var(--mono);
+  color: #aebba3;
+}
+.character-stage {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 0 28px;
+  animation: veil-enter 260ms ease-out both;
+}
+.character-stage h3 {
+  font: 26px var(--serif);
+  margin: 12px 0;
+  color: var(--character-color);
+}
+.character-stage .eyebrow {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.character-stage p {
+  font:
+    12px/1.7 Arial,
+    sans-serif;
+  color: var(--muted);
+}
+.character-sprite {
+  width: 128px;
+  height: 140px;
+  flex-shrink: 0;
+  display: block;
+  image-rendering: pixelated;
+  background: url("/assets/forest/player.png") 0 center/1280px 128px no-repeat;
+  filter: drop-shadow(0 8px 10px #0006);
+  animation: wanderer-idle 2.6s steps(1) infinite;
+}
+.character-sentinel {
+  filter: sepia(0.5) saturate(0.8);
+}
+.character-strider {
+  filter: hue-rotate(135deg) saturate(0.6);
+}
+.character-choices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.character-choice {
+  min-height: 52px;
+  padding: 10px;
+  background: #0c1c1855;
+  border: 1px solid var(--line);
+  font: 12px var(--serif);
+}
+.character-choice.selected {
+  border-color: var(--gold);
+  background: #d5b47a14;
+  box-shadow: inset 0 -2px var(--gold);
+}
+.attribute-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 24px 0;
+  animation: veil-enter 300ms ease-out both;
+}
+.attribute-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.attribute-grid span {
+  font: 8px var(--mono);
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.attribute-grid strong {
+  font: 28px var(--serif);
+  color: #e2d9b6;
+}
+.modal-panel:has(.relic-list) {
+  width: min(100%, 740px);
+}
+.inventory-wallet {
+  font: 12px var(--mono) !important;
+  color: var(--gold) !important;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+.inventory-wallet span {
+  color: var(--muted);
+}
+.inventory-empty {
+  padding: 20px;
+  background: #101e1866;
+  border: 1px dashed #94a17744;
+}
+.relic-list {
+  margin: 16px 0 24px;
+  display: grid;
+  gap: 10px;
+}
+.relic-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--line);
+  padding: 18px;
+  background: #12221b66;
+}
+.relic-row.selected {
+  border-color: var(--gold);
+}
+.relic-row.locked .pixel-icon {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+.relic-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.relic-row strong {
+  font: 19px var(--serif);
+}
+.relic-row p {
+  font:
+    11px/1.7 Arial,
+    sans-serif;
+  color: var(--muted);
+  margin: 7px 0;
+}
+.relic-row small {
+  font: 8px/1.6 var(--mono);
+  color: #a4b499;
+}
+.relic-row .relic-actions {
+  display: grid;
+  gap: 7px;
+  flex: 0 0 154px;
+}
+.relic-actions button {
+  font-size: 9px;
+  min-height: 44px;
+}
+.material-pouch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.material-pouch > span {
+  background: #0f1c18;
+  padding: 12px;
+  border: 1px solid #6a7d5d44;
+  font: 10px var(--mono);
+  color: var(--muted);
+}
+.material-pouch b {
+  color: var(--gold);
+  margin-left: 10px;
+}
+.modal-panel,
+.arena-overlay {
+  animation: veil-enter 220ms ease-out both;
+}
+@keyframes veil-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes rune-reveal {
+  from {
+    opacity: 0;
+    filter: brightness(1.5);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+@keyframes forest-breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.035) translateX(-0.4%);
+  }
+}
+@keyframes mist-drift {
+  from {
+    transform: translateX(-3%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(3%);
+    opacity: 1;
+  }
+}
+@keyframes rune-breathe {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mote-drift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 30px);
+  }
+  25%,
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(34px, -80px);
+  }
+}
+@keyframes wanderer-idle {
+  0%,
+  45%,
+  100% {
+    background-position: 0 center;
+  }
+  50%,
+  95% {
+    background-position: -1024px center;
+  }
+}
+@media (max-width: 650px) {
+  .settings-columns {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .modal-panel.settings-panel {
+    padding: 24px;
+  }
+  .character-stage {
+    gap: 12px;
+  }
+  .character-stage h3 {
+    font-size: 22px;
+  }
+  .character-sprite {
+    width: 96px;
+    height: 128px;
+    background-size: 960px 96px;
+    animation: none;
+  }
+  .character-choice {
+    font-size: 11px;
+  }
+  .relic-row {
+    gap: 12px;
+    padding: 14px;
+    flex-wrap: wrap;
+  }
+  .relic-row strong {
+    font-size: 17px;
+  }
+  .relic-row .relic-actions {
+    display: flex;
+    flex-wrap: wrap;
+    flex-basis: 100%;
+    align-items: center;
+  }
+  .relic-actions button {
+    flex: 1;
+  }
+  .relic-actions small {
+    flex-basis: 100%;
+  }
+  .rune-halo {
+    left: 58%;
+    top: 35%;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .modal-panel {
+    max-height: 94dvh;
+  }
+}
+:root[data-quality="low"] .menu-atmosphere i:nth-of-type(n + 6) {
+  display: none;
+}
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+:root[data-reduced-motion="true"] .menu-atmosphere i {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+  }
+  .menu-atmosphere i {
+    display: none;
+  }
+}
+.earned-relic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border: 1px solid #d5b47a70;
+  background: #c2aa6812;
+  box-shadow: 0 0 24px #d5b47a0d;
+}
+.earned-relic > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.earned-relic small {
+  font: 8px var(--mono);
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.earned-relic strong {
+  font: 20px var(--serif);
+  color: #e5d6ac;
+}
+@media (max-width: 760px) {
+  .hub-sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .hub-sidebar .nav-button {
+    min-width: 0;
+    min-height: 48px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+}
+.practice-note {
+  margin-top: 14px;
+  font:
+    12px/1.6 Arial,
+    sans-serif;
+  color: var(--muted);
+}

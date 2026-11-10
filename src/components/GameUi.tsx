@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, type ReactNode } from "react";
-import { useSettings } from "@/state/settings";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { audio } from "@/game/audio/engine";
+import { QUALITY, useSettings } from "@/state/settings";
 export function PixelIcon({
   index = 0,
   large = false,
@@ -16,20 +17,14 @@ export function PixelIcon({
     />
   );
 }
-export function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose?: () => void;
-  children: ReactNode;
-}) {
+function useDialogFocus(onClose?: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const element = ref.current;
-    element?.querySelector<HTMLElement>("button,select,input")?.focus();
+    element
+      ?.querySelector<HTMLElement>("button:not(:disabled),select,input")
+      ?.focus();
     const trap = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.stopImmediatePropagation();
@@ -62,11 +57,47 @@ export function Modal({
       previous?.focus();
     };
   }, [onClose]);
+  return ref;
+}
+export function DialogSurface({
+  children,
+  title,
+  className,
+  onClose,
+}: {
+  children: ReactNode;
+  title: string;
+  className: string;
+  onClose?: () => void;
+}) {
+  const ref = useDialogFocus(onClose);
+  return (
+    <div
+      ref={ref}
+      className={className}
+      role="dialog"
+      aria-label={title}
+      aria-modal="true"
+    >
+      {children}
+    </div>
+  );
+}
+export function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose?: () => void;
+  children: ReactNode;
+}) {
+  const ref = useDialogFocus(onClose);
   return (
     <div className="modal-shade">
       <div
         ref={ref}
-        className="modal-panel"
+        className={`modal-panel ${title === "Settings" ? "settings-panel" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -88,35 +119,169 @@ export function Modal({
 }
 export function Settings({ onClose }: { onClose: () => void }) {
   const prefs = useSettings();
+  const [status, setStatus] = useState(() => audio.diagnostics());
+  useEffect(() => {
+    const timer = setInterval(() => setStatus(audio.diagnostics()), 500);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <Modal title="Settings" onClose={onClose}>
-      <span className="eyebrow">MAKE YOURSELF AT HOME</span>
+      <span className="eyebrow">TUNE YOUR JOURNEY</span>
       <h2>Settings</h2>
-      <label className="setting-row">
-        <span>
-          Reduced effects<small>Less camera shake and fewer particles</small>
-        </span>
-        <input
-          type="checkbox"
-          checked={prefs.reducedEffects}
-          onChange={(e) => prefs.set({ reducedEffects: e.target.checked })}
-        />
-      </label>
-      <label className="setting-row">
-        <span>
-          Camera scale<small>Adjust character and world size</small>
-        </span>
-        <select
-          value={prefs.zoom}
-          onChange={(e) => prefs.set({ zoom: Number(e.target.value) })}
-        >
-          <option value="0.85">Wide</option>
-          <option value="1">Balanced</option>
-          <option value="1.15">Close</option>
-        </select>
-      </label>
+      <div className="settings-columns">
+        <section aria-label="Audio settings">
+          <h3>Sound & atmosphere</h3>
+          <label className="setting-row">
+            <span>Mute all audio</span>
+            <input
+              aria-label="Mute all audio"
+              type="checkbox"
+              checked={prefs.muted}
+              onChange={(e) => prefs.set({ muted: e.target.checked })}
+            />
+          </label>
+          {(
+            [
+              ["master", "Master volume"],
+              ["music", "Music volume"],
+              ["sfx", "Sound effect volume"],
+              ["ambient", "Ambient volume"],
+            ] as const
+          ).map(([key, label]) => (
+            <label className="volume-row" key={key}>
+              <span>
+                {label}
+                <output>{Math.round(prefs[key] * 100)}%</output>
+              </span>
+              <input
+                aria-label={label}
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={prefs[key]}
+                onChange={(e) => prefs.set({ [key]: Number(e.target.value) })}
+              />
+            </label>
+          ))}
+          <label className="setting-row">
+            <span>Audio intensity</span>
+            <select
+              aria-label="Audio intensity"
+              value={prefs.audioIntensity}
+              onChange={(e) =>
+                prefs.set({
+                  audioIntensity: e.target.value as typeof prefs.audioIntensity,
+                })
+              }
+            >
+              <option value="gentle">Gentle</option>
+              <option value="balanced">Balanced</option>
+              <option value="full">Full</option>
+            </select>
+          </label>
+          <button
+            className="action-button"
+            data-silent="true"
+            type="button"
+            onClick={() => {
+              void audio.unlock().then(() => audio.play("confirm"));
+            }}
+          >
+            TEST SOUND
+          </button>
+          <p className="audio-status" role="status">
+            {status.error ||
+              (status.context === "locked"
+                ? "Tap a button to enable audio."
+                : `Audio ${status.context} · Original procedural soundscape`)}
+          </p>
+        </section>
+        <section aria-label="Visual settings">
+          <h3>Light & motion</h3>
+          <label className="setting-row">
+            <span>Graphics quality</span>
+            <select
+              aria-label="Graphics quality"
+              value={prefs.quality}
+              onChange={(e) => {
+                const quality = e.target.value as typeof prefs.quality;
+                prefs.set({ quality, ...QUALITY[quality] });
+              }}
+            >
+              <option value="low">Low · battery saver</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <label className="setting-row">
+            <span>
+              Reduced effects
+              <small>Still motion, fewer particles, no shake</small>
+            </span>
+            <input
+              aria-label="Reduced effects"
+              type="checkbox"
+              checked={prefs.reducedEffects}
+              onChange={(e) => prefs.set({ reducedEffects: e.target.checked })}
+            />
+          </label>
+          {(
+            [
+              ["particles", "Particle density"],
+              ["glow", "Glow strength"],
+              ["shake", "Screen shake"],
+            ] as const
+          ).map(([key, label]) => (
+            <label className="volume-row" key={key}>
+              <span>
+                {label}
+                <output>{Math.round(prefs[key] * 100)}%</output>
+              </span>
+              <input
+                aria-label={label}
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={prefs[key]}
+                onChange={(e) => prefs.set({ [key]: Number(e.target.value) })}
+              />
+            </label>
+          ))}
+          <label className="setting-row">
+            <span>Damage numbers</span>
+            <select
+              aria-label="Damage numbers"
+              value={prefs.damageNumbers}
+              onChange={(e) =>
+                prefs.set({
+                  damageNumbers: e.target.value as typeof prefs.damageNumbers,
+                })
+              }
+            >
+              <option value="all">All</option>
+              <option value="sparse">Sparse</option>
+              <option value="off">Off</option>
+            </select>
+          </label>
+          <label className="setting-row">
+            <span>Camera scale</span>
+            <select
+              aria-label="Camera scale"
+              value={prefs.zoom}
+              onChange={(e) => prefs.set({ zoom: Number(e.target.value) })}
+            >
+              <option value="0.85">Wide</option>
+              <option value="1">Balanced</option>
+              <option value="1.15">Close</option>
+            </select>
+          </label>
+        </section>
+      </div>
       <p className="muted">
-        Preferences are stored on this browser. Active runs remain in memory.
+        Saved on this browser. Attack warnings remain visible at every quality
+        setting. Music and effects are original procedural synthesis.
       </p>
       {prefs.warning && (
         <p role="status" className="notice">

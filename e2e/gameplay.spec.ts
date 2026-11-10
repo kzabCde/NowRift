@@ -179,7 +179,9 @@ test("settings persist and corrupted preferences preserve playable defaults", as
   );
   await page.reload();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("defaults are in use");
+  await expect(
+    page.getByRole("status").filter({ hasText: "defaults are in use" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "DONE" }).click();
   await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
   await page.getByRole("button", { name: "START NEW RUN" }).click();
