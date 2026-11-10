@@ -12,6 +12,8 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
     document.documentElement.lang = locale;
     document.title = locale === "th" ? "NowRift — ก้าวสู่รอยแยก" : "NowRift — Enter the Rift";
     const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (manifest) manifest.href = locale === "th" ? "/manifest.th.webmanifest" : "/manifest.webmanifest";
     if (meta) meta.content = locale === "th"
       ? "สำรวจโลกแฟนตาซี NowRift ต่อสู้กับศัตรูและบอสในเกม Roguelike พิกเซลอาร์ต เล่นได้โดยไม่ต้องสมัครบัญชี"
       : "Enter NowRift as a guest. Explore a pixel-art roguelike adventure. No account required.";

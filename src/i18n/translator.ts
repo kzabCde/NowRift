@@ -22,6 +22,8 @@ export function translate<N extends Namespace>(locale: Locale, namespace: N, key
 export function translateText(locale: Locale, source: string): string {
   if (locale === "en" || !source) return source;
   const exact = content[source];
+  const missingArt = /^Missing art: (.+)$/.exec(source);
+  if (missingArt) return translate(locale, "game", "Missing art: {asset}", { asset: missingArt[1] });
   if (exact) return exact;
   // Existing progression messages keep their stable English return values for saved-state compatibility.
   const all = /^Clear all five (NORMAL|HARD|NIGHTMARE) stages in this world\\.$/.exec(source);
@@ -29,6 +31,7 @@ export function translateText(locale: Locale, source: string): string {
   const stage = /^Clear Stage (\\d+) on (NORMAL|HARD|NIGHTMARE)\\.$/.exec(source);
   if (stage) return translate(locale, "world", "Clear Stage {stage} on {difficulty}.", { stage: stage[1], difficulty: content[stage[2]] ?? stage[2] });
   if (/^Defeat the previous world’s Normal final boss\\.$/.test(source)) return translate(locale, "world", "Defeat the previous world’s Normal final boss.");
+  if (source.startsWith("Campaign save failed; progression was not changed. ")) return content["Campaign save failed; progression was not changed. "] + source.slice("Campaign save failed; progression was not changed. ".length);
   return source;
 }
 export function number(locale: Locale, value: number): string { return new Intl.NumberFormat(locale === "th" ? "th-TH" : "en-US", { numberingSystem: "latn" }).format(value); }

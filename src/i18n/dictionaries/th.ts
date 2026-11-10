@@ -1,4 +1,4 @@
-/** Translations are keyed by their canonical English copy and grouped by domain. */
+/** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
   "main": {
     "GUEST EDITION": "โหมดผู้เล่นทั่วไป",
@@ -81,7 +81,10 @@ export const th = {
     "Browser storage is unavailable. Runs remain playable without saving.": "ไม่สามารถใช้พื้นที่เก็บข้อมูลของเบราว์เซอร์ได้ ยังเล่นเกมได้แต่จะไม่บันทึก",
     "PLAY": "เล่น",
     "kills": "การกำจัด",
-    "gold": "ทอง"
+    "gold": "ทอง",
+    "movement": "ความเร็ว",
+    "HP": "พลังชีวิต",
+    "PROFILE": "โปรไฟล์"
   },
   "game": {
     "A JOURNEY BEYOND THE BREACH": "การเดินทางข้ามรอยแยก",
@@ -166,10 +169,29 @@ export const th = {
     "then defeat the guardian": "แล้วปราบผู้พิทักษ์",
     "survival": "เอาตัวรอด",
     "Loading": "กำลังโหลด",
-    "DMG": "พลังโจมตี",
+    "DMG": "ดาเมจ",
     "CRIT": "คริติคอล",
     "MOVE": "เคลื่อนที่",
-    "FIELD NOTES": "บันทึกภาคสนาม"
+    "FIELD NOTES": "บันทึกภาคสนาม",
+    "MOVING": "กำลังเคลื่อนที่",
+    "A NEW AWAKENING": "การตื่นรู้ครั้งใหม่",
+    "BLESSING": "พรพิเศษ",
+    "CHILLED": "หนาวเย็น",
+    "HINDERED": "เคลื่อนที่ช้า",
+    "BURNING": "ถูกเผาไหม้",
+    "MOLTEN FLOOR · MOVE": "พื้นลาวา · รีบหลบ",
+    "THIN ICE · MOVE": "น้ำแข็งบาง · รีบหลบ",
+    "health": "พลังชีวิต",
+    "STAGE": "ด่าน",
+    "Victory": "ชัยชนะ",
+    "Defeat": "พ่ายแพ้",
+    "PLAYER": "ผู้เล่น",
+    "Save": "บันทึก",
+    "WON": "ชนะ",
+    "Campaign gold": "ทองแคมเปญ",
+    "ENRAGED": "คลุ้มคลั่ง",
+    "Missing art: {asset}": "ไม่พบภาพเกม: {asset}",
+    "Survival": "เอาตัวรอด"
   },
   "settings": {
     "TUNE YOUR JOURNEY": "ปรับแต่งการเดินทางของคุณ",
@@ -214,7 +236,12 @@ export const th = {
     "English": "English",
     "ไทย": "ไทย",
     "Audio locked": "เสียงถูกล็อก",
-    "Original procedural soundscape": "เสียงบรรยากาศที่สร้างขึ้นเฉพาะเกม"
+    "Original procedural soundscape": "เสียงบรรยากาศที่สร้างขึ้นเฉพาะเกม",
+    "running": "ทำงานอยู่",
+    "suspended": "พักการทำงาน",
+    "closed": "ปิดแล้ว",
+    "locked": "ถูกล็อก",
+    "Audio unavailable on this device.": "ไม่สามารถใช้เสียงบนอุปกรณ์นี้ได้"
   },
   "world": {
     "THE SHATTERED ATLAS / CAMPAIGN": "แผนที่ที่แตกสลาย / แคมเปญ",
@@ -259,7 +286,9 @@ export const th = {
     "FOREST": "ป่า",
     "DESERT": "ทะเลทราย",
     "FROZEN": "น้ำแข็ง",
-    "INFERNAL": "โลกันตร์"
+    "INFERNAL": "โลกันตร์",
+    "Stage": "ด่าน",
+    "World": "โลก"
   },
   "sanctuary": {
     "Choose a wanderer": "เลือกนักพเนจร",
@@ -297,7 +326,8 @@ export const th = {
     "Equipment saved. Applies to your next run.": "บันทึกอุปกรณ์แล้ว และจะมีผลในรอบถัดไป",
     "Relic enhanced. Saved on this device.": "เสริมพลังวัตถุโบราณแล้ว บันทึกในเครื่องเรียบร้อย",
     "Equipment could not be saved.": "ไม่สามารถบันทึกอุปกรณ์ได้",
-    "Saving equipment…": "กำลังบันทึกอุปกรณ์…"
+    "Saving equipment…": "กำลังบันทึกอุปกรณ์…",
+    "Close": "ปิด"
   },
   "pwa": {
     "No network connection": "ไม่มีการเชื่อมต่ออินเทอร์เน็ต",
@@ -327,7 +357,20 @@ export const th = {
     "A BREAK IN THE VEIL": "ม่านพิภพเกิดรอยร้าว",
     "The journey was interrupted.": "การเดินทางถูกขัดจังหวะ",
     "Your completed run records have not been reset. Retry the page to return to the forest.": "ประวัติการเล่นที่สำเร็จแล้วไม่ได้ถูกลบ ลองอีกครั้งเพื่อกลับเข้าสู่ผืนป่า",
-    "TRY AGAIN →": "ลองอีกครั้ง →"
+    "TRY AGAIN →": "ลองอีกครั้ง →",
+    "Close another NowRift tab to enable campaign saves.": "ปิดแท็บ NowRift อื่นเพื่อเปิดการบันทึกแคมเปญ",
+    "Clear condition not met": "ยังไม่ผ่านเงื่อนไขการจบด่าน",
+    "Earn this relic by defeating its world guardian first.": "ต้องปราบผู้พิทักษ์โลกก่อนจึงจะได้รับวัตถุโบราณนี้",
+    "Choose a relic to enhance.": "เลือกวัตถุโบราณที่ต้องการเสริมพลัง",
+    "This relic is fully enhanced.": "วัตถุโบราณนี้เสริมพลังถึงระดับสูงสุดแล้ว",
+    "Not enough campaign gold or materials.": "ทองแคมเปญหรือวัสดุไม่เพียงพอ",
+    "Close another NowRift tab to upgrade local storage.": "ปิดแท็บ NowRift อื่นเพื่ออัปเกรดพื้นที่จัดเก็บ",
+    "Save storage is unavailable": "ไม่สามารถเข้าถึงพื้นที่เก็บข้อมูลเซฟ",
+    "Equipment save interrupted": "การบันทึกอุปกรณ์ถูกขัดจังหวะ",
+    "Campaign save interrupted": "การบันทึกแคมเปญถูกขัดจังหวะ",
+    "Save transaction interrupted": "การบันทึกเซฟถูกขัดจังหวะ",
+    "Invalid run result": "ผลการเล่นไม่ถูกต้อง",
+    "Invalid result": "ผลลัพธ์ไม่ถูกต้อง"
   },
   "content": {
     "Whispering Forest": "ป่ากระซิบ",

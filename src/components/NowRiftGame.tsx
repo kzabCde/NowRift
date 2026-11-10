@@ -41,7 +41,7 @@ export default function NowRiftGame({
   onExitToMenu,
   weapon = "arcane",
 }: Props) {
-  const { t, text } = useI18n();
+  const { t, text, locale } = useI18n();
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
   const [reward, setReward] = useState<Rewards | null>(null);
@@ -161,7 +161,7 @@ export default function NowRiftGame({
           <div>
             <span className="eyebrow">
               {definition
-                ? `${text(world!.name).toUpperCase()} / STAGE ${definition.number}`
+                ? `${text(world!.name).toUpperCase()} / ${t("game","STAGE")} ${definition.number}`
                 : t("game","CHAPTER I / THE FIRST BREACH")}
             </span>
             <h1>
@@ -294,7 +294,7 @@ export default function NowRiftGame({
             {hud.boss && (
               <div
                 className="boss-hud"
-                aria-label={`${world?.boss.name ?? t("game","Forest Guardian")} health`}
+                aria-label={`${text(world?.boss.name ?? "Forest Guardian")} ${t("game","health")}`}
               >
                 <span>
                   {world?.boss.name.toUpperCase() ?? t("game","FOREST GUARDIAN")}{" "}
@@ -331,7 +331,7 @@ export default function NowRiftGame({
                           : t("game","BREAK THE GUARDIAN")}
                 </span>
                 <span className="touch-hint">
-                  {touch ? text("MOVING") : t("game","DRAG TO MOVE")}
+                  {touch ? t("game","MOVING") : t("game","DRAG TO MOVE")}
                 </span>
               </>
             )}
@@ -368,7 +368,7 @@ export default function NowRiftGame({
                 title={t("game","Choose an upgrade")}
               >
                 <span className="eyebrow">
-                  LEVEL {hud.level} / A NEW AWAKENING
+                  {t("game","LEVEL")} {hud.level} / {t("game","A NEW AWAKENING")}
                 </span>
                 <h2>{t("game","Choose your")}{" "}<em>{t("game","power.")}</em>
                 </h2>
@@ -386,7 +386,7 @@ export default function NowRiftGame({
                         type="button"
                       >
                         <span className="card-rarity">
-                          BLESSING · {(hud.stacks[id] ?? 0) + 1}/{u.max}
+                          {t("game","BLESSING")} · {(hud.stacks[id] ?? 0) + 1}/{u.max}
                         </span>
                         <PixelIcon index={u.icon} large />
                         <strong>{text(u.name)}</strong>
@@ -401,7 +401,7 @@ export default function NowRiftGame({
             {terminal && (
               <DialogSurface
                 className="arena-overlay results-overlay"
-                title={hud.phase === "victory" ? text("VICTORY") : text("GAMEOVER")}
+                title={hud.phase === "victory" ? t("game","Victory") : t("game","Defeat")}
               >
                 <span className="eyebrow">
                   {hud.phase === "victory"
@@ -479,8 +479,8 @@ export default function NowRiftGame({
               <span>
                 <strong>{text(WEAPONS[weapon].name)}</strong>
                 <small>
-                  {hud.damage.toFixed(1)} DMG · {hud.interval.toFixed(2)}s ·{" "}
-                  {Math.round(hud.crit * 100)}% CRIT
+                  {hud.damage.toFixed(1)} {t("game","DMG")} · {hud.interval.toFixed(2)}s ·{" "}
+                  {Math.round(hud.crit * 100)}% {t("game","CRIT")}
                 </small>
               </span>
             </div>
@@ -502,7 +502,7 @@ export default function NowRiftGame({
           </p>
         )}
         <p className="field-note">
-          FIELD NOTES{" "}
+          {t("game","FIELD NOTES")}{" "}
           <span>{t("game","Collect emerald crystals to grow stronger. Red roots warn of an incoming strike. Keep moving.")}{" "}</span>
         </p>
       </section>

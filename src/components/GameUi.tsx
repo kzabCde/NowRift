@@ -197,7 +197,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
             {text(status.error) ||
               (status.context === "locked"
                 ? t("settings","Tap a button to enable audio.")
-                : (locale === "th" ? `เสียง: ${status.context} · ${t("settings","Original procedural soundscape")}` : `Audio ${status.context} · Original procedural soundscape`))}
+                : (locale === "th" ? `เสียง: ${text(status.context)} · ${t("settings","Original procedural soundscape")}` : `Audio ${status.context} · Original procedural soundscape`))}
           </p>
         </section>
         <section aria-label={t("settings","Visual settings")}>
