@@ -1,4 +1,5 @@
 "use client";
+import RpgScreen from "./RpgScreen";
 import WorldMap from "./WorldMap";
 import type { StageSelection } from "@/game/campaign/loader";
 
@@ -12,9 +13,9 @@ import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
-  const [screen, setScreen] = useState<"gateway" | "lobby" | "game" | "worlds">(
-    "gateway",
-  );
+  const [screen, setScreen] = useState<
+    "gateway" | "lobby" | "game" | "worlds" | "rpg"
+  >("gateway");
   const [selection, setSelection] = useState<StageSelection | undefined>();
   const [weapon, setWeapon] = useState<WeaponId>("arcane"),
     [controls, setControls] = useState(false),
@@ -78,6 +79,8 @@ export default function NowRiftMainMenu() {
       cancelled = true;
     };
   }, [screen]);
+  if (screen === "rpg")
+    return <RpgScreen weapon={weapon} onBack={() => setScreen("lobby")} />;
   if (screen === "worlds")
     return (
       <main className="nr-main">
@@ -85,6 +88,7 @@ export default function NowRiftMainMenu() {
           <Brand />
         </header>
         <WorldMap
+          weapon={weapon}
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
             setSelection(s);
@@ -108,7 +112,7 @@ export default function NowRiftMainMenu() {
         <Brand />
         <div className="header-right">
           <span className="build-tag">
-            PHASE II <span>·</span> LOCAL ADVENTURE
+            PHASE III <span>·</span> LOCAL ADVENTURE
           </span>
           <PwaControls />
           <button
@@ -164,6 +168,9 @@ export default function NowRiftMainMenu() {
               The Hub<span className="gold">.</span>
             </h2>
             <nav aria-label="Main navigation">
+              <button className="nav-button" onClick={() => setScreen("rpg")}>
+                INVENTORY & GEAR →
+              </button>
               <button
                 className="nav-button"
                 onClick={() => setScreen("worlds")}
@@ -330,7 +337,7 @@ export default function NowRiftMainMenu() {
         <span>
           NOWRIFT <span className="gold">/</span> A WORLD BETWEEN WORLDS
         </span>
-        <span>PHASE I · FOREST SURVIVAL · NO CLOUD SAVE</span>
+        <span>PHASE III · LOCAL RPG ADVENTURE · NO CLOUD SAVE</span>
       </footer>
       {settings && <Settings onClose={closeSettings} />}
       {controls && (
@@ -407,7 +414,8 @@ export default function NowRiftMainMenu() {
                   <b>
                     {r.kills} kills
                     <small>
-                      {clock(r.seconds)} · {r.gold} gold
+                      {clock(r.seconds)} · {r.gold}{" "}
+                      {r.campaign ? "gold" : "score"}
                     </small>
                   </b>
                 </div>

@@ -1,0 +1,192 @@
+import type { Progress } from "../campaign/progression";
+import { WEAPONS, type WeaponId, type UpgradeId } from "../content/forest";
+import { ITEMS, RARITIES, PRIMARY_VALUES, UPGRADES } from "./content";
+import {
+  SLOTS,
+  type Attributes,
+  type StatKey,
+  type CharacterStats,
+  type EquipmentInstance,
+} from "./model";
+export const zero = (): Attributes => ({
+  maxHp: 0,
+  damage: 0,
+  attackSpeed: 0,
+  critChance: 0,
+  critDamage: 0,
+  armor: 0,
+  speed: 0,
+  regen: 0,
+  projectiles: 0,
+  area: 0,
+});
+export function characterLevel(xp: number) {
+  let level = 1,
+    remaining = Math.max(0, xp);
+  while (level < 60 && remaining >= 100 + (level - 1) * 50) {
+    remaining -= 100 + (level - 1) * 50;
+    level++;
+  }
+  return {
+    level,
+    xp: remaining,
+    next: level === 60 ? 0 : 100 + (level - 1) * 50,
+  };
+}
+export function itemStats(
+  item: EquipmentInstance,
+  enhancement = item.enhancement,
+): Attributes {
+  const def = ITEMS[item.definitionId],
+    out = zero(),
+    rarity = RARITIES[item.rarity],
+    scale =
+      (1 + item.level * 0.16) *
+      rarity.multiplier *
+      (1 + enhancement * rarity.enhance);
+  if (def?.primary) out[def.primary] = PRIMARY_VALUES[def.primary] * scale;
+  for (const [key, value] of Object.entries(item.affixes))
+    out[key as StatKey] += (value ?? 0) * (1 + enhancement * rarity.enhance);
+  if (def?.slot === "armor")
+    out.armor +=
+      item.level * rarity.multiplier * (1 + enhancement * rarity.enhance);
+  return out;
+}
+function cap(
+  stats: Attributes,
+  weapon: WeaponId,
+  level: number,
+): CharacterStats {
+  const s = {
+    ...stats,
+    maxHp: Math.min(5000, Math.max(1, Math.round(stats.maxHp))),
+    damage: Math.min(10000, Math.max(1, stats.damage)),
+    attackSpeed: Math.min(2, Math.max(0, stats.attackSpeed)),
+    critChance: Math.min(0.75, Math.max(0, stats.critChance)),
+    critDamage: Math.min(4, Math.max(1, stats.critDamage)),
+    armor: Math.min(300, Math.max(0, stats.armor)),
+    speed: Math.min(360, Math.max(60, stats.speed)),
+    regen: Math.min(20, Math.max(0, stats.regen)),
+    projectiles: Math.min(8, Math.max(1, Math.floor(stats.projectiles))),
+    area: Math.min(4, Math.max(1, stats.area)),
+  };
+  const interval = Math.max(
+    0.12,
+    WEAPONS[weapon].interval / (1 + s.attackSpeed),
+  );
+  return {
+    ...s,
+    interval,
+    level,
+    power: powerRating(s, interval),
+  };
+}
+export function calculateStats(
+  profile: Progress,
+  weapon: WeaponId = "arcane",
+): CharacterStats {
+  const { level } = characterLevel(profile.xp),
+    w = WEAPONS[weapon],
+    out: Attributes = {
+      maxHp: 100 + (level - 1) * 8,
+      damage: w.damage + (level - 1) * 1.25,
+      attackSpeed: 0,
+      critChance: 0.05,
+      critDamage: 1.5,
+      armor: 0,
+      speed: 180,
+      regen: 0,
+      projectiles: weapon === "daggers" ? 2 : 1,
+      area: 1,
+    };
+  const rpg = profile.rpg;
+  if (rpg) {
+    for (const slot of SLOTS) {
+      const item = rpg.equipment.find((e) => e.id === rpg.equipped[slot]);
+      if (item) {
+        const stats = itemStats(item);
+        for (const key of Object.keys(stats) as StatKey[])
+          out[key] += stats[key];
+      }
+    }
+    for (const [id, def] of Object.entries(UPGRADES))
+      out[def.stat] += (rpg.upgrades[id] ?? 0) * def.amount;
+  }
+  return cap(out, weapon, level);
+}
+export function temporaryStats(
+  base: CharacterStats,
+  weapon: WeaponId,
+  stacks: Partial<Record<UpgradeId, number>>,
+  focus = false,
+): CharacterStats {
+  const n = (key: UpgradeId) => stacks[key] ?? 0;
+  const out = cap(
+    {
+      ...base,
+      maxHp: base.maxHp + n("vitality") * 25,
+      damage: base.damage + WEAPONS[weapon].damage * 0.25 * n("power"),
+      speed: base.speed + 18 * n("stride"),
+      critChance: base.critChance + 0.05 * n("critical"),
+      critDamage: base.critDamage + 0.25 * n("fury"),
+      projectiles: base.projectiles + n("multishot"),
+      area: base.area + 0.2 * n("area"),
+      regen: base.regen + 0.5 * n("regen"),
+    },
+    weapon,
+    base.level,
+  );
+  out.interval = Math.max(
+    0.12,
+    (base.interval * 0.88 ** n("rapid")) / (focus ? 1.3 : 1),
+  );
+  out.power = powerRating(out, out.interval);
+  return out;
+}
+export function incomingDamage(amount: number, armor: number) {
+  return Math.max(1, Math.round((amount * 100) / (100 + Math.max(0, armor))));
+}
+
+export function campaignLoadout(profile: Progress, weapon: WeaponId) {
+  const equipped = profile.rpg?.equipment.find(
+    (e) => e.id === profile.rpg!.equipped.weapon,
+  );
+  return {
+    build: calculateStats(profile, weapon),
+    appearance: equipped
+      ? { rarity: equipped.rarity, icon: ITEMS[equipped.definitionId].icon }
+      : undefined,
+  };
+}
+
+export function powerRating(s: Attributes, interval: number) {
+  return Math.round(
+    (s.damage / interval) *
+      (1 + s.critChance * (s.critDamage - 1)) *
+      (1 + (s.projectiles - 1) * 0.35) *
+      (1 + (s.area - 1) * 0.25) +
+      s.maxHp * 0.08 +
+      s.armor * 0.5 +
+      s.regen * 8 +
+      (s.speed - 180) * 0.15,
+  );
+}
+export function equipmentPower(item: EquipmentInstance) {
+  const base: Attributes = {
+      maxHp: 100,
+      damage: 10,
+      attackSpeed: 0,
+      critChance: 0.05,
+      critDamage: 1.5,
+      armor: 0,
+      speed: 180,
+      regen: 0,
+      projectiles: 1,
+      area: 1,
+    },
+    before = cap(base, "arcane", 1),
+    bonus = itemStats(item),
+    next = { ...base };
+  for (const key of Object.keys(bonus) as StatKey[]) next[key] += bonus[key];
+  return cap(next, "arcane", 1).power - before.power;
+}

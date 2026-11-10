@@ -91,7 +91,7 @@ test.describe("campaign simulation bridge", () => {
     ).toBeEnabled();
     await page.reload();
     await atlas(page);
-    await expect(page.locator(".campaign-wallet")).toContainText(
+    await expect(page.getByTestId("campaign-gold")).toContainText(
       /^[1-9]\d* GOLD/,
     );
   });

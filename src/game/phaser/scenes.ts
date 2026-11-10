@@ -1,3 +1,5 @@
+import { applyBuild } from "../engine";
+import { RARITIES } from "../rpg/content";
 import { WORLDS } from "../campaign/content";
 import { loadStage, type StageSelection } from "../campaign/loader";
 import { buildWorld } from "./world-renderer";
@@ -50,6 +52,10 @@ export class PreloadScene extends Phaser.Scene {
         "Missing art: " + file.key + ". A fallback is in use; reload to retry.",
       ),
     );
+    this.load.spritesheet("items", "/assets/items/atlas.png", {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
     for (const w of WORLDS) {
       this.load.spritesheet(
         w.id + "-projectiles",
@@ -134,6 +140,8 @@ class ForestRenderer {
   light: Phaser.GameObjects.Image;
   tick = 0;
   lastHp = 100;
+  aura: Phaser.GameObjects.Graphics;
+  gear: Phaser.GameObjects.Image;
   skin = "";
   constructor(
     private scene: Phaser.Scene,
@@ -189,6 +197,8 @@ class ForestRenderer {
     const border = scene.add.graphics().setDepth(-90);
     border.lineStyle(14, 0x142c26, 0.8);
     border.strokeRect(9, 9, FOREST.width - 18, FOREST.height - 18);
+    this.aura = scene.add.graphics();
+    this.gear = scene.add.image(0, 0, "items", 0).setVisible(false);
     this.player = scene.add.image(900, 700, "player").setScale(2);
     this.health = scene.add.graphics();
     this.telegraphs = scene.add.graphics().setDepth(8);
@@ -271,6 +281,27 @@ class ForestRenderer {
     this.player.setFrame(playerFrame);
     if (g.player.hp < this.lastHp && !reduced) camera.shake(110, 0.0025);
     this.lastHp = g.player.hp;
+    this.aura.clear();
+    this.gear.setVisible(!!g.appearance);
+    if (g.appearance) {
+      const color = Phaser.Display.Color.HexStringToColor(
+        RARITIES[g.appearance.rarity].color,
+      ).color;
+      this.aura
+        .setDepth(g.player.y - 2)
+        .lineStyle(1.5, color, 0.65)
+        .strokeEllipse(g.player.x, g.player.y + 19, 34, 13);
+      this.gear
+        .setFrame(g.appearance.icon)
+        .setPosition(
+          g.player.x + (Math.cos(g.player.angle) < 0 ? -18 : 18),
+          g.player.y + 2,
+        )
+        .setScale(0.65)
+        .setDepth(g.player.y + 4)
+        .setFlipX(Math.cos(g.player.angle) < 0);
+    }
+
     const hp = this.health;
     hp.clear().setDepth(7000);
     let i = 0;
@@ -458,6 +489,8 @@ export class GameScene extends Phaser.Scene {
   terminalTime = 0;
   reported = false;
   runId = "";
+  tonicPending = false;
+  tonicReceipts = new Set<string>();
   constructor() {
     super("GameScene");
   }
@@ -470,6 +503,9 @@ export class GameScene extends Phaser.Scene {
     this.terminalTime = 0;
     this.reported = false;
     this.runId = crypto.randomUUID();
+    this.simulation.id = this.runId;
+    this.tonicPending = false;
+    this.tonicReceipts.clear();
     this.joystick = null;
     this.pointer = null;
   }
@@ -487,6 +523,7 @@ export class GameScene extends Phaser.Scene {
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     const escape = () => {
+      if (this.tonicPending) return;
       togglePause(g);
       this.clearInput();
       this.publish();
@@ -658,6 +695,38 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.resetKeys();
   }
   command(command: Command) {
+    if (command.type === "tonic-lock") {
+      if (command.runId === this.runId && this.simulation.phase === "paused")
+        this.tonicPending = true;
+      return;
+    }
+    if (command.type === "tonic-unlock") {
+      if (command.runId === this.runId) this.tonicPending = false;
+      return;
+    }
+    if (command.type === "tonic") {
+      if (
+        command.runId === this.runId &&
+        this.simulation.phase === "paused" &&
+        !this.tonicReceipts.has(command.receiptId)
+      ) {
+        this.tonicReceipts.add(command.receiptId);
+        if (command.definitionId === "health-tonic")
+          this.simulation.player.hp = Math.min(
+            this.simulation.player.maxHp,
+            this.simulation.player.hp + 35,
+          );
+        else if (this.simulation.build) {
+          this.simulation.focus = 20;
+          applyBuild(this.simulation, this.simulation.build);
+        }
+        this.publish();
+      }
+      this.tonicPending = false;
+      return;
+    }
+    if (this.tonicPending) return;
+
     switch (command.type) {
       case "start":
         this.scene.restart({ weapon: command.weapon, stage: command.stage });

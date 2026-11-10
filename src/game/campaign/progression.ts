@@ -1,3 +1,4 @@
+import type { RpgState } from "../rpg/model";
 import {
   ITEM_IDS,
   STAGES,
@@ -6,6 +7,7 @@ import {
   type DifficultyId,
 } from "./content";
 export type Progress = {
+  rpg?: RpgState;
   version: 1;
   clears: string[];
   receipts: string[];

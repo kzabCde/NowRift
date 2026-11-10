@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./rpg.css";
 
 export const metadata: Metadata = {
   applicationName: "NowRift",

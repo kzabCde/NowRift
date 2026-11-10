@@ -1,4 +1,6 @@
 "use client";
+import { calculateStats, campaignLoadout } from "@/game/rpg/stats";
+import type { WeaponId } from "@/game/content/forest";
 import { useEffect, useState } from "react";
 import {
   WORLDS,
@@ -19,9 +21,11 @@ import type { StageSelection } from "@/game/campaign/loader";
 export default function WorldMap({
   onStart,
   onBack,
+  weapon = "arcane",
 }: {
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
+  weapon?: WeaponId;
 }) {
   const [world, setWorld] = useState<WorldId>("forest"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
@@ -181,14 +185,18 @@ export default function WorldMap({
           <p>
             {w.materials.map((x) => x.replaceAll("-", " ")).join(" · ")}
             <br />
-            Boss candidate: {w.boss.reward.replaceAll("-", " ")}
+            Boss relic: {w.boss.reward.replaceAll("-", " ")}
           </p>
           <p className="muted">
-            First clears grant additional gold, XP and materials. Equipment
-            candidates are stored for Phase 3; no inventory is simulated.
+            First clears grant additional gold, XP, materials and equipment.
+            Boss relics become real owned gear. Excess loot remains in protected
+            inventory parcels.
           </p>
           <div className="campaign-wallet">
-            {progress.gold} GOLD · {progress.xp} PROFILE XP
+            YOUR POWER {calculateStats(progress, weapon).power}
+            <br />
+            <span data-testid="campaign-gold">{progress.gold} GOLD</span> ·{" "}
+            {progress.xp} PROFILE XP
             <br />
             {Object.entries(progress.materials).map(([id, n]) => (
               <small key={id}>
@@ -216,6 +224,7 @@ export default function WorldMap({
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
+                  ...campaignLoadout(progress, weapon),
                 });
             }}
           >

@@ -6,6 +6,8 @@ import {
   type LootTableDefinition,
 } from "./content";
 export type Rewards = {
+  equipmentCount?: number;
+  overflow?: number;
   gold: number;
   xp: number;
   materials: Record<string, number>;

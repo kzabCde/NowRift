@@ -1,3 +1,5 @@
+import { temporaryStats, incomingDamage } from "./rpg/stats";
+import type { CharacterStats, Rarity } from "./rpg/model";
 import {
   environmentStep,
   campaignBossAttack,
@@ -93,6 +95,10 @@ export type Hazard = {
   damage: number;
 };
 export type Game = {
+  id?: string;
+  build?: CharacterStats;
+  focus: number;
+  appearance?: { rarity: Rarity; icon: number };
   campaign?: StageRuntime;
   phase: GamePhase;
   width: number;
@@ -115,6 +121,7 @@ export type Game = {
     speed: number;
     angle: number;
     invincible: number;
+    armor?: number;
     moving: boolean;
     hit: number;
   };
@@ -151,6 +158,7 @@ export type Game = {
   };
 };
 export type Snapshot = {
+  runId?: string;
   statuses: string[];
   phase: GamePhase;
   hp: number;
@@ -184,6 +192,7 @@ export function makeGame(
   const w = WEAPONS[weaponId];
   return {
     phase: "menu",
+    focus: 0,
     width,
     height,
     time: 0,
@@ -250,12 +259,14 @@ export function togglePause(g: Game) {
 export function snapshot(g: Game): Snapshot {
   const boss = g.enemies.find((e) => e.kind === "boss");
   return {
+    runId: g.id,
     statuses: g.campaign
       ? [
           ...(g.campaign.slow > 0
             ? [g.campaign.world.hazard.kind === "ice" ? "CHILLED" : "HINDERED"]
             : []),
           ...(g.campaign.burn > 0 ? ["BURNING"] : []),
+          ...(g.focus > 0 ? ["FOCUSED"] : []),
           ...(g.campaign.exposure > 0 && g.campaign.exposure < 0.8
             ? [
                 g.campaign.world.id === "infernal"
@@ -378,6 +389,7 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
       g.pickupRadius += 30;
       break;
   }
+  if (g.build) applyBuild(g, g.build);
   g.offers = [];
   g.phase = "playing";
   emit(g, g.player.x, g.player.y, "#e9cf82", 30);
@@ -386,7 +398,18 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
 }
 function checkLevel(g: Game) {
   if (g.xp < g.xpToNext) return;
-  const available = UPGRADES.filter((u) => (g.stacks[u.id] ?? 0) < u.max);
+  const available = UPGRADES.filter(
+    (u) =>
+      (g.stacks[u.id] ?? 0) < u.max &&
+      !(
+        u.id === "critical" && g.weapon.crit >= (g.build ? 0.75 : 0.5) - 0.00001
+      ) &&
+      !(u.id === "multishot" && g.weapon.projectiles >= 8) &&
+      !(u.id === "stride" && g.player.speed >= 360) &&
+      !(u.id === "vitality" && g.player.maxHp >= 5000) &&
+      !(u.id === "regen" && g.regen >= 20) &&
+      !(u.id === "area" && g.weapon.area >= 4),
+  );
   if (!available.length) return;
   g.xp -= g.xpToNext;
   g.level++;
@@ -500,6 +523,7 @@ function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
 function hurt(g: Game, amount: number, from: { x: number; y: number }) {
   const p = g.player;
   if (p.invincible > 0 || g.phase !== "playing") return;
+  amount = incomingDamage(amount, p.armor ?? 0);
   p.hp = Math.max(0, p.hp - amount);
   p.invincible = 0.7;
   p.hit = 0.2;
@@ -750,6 +774,10 @@ export function updateGame(
   const step = Math.min(0.05, Math.max(0, dt));
   if (!step) return;
   const p = g.player;
+  if (g.focus > 0) {
+    g.focus = Math.max(0, g.focus - step);
+    if (g.focus === 0 && g.build) applyBuild(g, g.build);
+  }
   g.time += step;
   g.wave = 1 + Math.floor(g.time / 60);
   p.invincible = Math.max(0, p.invincible - step);
@@ -978,7 +1006,8 @@ export function updateGame(
       else if (e.kind === "elite") g.campaign.elites++;
       else g.campaign.enemies++;
     }
-    g.gold += ENEMIES[e.kind].gold;
+    // Legacy practice score only. Campaign currency is settled by the economy service.
+    if (!g.campaign) g.gold += ENEMIES[e.kind].gold;
     const drop = g.pools.drops.pop() ?? ({} as Drop);
     Object.assign(drop, {
       x: e.x,
@@ -996,7 +1025,7 @@ export function updateGame(
     g.enemies.splice(i, 1);
     if (e.kind === "boss") {
       g.phase = "victory";
-      g.gold += 150;
+      if (!g.campaign) g.gold += 150;
     }
   }
   while (g.drops.length > FOREST.maxDrops) {
@@ -1040,4 +1069,21 @@ export function advanceEffects(g: Game, step: number) {
     t.age += step;
     if (t.age > t.life) g.texts.splice(i, 1);
   }
+}
+
+/** The same derived build used by the character screen feeds the simulation once per change. */
+export function applyBuild(g: Game, base: CharacterStats, fullHealth = false) {
+  g.build = base;
+  const s = temporaryStats(base, g.weaponId, g.stacks, g.focus > 0);
+  Object.assign(g.player, { maxHp: s.maxHp, speed: s.speed, armor: s.armor });
+  g.player.hp = fullHealth ? s.maxHp : Math.min(g.player.hp, s.maxHp);
+  Object.assign(g.weapon, {
+    damage: s.damage,
+    delay: s.interval,
+    crit: s.critChance,
+    critDamage: s.critDamage,
+    projectiles: s.projectiles,
+    area: s.area,
+  });
+  g.regen = s.regen;
 }

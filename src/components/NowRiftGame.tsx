@@ -13,6 +13,7 @@ import {
 import { stageById, worldById, DIFFICULTIES } from "@/game/campaign/content";
 import type { StageSelection } from "@/game/campaign/loader";
 import { campaignRepository } from "@/game/campaign/persistence";
+import { campaignLoadout } from "@/game/rpg/stats";
 import type { Rewards } from "@/game/campaign/rewards";
 import { runRepository } from "@/game/services/saves";
 import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
@@ -31,7 +32,14 @@ export default function NowRiftGame({
 }: Props) {
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
+  const resultRun = useRef<string | null>(null);
+  const pendingResult = useRef<Promise<void> | null>(null),
+    startGuard = useRef(false);
+  const [starting, setStarting] = useState(false);
   const [reward, setReward] = useState<Rewards | null>(null);
+  const [tonics, setTonics] = useState<Record<string, number>>({}),
+    [tonicBusy, setTonicBusy] = useState(false);
+  const tonicGuard = useRef(false);
   const bridge = useMemo(() => new GameBridge(), []);
   const [hud, setHud] = useState<Snapshot>(() =>
     snapshot(makeGame(FOREST.width, FOREST.height, weapon)),
@@ -59,25 +67,35 @@ export default function NowRiftGame({
           bridge.emit("command", { type: "start", weapon, stage });
       }),
       bridge.on("result", (run) => {
-        if (run.campaign)
-          campaignRepository
-            .settle(run.campaign)
-            .then((r) => setReward(r.reward))
-            .catch((e) =>
-              setError(
-                "Campaign save failed; progression was not changed. " +
-                  String(e),
-              ),
-            );
+        resultRun.current = run.id;
         setSave("Saving run record…");
-        runRepository
-          .put(run)
-          .then(() => setSave("Run record saved on this device."))
-          .catch(() =>
-            setSave(
-              "Run record could not be saved. You can keep playing; previous records are preserved.",
-            ),
-          );
+        pendingResult.current = (async () => {
+          let recordedGold = run.gold;
+          if (run.campaign) {
+            try {
+              const settled = await campaignRepository.settle(run.campaign);
+              recordedGold = settled.reward?.gold ?? 0;
+              if (resultRun.current === run.id) setReward(settled.reward);
+            } catch (e) {
+              recordedGold = 0;
+              if (resultRun.current === run.id)
+                setError(
+                  "Campaign save failed; progression was not changed. " +
+                    String(e),
+                );
+            }
+          }
+          try {
+            await runRepository.put({ ...run, gold: recordedGold });
+            if (resultRun.current === run.id)
+              setSave("Run record saved on this device.");
+          } catch {
+            if (resultRun.current === run.id)
+              setSave(
+                "Run record could not be saved. You can keep playing; previous records are preserved.",
+              );
+          }
+        })();
         try {
           const best = Math.max(
             parseBestKills(localStorage.getItem(BEST_SCORE_KEY)),
@@ -90,6 +108,7 @@ export default function NowRiftGame({
       }),
     ];
     return () => {
+      resultRun.current = null;
       off.forEach((fn) => fn());
     };
   }, [autoStart, bridge, weapon, stage]);
@@ -97,13 +116,76 @@ export default function NowRiftGame({
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
   }, [immersive]);
-  const pause = () => bridge.emit("command", { type: "pause" });
-  const start = () => {
-    setSave("");
-    setReward(null);
-    bridge.emit("command", { type: "start", weapon, stage });
+  useEffect(() => {
+    if (stage && (hud.phase === "paused" || hud.phase === "playing"))
+      campaignRepository
+        .load()
+        .then((p) => setTonics(p.rpg?.consumables ?? {}))
+        .catch(() => {});
+  }, [stage, hud.phase]);
+  const useTonic = async (definitionId: "health-tonic" | "focus-tonic") => {
+    if (tonicGuard.current || !hud.runId || hud.phase !== "paused" || !stage)
+      return;
+    tonicGuard.current = true;
+    setTonicBusy(true);
+    const runId = hud.runId,
+      id = "tonic-" + crypto.randomUUID();
+    bridge.emit("command", { type: "tonic-lock", runId });
+    try {
+      const p = await campaignRepository.load();
+      const result = await campaignRepository.act({
+        id,
+        at: Date.now(),
+        expectedRevision: p.rpg!.revision,
+        action: { type: "consume", definitionId },
+      });
+      setTonics(result.progress.rpg!.consumables);
+      bridge.emit("command", {
+        type: "tonic",
+        runId,
+        receiptId: id,
+        definitionId,
+      });
+    } catch (e) {
+      setError("Tonic could not be used. " + String(e));
+      bridge.emit("command", { type: "tonic-unlock", runId });
+    } finally {
+      tonicGuard.current = false;
+      setTonicBusy(false);
+    }
+  };
+  const pause = () => {
+    if (!tonicGuard.current) bridge.emit("command", { type: "pause" });
+  };
+  const start = async () => {
+    if (tonicGuard.current || startGuard.current) return;
+    startGuard.current = true;
+    setStarting(true);
+    try {
+      await pendingResult.current;
+      let selection = stage;
+      if (stage) {
+        const p = await campaignRepository.load();
+        selection = {
+          ...stage,
+          clears: p.clears,
+          ...campaignLoadout(p, weapon),
+        };
+      }
+      resultRun.current = null;
+      setSave("");
+      setReward(null);
+      setError("");
+      bridge.emit("command", { type: "start", weapon, stage: selection });
+    } catch (e) {
+      setError("Run could not start. " + String(e));
+    } finally {
+      startGuard.current = false;
+      setStarting(false);
+    }
   };
   const requestLeave = () => {
+    if (tonicGuard.current) return;
     if (["gameover", "victory", "menu"].includes(hud.phase)) {
       onExitToMenu?.();
       return;
@@ -208,7 +290,7 @@ export default function NowRiftGame({
               <button
                 className="action-button"
                 onClick={start}
-                disabled={!ready}
+                disabled={!ready || starting}
                 type="button"
               >
                 RESTART
@@ -334,6 +416,31 @@ export default function NowRiftGame({
                 <span className="eyebrow">TAKE A BREATH</span>
                 <h2>Paused</h2>
                 <p>The forest will wait.</p>
+                {stage && (
+                  <div className="run-tonics" aria-label="Campaign consumables">
+                    <button
+                      className="rpg-button"
+                      disabled={
+                        tonicBusy ||
+                        !tonics["health-tonic"] ||
+                        hud.hp >= hud.maxHp
+                      }
+                      onClick={() => void useTonic("health-tonic")}
+                    >
+                      CRIMSON TONIC ×{tonics["health-tonic"] ?? 0}
+                      <small>Restore 35 HP</small>
+                    </button>
+                    <button
+                      className="rpg-button"
+                      disabled={tonicBusy || !tonics["focus-tonic"]}
+                      onClick={() => void useTonic("focus-tonic")}
+                    >
+                      AZURE TONIC ×{tonics["focus-tonic"] ?? 0}
+                      <small>30% faster attacks / 20s</small>
+                    </button>
+                  </div>
+                )}
+                {tonicBusy && <p role="status">Using tonic…</p>}
                 <button
                   className="primary-button"
                   onClick={pause}
@@ -422,6 +529,9 @@ export default function NowRiftGame({
                       : "FARMING REWARDS · "}
                     {reward.gold} gold · {reward.xp} XP
                     <br />
+                    {reward.equipmentCount ?? 0} equipment ·{" "}
+                    {reward.overflow ?? 0} protected overflow parcels
+                    <br />
                     {Object.entries(reward.materials)
                       .map(([id, n]) => `${id.replaceAll("-", " ")} ×${n}`)
                       .join(" · ")}
@@ -435,7 +545,8 @@ export default function NowRiftGame({
                     <strong>{hud.kills}</strong>ENEMIES SLAIN
                   </span>
                   <span>
-                    <strong>{hud.gold}</strong>RUN GOLD
+                    <strong>{stage ? (reward?.gold ?? "…") : hud.gold}</strong>
+                    {stage ? "BANKED GOLD" : "PRACTICE SCORE"}
                   </span>
                 </div>
                 <p className="save-message" role="status">
@@ -444,6 +555,7 @@ export default function NowRiftGame({
                 <button
                   className="primary-button"
                   onClick={start}
+                  disabled={starting}
                   type="button"
                 >
                   TRY AGAIN <span>→</span>
@@ -456,8 +568,9 @@ export default function NowRiftGame({
                   RETURN TO MAIN MENU
                 </button>
                 <small className="muted">
-                  Run gold is a score in Phase 1; it has no permanent spending
-                  system.
+                  {stage
+                    ? "Earned gold, materials and equipment are banked for your RPG inventory. Gear changes apply when a new campaign run starts."
+                    : "Practice gold is a run score. Enter the World Map campaign to earn permanent inventory rewards."}
                 </small>
               </div>
             )}
