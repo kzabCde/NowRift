@@ -1,5 +1,5 @@
-import { useI18n } from "@/i18n/useI18n";
 "use client";
+import { useI18n } from "@/i18n/useI18n";
 import { useState } from "react";
 import { Modal, PixelIcon } from "./GameUi";
 import {
@@ -37,7 +37,7 @@ export function CharacterSelection({
         <span
           className={`character-sprite character-${preview}`}
           role="img"
-          aria-label={`${text(c.name)} idle preview`}
+          aria-label={`${text(c.name)} ${t("sanctuary","idle preview")}`}
         />
         <div>
           <span className="eyebrow">{text(c.title)}</span>
@@ -66,7 +66,7 @@ export function CharacterSelection({
           ["CRITICAL", `${Math.round(c.crit * 100)}%`],
         ].map(([label, value]) => (
           <div key={text(label)}>
-            <span>{label}</span>
+            <span>{text(label)}</span>
             <strong>{value}</strong>
           </div>
         ))}
@@ -104,15 +104,11 @@ export function Inventory({
     try {
       const p = await campaignRepository[action](id as RelicId);
       onChange(p);
-      setNotice(
-        action === "equip"
-          ? t("sanctuary","Equipment saved. Applies to your next run.")
-          : t("sanctuary","Relic enhanced. Saved on this device."),
-      );
+      setNotice(action === "equip" ? "Equipment saved. Applies to your next run." : "Relic enhanced. Saved on this device.");
       audio.play(action === "equip" ? "equip" : "upgrade");
     } catch (e) {
       setNotice(
-        e instanceof Error ? e.message : t("sanctuary","Equipment could not be saved."),
+        e instanceof Error ? e.message : "Equipment could not be saved.",
       );
       audio.play("error");
     } finally {
@@ -209,7 +205,7 @@ export function Inventory({
         )}
       </div>
       <p role="status" className="audio-status">
-        {busy ? t("sanctuary","Saving equipment…") : notice}
+        {busy ? t("sanctuary","Saving equipment…") : text(notice)}
       </p>
       <p className="muted">{t("sanctuary","Campaign rewards and equipment are saved on this device. Enhancements spend the displayed resources immediately. Run blessings are temporary.")}{" "}</p>
       <button className="primary-button" onClick={onClose} type="button">{t("sanctuary","DONE")}{" "}</button>

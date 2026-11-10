@@ -1,6 +1,6 @@
+"use client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
-"use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { audio } from "@/game/audio/engine";
 import { QUALITY, useSettings } from "@/state/settings";
@@ -236,11 +236,11 @@ export function Settings({ onClose }: { onClose: () => void }) {
           ).map(([key, label]) => (
             <label className="volume-row" key={key}>
               <span>
-                {label}
+                {text(label)}
                 <output>{Math.round(prefs[key] * 100)}%</output>
               </span>
               <input
-                aria-label={label}
+                aria-label={text(label)}
                 type="range"
                 min="0"
                 max="1"

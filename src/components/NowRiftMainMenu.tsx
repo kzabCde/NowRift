@@ -1,6 +1,6 @@
+"use client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
-"use client";
 import Atmosphere from "./Atmosphere";
 import { CharacterSelection, Inventory } from "./Sanctuary";
 import { CHARACTERS, type CharacterId, type Loadout } from "@/game/loadout";

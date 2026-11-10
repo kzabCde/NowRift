@@ -1,6 +1,6 @@
+"use client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
-"use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CHARACTERS, RELICS, type RelicId, type Loadout } from "@/game/loadout";
 import PhaserHost from "./PhaserHost";
@@ -168,15 +168,13 @@ export default function NowRiftGame({
               {world ? (
                 text(world.name)
               ) : (
-                <>
-                  Whispering <em>Forest</em>
-                </>
+                <>{t("main","Whispering")} <em>{t("main","Forest")}</em></>
               )}
             </h1>
           </div>
           <p>
             {definition && stage ? (
-              `${definition.name} · ${stage.difficulty.toUpperCase()} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game","then defeat the guardian") : t("game","survival")}`
+              `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game","then defeat the guardian") : t("game","survival")}`
             ) : (
               <>{t("game","Survive until")}{" "}<strong>08:00</strong>{t("game",". Defeat the Forest Guardian.")}{" "}</>
             )}
@@ -186,7 +184,7 @@ export default function NowRiftGame({
           <div className="game-topbar">
             <div className="sector-heading">
               <span className="live-dot" />{" "}
-              {text(world?.name ?? "Whispering Forest").toUpperCase() ?? t("game","WHISPERING FOREST")}{" "}
+              {text(world?.name ?? "Whispering Forest").toUpperCase()}{" "}
               <span className="game-state">
                 {hud.phase === "playing" ? t("game","LIVE RUN") : text(hud.phase.toUpperCase())}
               </span>
@@ -333,7 +331,7 @@ export default function NowRiftGame({
                           : t("game","BREAK THE GUARDIAN")}
                 </span>
                 <span className="touch-hint">
-                  {touch ? "MOVING" : t("game","DRAG TO MOVE")}
+                  {touch ? text("MOVING") : t("game","DRAG TO MOVE")}
                 </span>
               </>
             )}
@@ -403,7 +401,7 @@ export default function NowRiftGame({
             {terminal && (
               <DialogSurface
                 className="arena-overlay results-overlay"
-                title={hud.phase === "victory" ? "Victory" : "Defeat"}
+                title={hud.phase === "victory" ? text("VICTORY") : text("GAMEOVER")}
               >
                 <span className="eyebrow">
                   {hud.phase === "victory"

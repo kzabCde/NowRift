@@ -1,5 +1,5 @@
-import { useI18n } from "@/i18n/useI18n";
 "use client";
+import { useI18n } from "@/i18n/useI18n";
 import Atmosphere from "./Atmosphere";
 import { audio } from "@/game/audio/engine";
 import { useEffect, useState } from "react";

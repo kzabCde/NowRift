@@ -1,6 +1,7 @@
-import { useI18n } from "@/i18n/useI18n";
 "use client";
+import { useI18n } from "@/i18n/useI18n";
 export default function ErrorPage({ reset }: { reset: () => void }) {
+  const { t } = useI18n();
   return (
     <main className="modal-shade">
       <section className="modal-panel">
