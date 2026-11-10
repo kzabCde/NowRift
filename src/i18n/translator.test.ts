@@ -7,6 +7,7 @@ describe("offline internationalization", () => {
     expect(translate("en", "main", "Settings")).toBe("Settings");
     expect(translate("th", "main", "Settings")).toBe("ตั้งค่า");
     expect(translateText("th", "Whispering Forest")).toBe("ป่ากระซิบ");
+    expect(translateText("th", "slime")).toBe("สไลม์");
     expect(translateText("en", "unrecognized")).toBe("unrecognized");
   });
   it("detects and persists only valid locales", () => {

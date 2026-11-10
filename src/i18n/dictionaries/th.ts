@@ -500,6 +500,13 @@ export const th = {
     "verdant-relic": "วัตถุโบราณพฤกษา",
     "solar-relic": "วัตถุโบราณสุริยะ",
     "glacial-relic": "วัตถุโบราณน้ำแข็ง",
-    "sovereign-relic": "วัตถุโบราณราชัน"
+    "sovereign-relic": "วัตถุโบราณราชัน",
+    "slime": "สไลม์",
+    "goblin": "ก็อบลิน",
+    "wolf": "หมาป่า",
+    "caster": "จอมเวท",
+    "elite": "ศัตรูชั้นสูง",
+    "boss": "บอส",
+    "player": "ผู้เล่น"
   }
 } as const;

@@ -48,3 +48,18 @@ test("a new Thai-speaking visitor uses Thai without server hydration errors", as
     expect(errors).toEqual([]);
   } finally { await context.close(); }
 });
+
+test("Thai locale and installation metadata remain available offline after caching", async ({ page, context, request }) => {
+  const manifest = await (await request.get("/manifest.th.webmanifest")).json();
+  expect(manifest.name).toContain("NowRift");
+  expect(manifest.description).toContain("ออฟไลน์");
+  await page.goto("/");
+  await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await page.locator(".language-switcher.compact button").nth(1).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "th");
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveAttribute("lang", "th");
+  await expect(page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ })).toBeVisible();
+});

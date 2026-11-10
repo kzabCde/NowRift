@@ -1,3 +1,5 @@
+import { translateText } from "../../i18n/translator";
+import { useLocale } from "../../state/locale";
 import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
 import { CombatVfx } from "./combat-vfx";
 import { audio } from "../audio/engine";
@@ -529,7 +531,7 @@ class ForestRenderer {
       i++;
       label
         .setVisible(true)
-        .setText(t.value + (t.critical ? "!" : ""))
+        .setText(translateText(useLocale.getState().locale, t.value) + (t.critical ? "!" : ""))
         .setColor(
           t.critical
             ? "#ffe0a2"
