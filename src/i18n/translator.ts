@@ -7,7 +7,7 @@ const groups: ReadonlyArray<Record<string, string>> = Object.values(th);
 const content = Object.assign({}, ...groups) as Record<string, string>;
 const missing = new Set<string>();
 function interpolate(value: string, vars?: Variables): string {
-  return value.replace(/\\{([a-zA-Z][\\w]*)\\}/g, (full, key: string) =>
+  return value.replace(/\{([a-zA-Z][\w]*)\}/g, (full, key: string) =>
     vars && Object.hasOwn(vars, key) ? String(vars[key]) : full,
   );
 }
@@ -26,11 +26,11 @@ export function translateText(locale: Locale, source: string): string {
   if (missingArt) return translate(locale, "game", "Missing art: {asset}", { asset: missingArt[1] });
   if (exact) return exact;
   // Existing progression messages keep their stable English return values for saved-state compatibility.
-  const all = /^Clear all five (NORMAL|HARD|NIGHTMARE) stages in this world\\.$/.exec(source);
+  const all = /^Clear all five (NORMAL|HARD|NIGHTMARE) stages in this world\.$/.exec(source);
   if (all) return translate(locale, "world", "Clear all five {difficulty} stages in this world.", { difficulty: content[all[1]] ?? all[1] });
-  const stage = /^Clear Stage (\\d+) on (NORMAL|HARD|NIGHTMARE)\\.$/.exec(source);
+  const stage = /^Clear Stage (\d+) on (NORMAL|HARD|NIGHTMARE)\.$/.exec(source);
   if (stage) return translate(locale, "world", "Clear Stage {stage} on {difficulty}.", { stage: stage[1], difficulty: content[stage[2]] ?? stage[2] });
-  if (/^Defeat the previous world’s Normal final boss\\.$/.test(source)) return translate(locale, "world", "Defeat the previous world’s Normal final boss.");
+  if (/^Defeat the previous world’s Normal final boss\.$/.test(source)) return translate(locale, "world", "Defeat the previous world’s Normal final boss.");
   if (source.startsWith("Campaign save failed; progression was not changed. ")) return content["Campaign save failed; progression was not changed. "] + source.slice("Campaign save failed; progression was not changed. ".length);
   return source;
 }
