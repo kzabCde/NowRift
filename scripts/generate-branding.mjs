@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { inflateSync, deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
