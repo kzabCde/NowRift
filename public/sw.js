@@ -1,5 +1,5 @@
 /* NowRift Phase 2 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v7-locales";
+const VERSION = "nowrift-pwa-v8-official-brand";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -64,6 +64,9 @@ const CORE_URLS = [
   "/",
   "/manifest.webmanifest",
   "/manifest.th.webmanifest",
+  "/branding/nowrift-logo-black.png",
+  "/branding/nowrift-logo-transparent.png",
+  "/icons/favicon-48.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
@@ -189,7 +192,7 @@ self.addEventListener("fetch", (event) => {
   if (
     !url.pathname.startsWith("/_next/static/") &&
     !CORE_URLS.includes(url.pathname) &&
-    url.pathname !== "/icon.svg"
+    url.pathname !== "/icons/favicon-48.png"
   )
     return;
   event.respondWith(

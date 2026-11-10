@@ -1,5 +1,6 @@
 "use client";
 import LanguageSwitcher from "./LanguageSwitcher";
+import Image from "next/image";
 import { useI18n } from "@/i18n/useI18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { audio } from "@/game/audio/engine";
@@ -291,16 +292,17 @@ export function Settings({ onClose }: { onClose: () => void }) {
   );
 }
 export function Brand() {
-  const { t } = useI18n();
   return (
     <div className="wordmark">
-      <span className="brand-rune" aria-hidden="true">
-        N
-      </span>
-      <span>
-        NOW<span className="gold">RIFT</span>
-        <small>{t("settings","A WORLD BETWEEN WORLDS")}</small>
-      </span>
+      <Image
+        className="nowrift-header-logo"
+        src="/branding/nowrift-logo-transparent.png"
+        width={384}
+        height={384}
+        alt="NowRift"
+        priority
+        unoptimized
+      />
     </div>
   );
 }
