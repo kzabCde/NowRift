@@ -1,5 +1,5 @@
-import NowRiftGame from "@/components/NowRiftGame";
+import NowRiftMainMenu from "@/components/NowRiftMainMenu";
 
 export default function Home() {
-  return <NowRiftGame />;
+  return <NowRiftMainMenu />;
 }

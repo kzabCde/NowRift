@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./main-menu.css";
 
 export const metadata: Metadata = {
   applicationName: "NowRift",
-  title: "NowRift — Survive the Rift",
-  description: "A mobile-ready Bullet Heaven roguelike demo. Auto-attack, level up, survive the rift, and play offline after your first load.",
+  title: "NowRift — Enter the Rift",
+  description: "Enter NowRift as a guest. Explore the main hub and play a mobile-ready Bullet Heaven roguelike demo with no account required.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
