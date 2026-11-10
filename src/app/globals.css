@@ -2667,7 +2667,7 @@ html[lang="th"] body{font-family:Tahoma,"Noto Sans Thai","Leelawadee UI",system-
 html[lang="th"] button,html[lang="th"] input,html[lang="th"] select{font-family:inherit}
 @media(max-width:600px){.language-switcher.compact button{min-width:28px;padding:5px}.topbar .header-right{flex-wrap:wrap;justify-content:flex-end;gap:6px}}
 
-/* Official NowRift identity — transparent logotype in every app header, dark emblem on the guest gateway. */
+/* Official NowRift identity — the transparent logo is shared by the gateway and all app headers. */
 .wordmark {
   min-width: 70px;
   flex: 0 0 auto;
@@ -2689,7 +2689,6 @@ html[lang="th"] button,html[lang="th"] input,html[lang="th"] select{font-family:
   height: auto;
   object-fit: contain;
   image-rendering: pixelated;
-  mix-blend-mode: screen;
   pointer-events: none;
   user-select: none;
 }

@@ -1,21 +1,18 @@
 # Official NowRift branding
 
-Both source logos are derived from the two files supplied by the project owner:
-- Opaque black-background artwork: the guest gateway emblem, emitted as `public/branding/nowrift-logo-black.png`.
-- Transparent artwork: header and Web App brand logo, plus PWA icons.
+NowRift uses only the **transparent pixel-art logo** supplied by the project owner. The legacy black-background logo has been removed from the guest gateway, source generator, PWA precache and output assets.
 
-To keep pixel-art edges crisp and avoid committing redundant binary assets, `scripts/branding-data.mjs` contains the palette-indexed artwork and `scripts/generate-branding.mjs` deterministically generates all seven PNGs. `npm run dev`, `npm test` and `npm run build` all run the generator first. The generated files do not depend on any network service and have no database dependency.
+The transparent logo is displayed across the guest gateway, desktop and mobile headers, World Map, and Web App. Pixel-art assets retain the supplied lettering, crescent, stars, floating islands and castle silhouette.
+
+`scripts/branding-data.mjs` holds the palette-indexed transparent artwork; `scripts/generate-branding.mjs` deterministically creates the PNG assets. `npm run dev`, `npm test`, and `npm run build` generate all assets locally with no external network, database or translation services. On rebuild, the generator removes the obsolete black-background PNG if it remains from a previous build.
 
 | Output | Dimensions | Usage |
 |---|---|---|
-| `branding/nowrift-logo-black.png` | 384×384 | Guest gateway |
-| `branding/nowrift-logo-transparent.png` | 384×384 | Desktop/mobile header |
+| `branding/nowrift-logo-transparent.png` | 384×384 | Guest gateway and desktop/mobile headers |
 | `icons/favicon-48.png` | 48×48 | Browser favicon |
 | `icons/icon-192.png` | 192×192 | PWA |
 | `icons/icon-512.png` | 512×512 | PWA |
-| `icons/icon-maskable-512.png` | 512×512 | Android maskable PWA icon with safe margins |
-| `icons/apple-touch-icon.png` | 180×180 | iOS home-screen icon |
+| `icons/icon-maskable-512.png` | 512×512 | Android maskable icon with safe margins |
+| `icons/apple-touch-icon.png` | 180×180 | iOS home screen |
 
-The app manifest retains English and Thai variants. The service worker cache version was incremented to refresh installed assets and precaches the new logos/icons. The legacy `src/app/icon.svg` is removed so it cannot override the updated PNG favicon.
-
-Design assets use eight sampled grayscale shades from the originals (pixel-art optimization), keeping the supplied lettering, castle silhouette, crescent, stars and floating islands.
+English and Thai PWA manifests reference the same icon assets. The service worker uses an incremented cache version to remove obsolete caches when installed PWA instances update.

@@ -1,5 +1,5 @@
 /* NowRift Phase 2 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v8-official-brand";
+const VERSION = "nowrift-pwa-v9-transparent-brand";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -64,7 +64,6 @@ const CORE_URLS = [
   "/",
   "/manifest.webmanifest",
   "/manifest.th.webmanifest",
-  "/branding/nowrift-logo-black.png",
   "/branding/nowrift-logo-transparent.png",
   "/icons/favicon-48.png",
   "/icons/icon-192.png",
