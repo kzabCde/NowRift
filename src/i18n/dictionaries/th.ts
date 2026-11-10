@@ -84,7 +84,8 @@ export const th = {
     "gold": "ทอง",
     "movement": "ความเร็ว",
     "HP": "พลังชีวิต",
-    "PROFILE": "โปรไฟล์"
+    "PROFILE": "โปรไฟล์",
+    "kill": "การกำจัด"
   },
   "game": {
     "A JOURNEY BEYOND THE BREACH": "การเดินทางข้ามรอยแยก",

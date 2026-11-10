@@ -41,7 +41,7 @@ export default function NowRiftGame({
   onExitToMenu,
   weapon = "arcane",
 }: Props) {
-  const { t, text, locale } = useI18n();
+  const { t, text } = useI18n();
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
   const [reward, setReward] = useState<Rewards | null>(null);

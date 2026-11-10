@@ -34,5 +34,10 @@ export function translateText(locale: Locale, source: string): string {
   if (source.startsWith("Campaign save failed; progression was not changed. ")) return content["Campaign save failed; progression was not changed. "] + source.slice("Campaign save failed; progression was not changed. ".length);
   return source;
 }
+export type PluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+export function plural(locale: Locale, count: number, forms: PluralForms, vars?: Variables): string {
+  const category = new Intl.PluralRules(locale === "th" ? "th-TH" : "en-US").select(count);
+  return interpolate(forms[category] ?? forms.other, { ...vars, count });
+}
 export function number(locale: Locale, value: number): string { return new Intl.NumberFormat(locale === "th" ? "th-TH" : "en-US", { numberingSystem: "latn" }).format(value); }
 export function date(locale: Locale, value: number | Date): string { return new Intl.DateTimeFormat(locale === "th" ? "th-TH" : "en-US", { dateStyle: "medium", calendar: "gregory", numberingSystem: "latn" }).format(value); }

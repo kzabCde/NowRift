@@ -20,7 +20,7 @@ import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
-  const { t, text, date } = useI18n();
+  const { t, text, date, plural } = useI18n();
   const [screen, setScreen] = useState<"gateway" | "lobby" | "game" | "worlds">(
     "gateway",
   );
@@ -454,7 +454,7 @@ export default function NowRiftMainMenu() {
                     </small>
                   </span>
                   <b>
-                    {r.kills} {t("main","kills")}
+                    {r.kills} {plural(r.kills, {one: t("main","kill"), other: t("main","kills")})}
                     <small>
                       {clock(r.seconds)} · {r.gold} {t("main","gold")}
                     </small>
