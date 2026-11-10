@@ -1,218 +1,427 @@
 "use client";
+import WorldMap from "./WorldMap";
+import type { StageSelection } from "@/game/campaign/loader";
 
-import { useEffect, useState } from "react";
-import NowRiftGame from "@/components/NowRiftGame";
-import PwaControls from "@/components/PwaControls";
-
-type Screen = "gateway" | "lobby" | "game";
-
-const BEST_SCORE_KEY = "nowrift-phase1-best-kills";
-
-function RiftMark() {
-  return (
-    <span className="nr-mark" aria-hidden="true">
-      <span className="nr-mark-core">N</span>
-      <span className="nr-mark-star">✦</span>
-    </span>
-  );
-}
-
-function Brand() {
-  return (
-    <span className="nr-brand">
-      <RiftMark />
-      <span className="nr-brand-word">NOW<span>RIFT</span><small>BEYOND THE BREACH</small></span>
-    </span>
-  );
-}
-
-function RiftVisual({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className={compact ? "nr-visual nr-visual-compact" : "nr-visual"} aria-hidden="true">
-      <div className="nr-visual-halo nr-visual-halo-outer" />
-      <div className="nr-visual-halo nr-visual-halo-middle" />
-      <div className="nr-visual-halo nr-visual-halo-inner" />
-      <div className="nr-visual-orbit nr-visual-orbit-one" />
-      <div className="nr-visual-orbit nr-visual-orbit-two" />
-      <div className="nr-visual-rift">
-        <div className="nr-visual-rift-core" />
-        <span className="nr-visual-rune">✧</span>
-      </div>
-      <span className="nr-visual-label nr-visual-label-one">NR–001 // ALPHA</span>
-      <span className="nr-visual-label nr-visual-label-two">RIFT STABILITY 74%</span>
-      <span className="nr-visual-corner nr-visual-corner-tl" />
-      <span className="nr-visual-corner nr-visual-corner-br" />
-    </div>
-  );
-}
-
-function LockedModule({ number, name, note }: { number: string; name: string; note: string }) {
-  return (
-    <div className="nr-locked-module" aria-disabled="true">
-      <span className="nr-module-number">{number}</span>
-      <div>
-        <strong>{name}</strong>
-        <small>{note}</small>
-      </div>
-      <span className="nr-locked-pill"><span aria-hidden="true">◇</span> SOON</span>
-    </div>
-  );
-}
-
+import { useCallback, useEffect, useState } from "react";
+import NowRiftGame from "./NowRiftGame";
+import PwaControls from "./PwaControls";
+import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
+import { WEAPONS, type WeaponId } from "@/game/content/forest";
+import { runRepository } from "@/game/services/saves";
+import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
+import type { RunResult } from "@/game/bridge";
+import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
-  const [screen, setScreen] = useState<Screen>("gateway");
-  const [bestKills, setBestKills] = useState(0);
-  const [controlsOpen, setControlsOpen] = useState(false);
-
+  const [screen, setScreen] = useState<"gateway" | "lobby" | "game" | "worlds">(
+    "gateway",
+  );
+  const [selection, setSelection] = useState<StageSelection | undefined>();
+  const [weapon, setWeapon] = useState<WeaponId>("arcane"),
+    [controls, setControls] = useState(false),
+    [settings, setSettings] = useState(false),
+    [history, setHistory] = useState(false);
+  const [runs, setRuns] = useState<RunResult[]>([]),
+    [best, setBest] = useState(0),
+    [warning, setWarning] = useState("");
+  const closeControls = useCallback(() => setControls(false), []),
+    closeSettings = useCallback(() => setSettings(false), []),
+    closeHistory = useCallback(() => setHistory(false), []);
+  useEffect(() => {
+    useSettings.getState().load();
+    // Warm browser-only async gameplay chunks as well as the initial app shell.
+    import("@/game/phaser/create-game")
+      .then(async () => {
+        if (
+          process.env.NODE_ENV !== "production" ||
+          !("serviceWorker" in navigator)
+        )
+          return;
+        const ready = await navigator.serviceWorker.ready;
+        const urls = performance
+          .getEntriesByType("resource")
+          .map((r) => r.name)
+          .filter(
+            (url) =>
+              new URL(url).origin === location.origin &&
+              new URL(url).pathname.startsWith("/_next/static/"),
+          );
+        ready.active?.postMessage({ type: "WARM_ASSETS", urls });
+      })
+      .catch(() => {
+        /* PhaserHost reports a failed load if the player starts a run. */
+      });
+  }, []);
   useEffect(() => {
     if (screen !== "lobby") return;
+    let cancelled = false;
+    runRepository
+      .list()
+      .then((r) => {
+        if (!cancelled) setRuns(r);
+      })
+      .catch((e) => {
+        if (!cancelled)
+          setWarning(
+            e instanceof Error
+              ? e.message
+              : "Local records are unavailable; gameplay still works.",
+          );
+      });
     try {
-      const saved = Number(window.localStorage.getItem(BEST_SCORE_KEY));
-      setBestKills(Number.isFinite(saved) ? Math.max(0, Math.floor(saved)) : 0);
+      setBest(parseBestKills(localStorage.getItem(BEST_SCORE_KEY)));
     } catch {
-      setBestKills(0);
+      setWarning(
+        "Browser storage is unavailable. Runs remain playable without saving.",
+      );
     }
-  }, [screen]);
-
-  useEffect(() => {
-    if (!controlsOpen) return;
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setControlsOpen(false);
+    return () => {
+      cancelled = true;
     };
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [controlsOpen]);
-
-  if (screen === "game") {
-    return <NowRiftGame autoStart onExitToMenu={() => setScreen("lobby")} />;
-  }
-
+  }, [screen]);
+  if (screen === "worlds")
+    return (
+      <main className="nr-main">
+        <header className="topbar">
+          <Brand />
+        </header>
+        <WorldMap
+          onBack={() => setScreen("lobby")}
+          onStart={(s) => {
+            setSelection(s);
+            setScreen("game");
+          }}
+        />
+      </main>
+    );
+  if (screen === "game")
+    return (
+      <NowRiftGame
+        autoStart
+        stage={selection}
+        weapon={weapon}
+        onExitToMenu={() => setScreen("lobby")}
+      />
+    );
   return (
     <main className="nr-main">
-      <div className="nr-backdrop-grid" aria-hidden="true" />
-      <div className="nr-ambient-light" aria-hidden="true" />
-      <header className="nr-topbar">
+      <header className="topbar">
         <Brand />
-        <div className="nr-top-actions">
-          <span className="nr-build-badge"><span className="nr-status-dot" /> PRE-ALPHA / v0.1</span>
+        <div className="header-right">
+          <span className="build-tag">
+            PHASE II <span>·</span> LOCAL ADVENTURE
+          </span>
           <PwaControls />
+          <button
+            className="quiet-button"
+            aria-label="Settings"
+            onClick={() => setSettings(true)}
+            type="button"
+          >
+            SETTINGS
+          </button>
         </div>
       </header>
-
       {screen === "gateway" ? (
-        <div className="nr-gateway">
-          <section className="nr-gateway-copy">
-            <div className="nr-kicker"><span /> THE WORLD BETWEEN WORLDS</div>
-            <h1 className="nr-gateway-title">NOW<span>RIFT</span><b>.</b></h1>
-            <p className="nr-gateway-tagline">ONE LIFE. INFINITE POSSIBILITIES.</p>
-            <p className="nr-gateway-description">
-              Fight against the endless breach. Collect power, evolve your build and survive as long as you can.
-              Your journey begins here.
+        <div className="gateway">
+          <div className="gateway-art" aria-hidden="true" />
+          <div className="gateway-content">
+            <span className="eyebrow">
+              <span className="eyebrow-rule" /> A LIGHT IN THE FORGOTTEN WOODS
+            </span>
+            <h1>
+              Beyond the breach.
+              <br />
+              <em>Into the unknown.</em>
+            </h1>
+            <p>
+              An ancient forest. A thousand restless souls.
+              <br />
+              One wanderer standing between worlds.
             </p>
-
-            <div className="nr-entry-box" aria-label="Choose how to enter NowRift">
-              <div className="nr-entry-top">
-                <span>SELECT ACCESS MODE</span>
-                <span>01 / 01 AVAILABLE</span>
-              </div>
-              <button type="button" className="nr-guest-option" onClick={() => setScreen("lobby")}>
-                <span className="nr-guest-symbol" aria-hidden="true">◈</span>
-                <span className="nr-guest-copy">
-                  <strong>CONTINUE AS GUEST</strong>
-                  <small>No account required · Jump straight into the demo</small>
-                </span>
-                <span className="nr-guest-arrow" aria-hidden="true">↗</span>
-              </button>
-              <div className="nr-locked-accounts" aria-label="Future account modes">
-                <div><span aria-hidden="true">⌁</span> SIGN IN <small>COMING SOON</small></div>
-                <div><span aria-hidden="true">＋</span> CREATE ACCOUNT <small>COMING SOON</small></div>
-              </div>
-              <p className="nr-entry-warning">Guest progress is not synced. Each run resets on exit; only your best kills are saved on this device.</p>
-            </div>
-          </section>
-          <div className="nr-gateway-art">
-            <RiftVisual />
-            <div className="nr-art-caption"><span>SECTOR ACCESS</span><span>UNRESTRICTED // GUEST</span></div>
+            <button
+              className="primary-button gateway-enter"
+              onClick={() => setScreen("lobby")}
+              type="button"
+            >
+              CONTINUE AS GUEST <span>→</span>
+            </button>
+            <small className="gateway-note">
+              No account. No connection required after caching.
+              <br />
+              Your run records stay on this device.
+            </small>
+          </div>
+          <div className="gateway-bottom">
+            <span>01 — WHISPERING FOREST</span>
+            <span>AN ORIGINAL PIXEL-ART ADVENTURE</span>
           </div>
         </div>
       ) : (
-        <div className="nr-lobby-shell">
-          <aside className="nr-sidebar" aria-label="Main menu navigation">
-            <div className="nr-side-heading">NAVIGATION <span>/ 01</span></div>
-            <div className="nr-nav-item nr-nav-item-current"><span className="nr-nav-glyph">▰</span><strong>PLAY</strong><span className="nr-side-current">ACTIVE</span></div>
-            <div className="nr-nav-item nr-nav-item-locked" aria-disabled="true"><span className="nr-nav-glyph">◇</span><span>CHARACTER</span><small>SOON</small></div>
-            <div className="nr-nav-item nr-nav-item-locked" aria-disabled="true"><span className="nr-nav-glyph">▦</span><span>INVENTORY</span><small>SOON</small></div>
-            <div className="nr-nav-item nr-nav-item-locked" aria-disabled="true"><span className="nr-nav-glyph">⬡</span><span>UPGRADES</span><small>SOON</small></div>
-            <div className="nr-nav-item nr-nav-item-locked" aria-disabled="true"><span className="nr-nav-glyph">◎</span><span>SOCIAL / PVP</span><small>SOON</small></div>
-            <div className="nr-side-footer">
-              <span>SESSION</span>
-              <div className="nr-side-profile"><span className="nr-avatar-mini">G</span><div><strong>GUEST</strong><small>LOCAL SESSION</small></div></div>
-              <button type="button" className="nr-exit-guest" onClick={() => setScreen("gateway")}>← CHANGE MODE</button>
+        <div className="hub-layout">
+          <aside className="hub-sidebar">
+            <span className="eyebrow">YOUR SANCTUARY</span>
+            <h2>
+              The Hub<span className="gold">.</span>
+            </h2>
+            <nav aria-label="Main navigation">
+              <button
+                className="nav-button"
+                onClick={() => setScreen("worlds")}
+              >
+                WORLD MAP →
+              </button>
+              <button
+                className="nav-button selected"
+                type="button"
+                onClick={() => {
+                  setHistory(false);
+                  setControls(false);
+                }}
+              >
+                <PixelIcon index={0} />
+                Embark<span>01</span>
+              </button>
+              <button
+                className="nav-button"
+                onClick={() => setHistory(true)}
+                type="button"
+              >
+                <PixelIcon index={5} />
+                Run records<span>{runs.length}</span>
+              </button>
+              <button
+                className="nav-button"
+                onClick={() => setControls(true)}
+                type="button"
+              >
+                <PixelIcon index={4} />
+                Field manual<span>↗</span>
+              </button>
+            </nav>
+            <div className="wanderer-card">
+              <span className="portrait" aria-hidden="true" />
+              <span className="eyebrow">LOCAL ADVENTURER</span>
+              <strong>Rift Wanderer</strong>
+              <small>Some journeys begin alone.</small>
+              <div className="nr-record">
+                <span>PERSONAL BEST</span>
+                <strong>
+                  {String(best).padStart(3, "0")} <small>KILLS</small>
+                </strong>
+              </div>
+              <button
+                className="quiet-button"
+                onClick={() => setScreen("gateway")}
+                type="button"
+              >
+                ← CHANGE MODE
+              </button>
             </div>
           </aside>
-
-          <div className="nr-lobby-main">
-            <div className="nr-lobby-heading">
-              <div><div className="nr-kicker"><span /> WELCOME TO THE RIFT</div><h1>THE <em>HUB.</em></h1><p>Choose your next move. For now, one arena is open.</p></div>
-              <span className="nr-guest-status"><span className="nr-status-dot" /> GUEST SESSION</span>
-            </div>
-
-            <section className="nr-play-panel" aria-labelledby="nr-play-title">
-              <div className="nr-play-copy">
-                <span className="nr-panel-label">AVAILABLE GAME MODE <span>01 / 01</span></span>
-                <div className="nr-live-line"><span className="nr-status-dot" /> SOLO SURVIVAL <small>PLAYABLE NOW</small></div>
-                <h2 id="nr-play-title">ENTER THE<br /><span>BREACH.</span></h2>
-                <p>Survive relentless waves, auto-attack incoming enemies, collect XP and select new abilities every level.</p>
-                <div className="nr-play-chips"><span>◈ 1 ARENA</span><span>✦ AUTO COMBAT</span><span>∞ ENDLESS WAVES</span></div>
-                <button className="nr-start-button" type="button" onClick={() => setScreen("game")}>
-                  <span>START NEW RUN</span><span aria-hidden="true">↗</span>
-                </button>
-                <button type="button" className="nr-controls-button" onClick={() => setControlsOpen(true)}>▧ VIEW CONTROLS & HOW TO PLAY</button>
+          <section className="hub-main">
+            <div className="hub-heading">
+              <div>
+                <span className="eyebrow">YOUR NEXT CHAPTER</span>
+                <h1>
+                  The forest <em>is calling.</em>
+                </h1>
               </div>
-              <div className="nr-play-art"><RiftVisual compact /><span>SECTOR 01 <b>—</b> THE BREACH</span></div>
-            </section>
-
-            <div className="nr-lobby-bottom">
-              <section className="nr-account-panel" aria-label="Guest record">
-                <div className="nr-card-heading"><span>PLAYER PROFILE</span><span className="nr-card-live">● ACTIVE</span></div>
-                <div className="nr-account-profile">
-                  <span className="nr-avatar-large">G<span>✦</span></span>
-                  <div><h3>GUEST EXPLORER</h3><p>Temporary session · No account</p></div>
-                </div>
-                <div className="nr-record"><span>YOUR BEST RUN</span><strong>{String(bestKills).padStart(3, "0")} <small>KILLS</small></strong></div>
-                <p className="nr-profile-footnote">Stored only on this browser. No cloud save or cross-device syncing.</p>
-              </section>
-              <section className="nr-future-panel" aria-label="Upcoming systems">
-                <div className="nr-card-heading"><span>UPCOMING SYSTEMS</span><span>ROADMAP</span></div>
-                <LockedModule number="02" name="STAGES & BOSSES" note="Maps, enemy variety and stage progression" />
-                <LockedModule number="03" name="CHARACTER & EQUIPMENT" note="Builds, gear, inventory and loot farming" />
-                <LockedModule number="04" name="PERSISTENT WORLD" note="Accounts, friends, trading and PvP" />
-              </section>
+              <span className="local-badge">
+                <span className="live-dot" /> SINGLE PLAYER
+              </span>
             </div>
-          </div>
-        </div>
-      )}
-
-      <footer className="nr-footer"><span>© NOWRIFT — PRE-ALPHA</span><span>NO DATABASE / SINGLE PLAYER</span><span>BUILD 0.1.0</span></footer>
-      {controlsOpen && (
-        <div className="nr-modal-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setControlsOpen(false);
-        }}>
-          <section className="nr-how-modal" role="dialog" aria-modal="true" aria-labelledby="nr-how-title">
-            <button className="nr-modal-close" type="button" aria-label="Close controls" onClick={() => setControlsOpen(false)}>✕</button>
-            <div className="nr-kicker"><span /> FIELD MANUAL</div>
-            <h2 id="nr-how-title">HOW TO <em>SURVIVE.</em></h2>
-            <div className="nr-how-row"><strong>MOVE</strong><span>WASD / ARROW KEYS or drag on the arena with your finger</span></div>
-            <div className="nr-how-row"><strong>ATTACK</strong><span>Your weapon automatically fires at nearby enemies</span></div>
-            <div className="nr-how-row"><strong>EVOLVE</strong><span>Collect dropped XP and choose one upgrade when you level up</span></div>
-            <div className="nr-how-row"><strong>PAUSE</strong><span>Tap Pause or press Escape; use Focus mode for more screen space</span></div>
-            <div className="nr-how-row"><strong>RECORD</strong><span>Best kills stay in this browser; the current run resets on exit</span></div>
-            <button className="nr-start-button" type="button" onClick={() => {
-              setControlsOpen(false);
-              setScreen("game");
-            }}>START NEW RUN <span aria-hidden="true">↗</span></button>
+            <section className="expedition-card" aria-labelledby="forest-title">
+              <div className="expedition-art" aria-hidden="true" />
+              <div className="expedition-top">
+                <span className="chapter-badge">CHAPTER I</span>
+                <span className="region-tag">THE VERDANT FRONTIER</span>
+              </div>
+              <div className="expedition-copy">
+                <span className="eyebrow">SURVIVAL / BOSS ENCOUNTER</span>
+                <h2 id="forest-title">
+                  Whispering
+                  <br />
+                  <em>Forest</em>
+                </h2>
+                <p>
+                  Something ancient stirs beneath the canopy.
+                  <br />
+                  Gather your strength. Break the Guardian’s hold.
+                </p>
+                <div className="expedition-meta">
+                  <span>
+                    <b>08</b> MINUTES TO BOSS
+                  </span>
+                  <span>
+                    <b>05</b> ENEMY ARCHETYPES
+                  </span>
+                  <span>
+                    <b>01</b> ANCIENT GUARDIAN
+                  </span>
+                </div>
+              </div>
+              <span className="art-coordinate" aria-hidden="true">
+                N 48° 12′ · THE FIRST BREACH
+              </span>
+            </section>
+            <button
+              className="primary-button campaign-entry"
+              onClick={() => setScreen("worlds")}
+            >
+              OPEN WORLD MAP · 20 STAGES →
+            </button>
+            <div className="loadout-heading">
+              <div>
+                <span className="eyebrow">YOUR STARTING COMPANION</span>
+                <h3>Choose your weapon</h3>
+              </div>
+              <span className="muted">Each path plays differently.</span>
+            </div>
+            <div className="weapon-grid">
+              {(Object.keys(WEAPONS) as WeaponId[]).map((id) => {
+                const w = WEAPONS[id];
+                return (
+                  <button
+                    className={`weapon-card ${weapon === id ? "selected" : ""}`}
+                    aria-pressed={weapon === id}
+                    key={id}
+                    onClick={() => setWeapon(id)}
+                    type="button"
+                  >
+                    <span className="weapon-number">0{w.icon + 1}</span>
+                    <PixelIcon index={w.icon} large />
+                    <strong>{w.name}</strong>
+                    <small>{w.description}</small>
+                    <span className="weapon-footer">
+                      {weapon === id ? "EQUIPPED" : "SELECT WEAPON"}
+                      <span>{weapon === id ? "✓" : "+"}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="embark-row">
+              <p>
+                <span className="live-dot" /> Ready when you are.
+                <small>
+                  100 HP · 180 movement speed · Temporary run upgrades
+                </small>
+              </p>
+              <button
+                className="primary-button embark-button"
+                onClick={() => {
+                  setSelection(undefined);
+                  setScreen("game");
+                }}
+                type="button"
+              >
+                START NEW RUN <span>→</span>
+              </button>
+            </div>
+            {warning && (
+              <p className="notice" role="status">
+                {warning}
+              </p>
+            )}
           </section>
         </div>
+      )}
+      <footer className="site-footer">
+        <span>
+          NOWRIFT <span className="gold">/</span> A WORLD BETWEEN WORLDS
+        </span>
+        <span>PHASE I · FOREST SURVIVAL · NO CLOUD SAVE</span>
+      </footer>
+      {settings && <Settings onClose={closeSettings} />}
+      {controls && (
+        <Modal title="How to survive" onClose={closeControls}>
+          <span className="eyebrow">THE WANDERER’S FIELD MANUAL</span>
+          <h2>How to survive</h2>
+          <div className="manual-row">
+            <strong>MOVE</strong>
+            <span>
+              WASD, arrow keys, or touch and drag anywhere on the arena.
+              Movement is normalized diagonally.
+            </span>
+          </div>
+          <div className="manual-row">
+            <strong>ATTACK</strong>
+            <span>
+              Your selected weapon attacks nearby enemies automatically. Daggers
+              favor close range; Frost Pulse slows enemies around you.
+            </span>
+          </div>
+          <div className="manual-row">
+            <strong>GROW</strong>
+            <span>
+              Collect emerald XP crystals. Choose one blessing each level. Red
+              crystals heal you.
+            </span>
+          </div>
+          <div className="manual-row">
+            <strong>SURVIVE</strong>
+            <span>
+              Use Pause or Escape. Focus mode fills your screen. Red root
+              circles warn before the Guardian strikes.
+            </span>
+          </div>
+          <div className="manual-row">
+            <strong>WIN</strong>
+            <span>
+              At eight minutes, defeat the Forest Guardian. At half health it
+              enrages. Run records are saved locally; active runs reset on exit.
+            </span>
+          </div>
+          <button
+            className="primary-button"
+            onClick={closeControls}
+            type="button"
+          >
+            UNDERSTOOD →
+          </button>
+        </Modal>
+      )}
+      {history && (
+        <Modal title="Run records" onClose={closeHistory}>
+          <span className="eyebrow">REMEMBER EVERY JOURNEY</span>
+          <h2>Run records</h2>
+          <p className="muted">
+            Your latest 20 completed runs, stored in IndexedDB on this device.
+          </p>
+          {runs.length ? (
+            <div className="run-records">
+              {runs.map((r) => (
+                <div className="run-record" key={r.id}>
+                  <PixelIcon index={WEAPONS[r.weapon].icon} />
+                  <span>
+                    <strong>
+                      {r.outcome === "victory"
+                        ? "Guardian defeated"
+                        : "Wanderer fallen"}
+                    </strong>
+                    <small>
+                      {WEAPONS[r.weapon].name} ·{" "}
+                      {new Date(r.at).toLocaleDateString()}
+                    </small>
+                  </span>
+                  <b>
+                    {r.kills} kills
+                    <small>
+                      {clock(r.seconds)} · {r.gold} gold
+                    </small>
+                  </b>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-record">
+              Your story is unwritten.
+              <br />
+              Complete a run to leave your first mark.
+            </p>
+          )}
+          {warning && <p className="notice">{warning}</p>}
+        </Modal>
       )}
     </main>
   );

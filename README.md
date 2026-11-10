@@ -1,124 +1,108 @@
-# NowRift
+# NowRift — Phase II: Worlds and Stage Progression
 
-**NowRift** is a browser-based Roguelike / Bullet Heaven RPG. The current build contains a guest-only entry menu, main hub, and playable Phase 1 single-player demo.
+A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four weapons and explore four worlds with twenty stages and persistent campaign unlocks. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
 
-> No Supabase, database, accounts, API keys, or hosted game server is required to play. The browser app can run locally or on Vercel.
+## Campaign
+
+Enter as a guest, choose your weapon, then open **World Map**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. The original **Start New Run** button remains a Phase I practice route.
+
+World-specific materials, gold, profile XP, first-clear bonuses and boss equipment candidates are stored locally. Full inventory/equipment mechanics are deferred to Phase III. See [Phase II architecture and validation](docs/phase-2-validation.md).
 
 ## Run locally
 
-Requires **Node.js 20.9+** and npm.
+Use Node **22.12+ or 24 LTS** (Node 24 was used for development) and npm. Versions are pinned in `package.json` and `package-lock.json`.
 
-```bash
-git clone https://github.com/kzabCde/NowRift.git
-cd NowRift
-npm install
+```sh
+npm ci
 npm run dev
 ```
 
-Open **http://localhost:3000**. For the new guest hub PR, switch to `feat/guest-main-menu` before installing dependencies.
+Production/PWA validation:
 
-### Quality checks
-
-```bash
-npm run typecheck
-npm test
+```sh
 npm run build
+npm run start
 ```
 
-## Gameplay (Phase 1)
+Use the guest gateway, choose your weapon in the Hub, and select **Start New Run**. The development server does not register a service worker. Production builds cache the app shell, async gameplay code, and local art for offline play after successful initial caching. Browser storage eviction or private browsing can remove/prevent caches and saves.
 
-- Move with **WASD**, arrow keys or touch-and-drag.
-- Your weapon **automatically targets the closest enemy** in range.
-- Survive increasingly difficult waves of drones, stalkers and brutes.
-- Kill enemies to earn credits and collect dropped XP.
-- Choose **one of three upgrades** each time you level up.
-- Pause/resume (button or Escape), restart, or retry after defeat.
-- Your **best kill count** is stored only in the browser's `localStorage` under `nowrift-phase1-best-kills`.
+## Controls
 
-This is a single-player prototype: credits, levels and upgrades reset with every run. Reloading the page ends the current run. Clearing browser site data resets the personal best.
+| Action | Desktop | Mobile |
+| --- | --- | --- |
+| Move | WASD / arrow keys | Touch and drag anywhere in the arena |
+| Attack | Automatic nearest-target attacks | Automatic |
+| Level up | Select one of three blessings | Tap one blessing |
+| Pause / resume | Escape / Pause | Pause / Resume |
+| Focus mode | Focus / Exit Focus | Focus / Exit Focus |
+| Settings | Reduced effects and camera scale | Same; saved per browser |
+
+Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or rotating changes the camera viewport without resizing/resetting the simulation world. Trees and rocks have collision footprints at their bases; foliage is depth-sorted above characters.
+
+## Combat and content
+
+- **Rift Wanderer:** 100 HP, 180 units/s, level 1. Arcane Bolt starts at 10 damage / 0.8 seconds.
+- **Arcane Bolt:** precise targeted magic projectiles.
+- **Twin Daggers:** paired fast projectiles, shorter range.
+- **Fire Orb:** slower projectile with splash damage on impact.
+- **Frost Pulse:** radial damage and a movement slow; projectile-count and velocity blessings have explicit pulse-specific effects.
+- **Enemies:** Moss Slime, Briar Goblin, bursting Forest Wolf, ranged Thorn Caster, and durable Armored Guardian.
+- **Blessings:** damage, attack speed, movement, maximum health, critical chance, critical damage, projectile count, projectile speed, area, regeneration, and pickup radius. Stacks are bounded; capped blessings are removed from offers.
+- **Survival:** basic enemies first; faster enemies from two minutes; casters and elites after four; mixed pressure after six. Spawn rates use simulation time, not frame count.
+- **Boss:** Forest Guardian spawns at 08:00, even if normal enemies fill the population cap. Root strikes lock positions and telegraph for 1.3 seconds; spreading projectile rings have dodgeable gaps. At 50% HP, strikes multiply and attacks accelerate. Normal spawns stop during the encounter.
+- **Victory:** kill the Guardian for its 100 gold plus 150 victory gold. Phase I gold is a run score, not a permanent currency. Defeat, victory, retry, and return-to-Hub are functional.
 
 ## Architecture
 
-| Area | Technology | Persistence |
-| --- | --- | --- |
-| App shell | Next.js App Router + React + TypeScript | None |
-| Combat | Custom HTML5 Canvas 2D game loop | In-memory state |
-| UI | Plain CSS; responsive layout | None |
-| Best score | Browser `localStorage` | This device only |
-| Database / auth / multiplayer | Not included in Phase 1 | None |
+| Location | Responsibility |
+| --- | --- |
+| `src/game/campaign/` | World/stage/difficulty definitions, seeded maps, hazards, unlocks, rewards and atomic campaign saves |
+| `src/components/WorldMap.tsx` | World atlas, stage selection, locks, boss preview and material wallet |
+| `src/game/content/forest.ts` | Enemy, weapon, blessing, obstacle, and stage definitions |
+| `src/game/engine.ts` | Framework-independent simulation, targeting, swept collisions, spatial buckets, object pools, XP and boss logic |
+| `src/game/phaser/` | Boot, Preload, MainMenu, Game, and Results scenes; rendering, camera and input |
+| `src/game/bridge.ts` | Typed, per-instance React ↔ Phaser commands and events |
+| `src/components/PhaserHost.tsx` | Browser-only dynamic import, instance ownership and teardown |
+| `src/components/NowRiftGame.tsx` | HUD, blessings, pause, settings, results and exit confirmation |
+| `src/components/NowRiftMainMenu.tsx` | Gateway, Hub, weapon selection and local records |
+| `src/game/services/` | Replaceable run repository backed by versioned IndexedDB; legacy score metadata |
+| `src/state/settings.ts` | Zustand preference state with validated localStorage reads |
+| `public/assets/forest/` | Original local art and CC0 asset notice |
+| `scripts/generate-assets.py` | Editable procedural pixel-art source; requires Pillow only to regenerate |
 
-The combat engine lives in `src/game/engine.ts`, while `src/components/NowRiftGame.tsx` handles rendering, input and HUD state. No external images, fonts or API calls are needed during gameplay.
+Phaser owns the frame loop, input, camera, scenes, and pooled visual objects. The simulation owns all combat state. React receives snapshots at approximately 10 Hz or on phase changes, never per-frame combat updates. Instances and listeners are scoped to a mount/run; no shared game singleton is created. Phaser uses its Canvas2D renderer for this sprite-only stage: it avoided costly software WebGL rendering in cloud Chromium while retaining the Phaser scene lifecycle.
 
-## Planned phases (not in demo)
+## Local data
 
-1. **Foundation and combat loop** — playable local demo (this branch).
-2. **Stages, bosses, inventory and deeper progression**.
-3. **Optional accounts / guest profiles, persistence and daily rewards**.
-4. **Trade, friends, PvP, anti-cheat and online services**.
-5. **Balancing, testing and production beta**.
+Completed run records are stored in IndexedDB (`nowrift-saves`, schema version 1). The Hub displays the latest 20. Stable run IDs make result writes idempotent. Invalid records are reported and preserved, not silently reset. Storage failure leaves the game playable and reports that saving failed.
 
-Future online features will be designed separately. They are not simulated as working multiplayer features here.
+Small preferences use `nowrift-preferences-v1`; the legacy best-kill key `nowrift-phase1-best-kills` is retained. Preference and metadata reads validate malformed values. Active runs and temporary blessings are in-memory and end on refresh/exit. Campaign unlocks and farming materials now persist separately in `nowrift-campaign` (schema version 1). Equipment, permanent character stats and enhancement remain later-phase work.
 
-## Notes
+## Checks
 
-- Run on `localhost` only for this phase; no production deployment is configured.
-- Installation downloads npm dependencies once. The gameplay itself doesn't make requests to game services.
-- Desktop and mobile browser input are supported, but actual cross-browser performance needs device testing.
-- This is an early gameplay prototype, not a security-hardened or production-ready online game.
-
-## Mobile PWA (Phase 1 responsive update)
-
-The mobile-first improvements live on `feat/phase-1-mobile-pwa`. This branch adds:
-
-- Full-screen-style **Focus mode** (CSS-based, works in browsers that do not support the Fullscreen API).
-- Responsive HUD, safe-area padding for notched phones, landscape adjustments and larger touch targets.
-- Installable PWA manifest, 192/512px app icons, maskable Android icon, iOS Apple touch icon.
-- In-app Install/Add to Home instructions for iOS Safari and Chromium browsers.
-- A same-origin service worker that caches the app shell and Next.js static assets. The game can run offline **after the first successful online load and caching**; this does not download on a device before that visit.
-- New worker version update button, online/offline indicator and installation state.
-
-**Important:** No database, accounts or synced progress are added. The best score stays in this browser's localStorage; active runs are memory-only and reset when the app is closed or refreshed.
-
-For realistic PWA testing, run `npm run build && npm run start` on localhost or use an HTTPS Vercel deployment. `npm run dev` does not register the service worker to avoid stale development assets.
-
-### Install
-
-- **iPhone / iPad:** Open in Safari → Share → Add to Home Screen.
-- **Android Chrome:** Use the INSTALL button if the browser provides it, or menu → Install app / Add to Home Screen.
-- **Desktop Chrome / Edge:** Use the Install icon in the address bar or the in-app INSTALL action.
-
-Offline behavior depends on browser storage/cache retention. First load must complete online; a private tab or cleared site data cannot guarantee cached assets. There is no background sync.
-
-
-## Gameplay stability / regression suite
-
-The `fix/gameplay-stability-mobile` branch contains engine-level fixes for arena resize (all world entities), low-FPS timekeeping, swept projectile collisions, improved pickup movement, contact hits, and touch interruptions. It introduces browser smoke tests for desktop, small mobile screens, landscape Focus mode, touch input and cached PWA offline launch.
-
-Run:
-
-```bash
-npm install
+```sh
+npm run lint
 npm run typecheck
 npm test
 npm run build
-npx playwright install chromium
 npm run test:browser
+npm run test:stress
+npm run test:playthrough
 ```
 
-The Playwright tests launch `next start` locally on port 3100. They do not deploy or use a database.
+`npm run build` also runs typechecking and unit tests. Playwright launches a production server on port 3100. The config uses an installed `/usr/bin/chromium` if available, or the browser installed by `npx playwright install --with-deps chromium`. Override with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when needed. Art is committed, so Python is not required for installation or play.
 
-## Pre-game main menu (Guest Only)
+The full browser suite includes explicit, opt-in scenario fixtures for the eight-minute boss, upgrades, defeat, and a 150-enemy stress load. Build them only for testing:
 
-The app now opens to a cinematic **access-mode selection**, then a **Guest Main Hub**, before launching the gameplay screen:
+```sh
+NEXT_PUBLIC_E2E=1 npm run build
+NOWRIFT_E2E=1 npm run test:browser
+# Restore the ordinary build after testing; test controls are absent by default.
+npm run build
+```
 
-1. Open the website or PWA → **CONTINUE AS GUEST** (the only usable access mode).
-2. Explore the Main Hub → review guest-local best kills and the Phase 2–3 roadmap.
-3. Select **START NEW RUN** to enter the existing playable solo demo.
-4. Use **MAIN MENU** in the game to return to the Hub. During an active run you must confirm that you want to abandon it.
-5. Use **CHANGE MODE** to return from the Hub to the Guest selection screen.
+Without the flags, the ordinary guest/input/responsive/settings/PWA smoke tests run and the instrumented tests are explicitly skipped. The fixtures set up scenarios; damage, telegraphs, outcomes, and persistence still execute real game code. A separate deterministic movement-and-upgrade bot (`test:playthrough`) completes the full eight-minute survival and boss encounter using normal combat stats; it does not establish human difficulty balance.
 
-Sign in and account creation are deliberately marked **COMING SOON** and have no active auth flow. Character, Inventory, Upgrades and Social/PvP areas are roadmap previews, not fake functional systems.
+Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Phase I validation](docs/phase-1-validation.md) for measured results and limitations.
 
-**Guest session is UI-only**, not a persistent user profile. Individual runs stay in memory and are lost when you exit or refresh. The only persisted value is your local best kill count. There is no database, cloud save, trading, PvP, or real character inventory.
-
-This page is part of the PWA shell; the service-worker cache version was bumped to `nowrift-pwa-v3` so installed app users can update to the new entry flow.
+Production target: `https://nowrift-one.vercel.app/`. Deployment requires Vercel project access; see the Phase II release notes. Application deployment is separate from publishing this development environment.

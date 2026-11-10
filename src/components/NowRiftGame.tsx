@@ -1,468 +1,530 @@
 "use client";
-
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import PwaControls from "@/components/PwaControls";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PhaserHost from "./PhaserHost";
+import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
+import { GameBridge } from "@/game/bridge";
+import { makeGame, snapshot, type Snapshot } from "@/game/engine";
 import {
+  FOREST,
   UPGRADES,
-  advanceGame,
-  beginGame,
-  chooseUpgrade,
-  drawGame,
-  makeGame,
-  resizeGame,
-  snapshot,
-  togglePause,
-  updateGame,
-  type Game,
-  type Joystick,
-  type Snapshot,
-  type UpgradeId,
-} from "@/game/engine";
+  WEAPONS,
+  type WeaponId,
+} from "@/game/content/forest";
+import { stageById, worldById, DIFFICULTIES } from "@/game/campaign/content";
+import type { StageSelection } from "@/game/campaign/loader";
+import { campaignRepository } from "@/game/campaign/persistence";
+import type { Rewards } from "@/game/campaign/rewards";
+import { runRepository } from "@/game/services/saves";
+import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 
-const SCORE_KEY = "nowrift-phase1-best-kills";
-
-const initialHud: Snapshot = snapshot(makeGame(960, 540));
-
-function formatClock(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="stat">
-      <span className="stat-label">{label}</span>
-      <span className="stat-value">{value}</span>
-    </div>
-  );
-}
-
-type NowRiftGameProps = {
+type Props = {
+  stage?: StageSelection;
   autoStart?: boolean;
   onExitToMenu?: () => void;
+  weapon?: WeaponId;
 };
-
-export default function NowRiftGame({ autoStart = false, onExitToMenu }: NowRiftGameProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const gameRef = useRef<Game>(makeGame(960, 540));
-  const keysRef = useRef<Set<string>>(new Set());
-  const joystickRef = useRef<Joystick>(null);
-  const pointerIdRef = useRef<number | null>(null);
-  const capturedCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const recordedRef = useRef(false);
-  const [hud, setHud] = useState<Snapshot>(initialHud);
-  const [bestKills, setBestKills] = useState(0);
-  const [immersive, setImmersive] = useState(false);
-  const [touchEngaged, setTouchEngaged] = useState(false);
-  const [confirmLeave, setConfirmLeave] = useState(false);
-  const resumeAfterCancelRef = useRef(false);
-
+export default function NowRiftGame({
+  stage,
+  autoStart = true,
+  onExitToMenu,
+  weapon = "arcane",
+}: Props) {
+  const definition = stage ? stageById(stage.stageId) : null,
+    world = definition ? worldById(definition.worldId) : null;
+  const [reward, setReward] = useState<Rewards | null>(null);
+  const bridge = useMemo(() => new GameBridge(), []);
+  const [hud, setHud] = useState<Snapshot>(() =>
+    snapshot(makeGame(FOREST.width, FOREST.height, weapon)),
+  );
+  const [ready, setReady] = useState(false),
+    [loading, setLoading] = useState(0),
+    [error, setError] = useState(""),
+    [save, setSave] = useState("");
+  const [immersive, setImmersive] = useState(false),
+    [touch, setTouch] = useState(false),
+    [confirmLeave, setConfirmLeave] = useState(false),
+    [settings, setSettings] = useState(false);
+  const resume = useRef(false),
+    currentHud = useRef(hud);
+  currentHud.current = hud;
+  useEffect(() => {
+    const off = [
+      bridge.on("hud", setHud),
+      bridge.on("loading", setLoading),
+      bridge.on("error", setError),
+      bridge.on("touch", setTouch),
+      bridge.on("ready", (value) => {
+        setReady(value);
+        if (value && autoStart)
+          bridge.emit("command", { type: "start", weapon, stage });
+      }),
+      bridge.on("result", (run) => {
+        if (run.campaign)
+          campaignRepository
+            .settle(run.campaign)
+            .then((r) => setReward(r.reward))
+            .catch((e) =>
+              setError(
+                "Campaign save failed; progression was not changed. " +
+                  String(e),
+              ),
+            );
+        setSave("Saving run record…");
+        runRepository
+          .put(run)
+          .then(() => setSave("Run record saved on this device."))
+          .catch(() =>
+            setSave(
+              "Run record could not be saved. You can keep playing; previous records are preserved.",
+            ),
+          );
+        try {
+          const best = Math.max(
+            parseBestKills(localStorage.getItem(BEST_SCORE_KEY)),
+            run.kills,
+          );
+          localStorage.setItem(BEST_SCORE_KEY, String(best));
+        } catch {
+          /* Record storage is optional. */
+        }
+      }),
+    ];
+    return () => {
+      off.forEach((fn) => fn());
+    };
+  }, [autoStart, bridge, weapon, stage]);
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
   }, [immersive]);
-
-  const syncHud = useCallback(() => setHud(snapshot(gameRef.current)), []);
-
-  const clearPointer = useCallback(() => {
-    const id = pointerIdRef.current;
-    const element = capturedCanvasRef.current;
-    pointerIdRef.current = null;
-    joystickRef.current = null;
-    capturedCanvasRef.current = null;
-    setTouchEngaged(false);
-    if (id !== null && element?.hasPointerCapture(id)) {
-      element.releasePointerCapture(id);
-    }
-  }, []);
-
-  const start = useCallback(() => {
-    const bounds = canvasRef.current?.getBoundingClientRect();
-    const game = makeGame(Math.max(1, bounds?.width ?? 960), Math.max(1, bounds?.height ?? 540));
-    beginGame(game);
-    gameRef.current = game;
-    keysRef.current.clear();
-    clearPointer();
-    recordedRef.current = false;
-    setHud(snapshot(game));
-  }, [clearPointer]);
-
-  const pause = useCallback(() => {
-    togglePause(gameRef.current);
-    if (gameRef.current.phase !== "playing") {
-      clearPointer();
-      keysRef.current.clear();
-    }
-    syncHud();
-  }, [clearPointer, syncHud]);
-
-  const requestReturnToMenu = useCallback(() => {
-    if (!onExitToMenu) return;
-    const game = gameRef.current;
-    if (game.phase === "menu" || game.phase === "gameover") {
-      onExitToMenu();
+  const pause = () => bridge.emit("command", { type: "pause" });
+  const start = () => {
+    setSave("");
+    setReward(null);
+    bridge.emit("command", { type: "start", weapon, stage });
+  };
+  const requestLeave = () => {
+    if (["gameover", "victory", "menu"].includes(hud.phase)) {
+      onExitToMenu?.();
       return;
     }
-    resumeAfterCancelRef.current = game.phase === "playing";
-    if (resumeAfterCancelRef.current) togglePause(game);
-    keysRef.current.clear();
-    clearPointer();
-    syncHud();
+    resume.current = hud.phase === "playing";
+    if (resume.current) pause();
     setConfirmLeave(true);
-  }, [clearPointer, onExitToMenu, syncHud]);
-
-  const cancelReturnToMenu = useCallback(() => {
+  };
+  const cancelLeave = useCallback(() => {
     setConfirmLeave(false);
-    if (resumeAfterCancelRef.current && gameRef.current.phase === "paused") {
-      togglePause(gameRef.current);
-    }
-    resumeAfterCancelRef.current = false;
-    syncHud();
-  }, [syncHud]);
-
-  const selectUpgrade = useCallback((id: UpgradeId) => {
-    if (chooseUpgrade(gameRef.current, id)) {
-      clearPointer();
-      keysRef.current.clear();
-      syncHud();
-    }
-  }, [clearPointer, syncHud]);
-
-  useEffect(() => {
-    try {
-      const stored = Number(window.localStorage.getItem(SCORE_KEY));
-      if (Number.isFinite(stored)) setBestKills(Math.max(0, stored));
-    } catch {
-      // Local storage is optional; gameplay also works in private browsing.
-    }
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    function resize() {
-      if (!canvas) return;
-      const bounds = canvas.getBoundingClientRect();
-      if (bounds.width < 40 || bounds.height < 40) return;
-      const game = gameRef.current;
-      const previousWidth = game.width;
-      const previousHeight = game.height;
-      const width = bounds.width;
-      const height = bounds.height;
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const pixelWidth = Math.round(width * dpr);
-      const pixelHeight = Math.round(height * dpr);
-      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
-      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-      resizeGame(game, width, height);
-      if (joystickRef.current && previousWidth > 0 && previousHeight > 0) {
-        joystickRef.current.x *= width / previousWidth;
-        joystickRef.current.y *= height / previousHeight;
-      }
-    }
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-    resize();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      const key = event.key.toLowerCase();
-      if (key === "escape" && !event.repeat) {
-        togglePause(gameRef.current);
-        clearPointer();
-        keysRef.current.clear();
-        syncHud();
-        return;
-      }
-      if (gameRef.current.phase !== "playing") return;
-      if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
-      keysRef.current.add(key);
-    };
-    const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.key.toLowerCase());
-    const onInterruption = () => {
-      keysRef.current.clear();
-      clearPointer();
-      if (gameRef.current.phase === "playing") {
-        togglePause(gameRef.current);
-        syncHud();
-      }
-    };
-    const onVisibilityChange = () => {
-      if (document.hidden) onInterruption();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onInterruption);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    let frameId = 0;
-    let previousTime = performance.now();
-    let previousHudTime = 0;
-    let previousPhase = gameRef.current.phase;
-
-    const frame = (now: number) => {
-      const dt = Math.max(0, (now - previousTime) / 1000);
-      previousTime = now;
-      const game = gameRef.current;
-      const keys = keysRef.current;
-      let dx = Number(keys.has("d") || keys.has("arrowright")) - Number(keys.has("a") || keys.has("arrowleft"));
-      let dy = Number(keys.has("s") || keys.has("arrowdown")) - Number(keys.has("w") || keys.has("arrowup"));
-      if (joystickRef.current) {
-        dx += joystickRef.current.dx;
-        dy += joystickRef.current.dy;
-      }
-      advanceGame(game, dt, dx, dy);
-      if (game.phase !== "playing" && pointerIdRef.current !== null) {
-        clearPointer();
-        keysRef.current.clear();
-      }
-
-      if (game.phase === "gameover" && !recordedRef.current) {
-        recordedRef.current = true;
-        setBestKills((previous) => {
-          const best = Math.max(previous, game.kills);
-          try { window.localStorage.setItem(SCORE_KEY, String(best)); } catch { /* optional */ }
-          return best;
-        });
-      }
-
-      const dprX = canvas.width / Math.max(1, game.width);
-      const dprY = canvas.height / Math.max(1, game.height);
-      context.setTransform(dprX, 0, 0, dprY, 0, 0);
-      drawGame(context, game, joystickRef.current);
-
-      if (now - previousHudTime > 110 || previousPhase !== game.phase) {
-        setHud(snapshot(game));
-        previousHudTime = now;
-        previousPhase = game.phase;
-      }
-      frameId = requestAnimationFrame(frame);
-    };
-    frameId = requestAnimationFrame(frame);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      observer.disconnect();
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onInterruption);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [clearPointer, syncHud]);
-
-  useEffect(() => {
-    if (autoStart) start();
-  }, [autoStart, start]);
-
-  const getPoint = (event: PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    if (resume.current && currentHud.current.phase === "paused")
+      bridge.emit("command", { type: "pause" });
+    resume.current = false;
+  }, [bridge]);
+  const openSettings = () => {
+    resume.current = hud.phase === "playing";
+    if (resume.current) pause();
+    setSettings(true);
   };
-
-  const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (gameRef.current.phase !== "playing" || pointerIdRef.current !== null) return;
-    const point = getPoint(event);
-    pointerIdRef.current = event.pointerId;
-    capturedCanvasRef.current = event.currentTarget;
-    joystickRef.current = { ...point, dx: 0, dy: 0 };
-    setTouchEngaged(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (pointerIdRef.current !== event.pointerId || !joystickRef.current) return;
-    const point = getPoint(event);
-    const joy = joystickRef.current;
-    const dx = point.x - joy.x;
-    const dy = point.y - joy.y;
-    const distance = Math.hypot(dx, dy);
-    joy.dx = distance > 0 ? dx / Math.max(distance, 42) : 0;
-    joy.dy = distance > 0 ? dy / Math.max(distance, 42) : 0;
-  };
-
-  const onPointerEnd = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (pointerIdRef.current !== event.pointerId) return;
-    clearPointer();
-  };
-
-  const upgrades = hud.offers
-    .map((id) => UPGRADES.find((upgrade) => upgrade.id === id))
-    .filter((upgrade): upgrade is (typeof UPGRADES)[number] => Boolean(upgrade));
-
+  const closeSettings = useCallback(() => {
+    setSettings(false);
+    if (resume.current && currentHud.current.phase === "paused")
+      bridge.emit("command", { type: "pause" });
+    resume.current = false;
+  }, [bridge]);
+  const terminal = hud.phase === "gameover" || hud.phase === "victory";
   return (
-    <main className={immersive ? "site-shell immersive" : "site-shell"}>
+    <main className={`site-shell ${immersive ? "immersive" : ""}`}>
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-symbol" aria-hidden="true">N<span>✦</span></div>
-          <div className="brand-text">NOW<span>RIFT</span><small>PROJECT / 001</small></div>
-        </div>
+        <Brand />
         <div className="header-right">
-          <span className="header-note">BROWSER RPG EXPERIMENT</span>
-          <PwaControls />
+          <span className="eyebrow">A JOURNEY BEYOND THE BREACH</span>
+          <button className="quiet-button" onClick={requestLeave} type="button">
+            ← MAIN MENU
+          </button>
         </div>
       </header>
-
-      <div className="content">
-        <div className="hero">
+      <section className="content">
+        <div className="run-heading hero">
           <div>
-            <div className="eyebrow"><span className="eyebrow-line" /> PHASE 01 / PLAYABLE PROTOTYPE</div>
-            <h1>SURVIVE <em>THE RIFT.</em></h1>
-            <p>One arena. Endless threats. Every upgrade changes your run. Move, survive, and let your weapon do the talking.</p>
+            <span className="eyebrow">
+              {definition
+                ? `${world!.name.toUpperCase()} / STAGE ${definition.number}`
+                : "CHAPTER I / THE FIRST BREACH"}
+            </span>
+            <h1>
+              {world ? (
+                world.name
+              ) : (
+                <>
+                  Whispering <em>Forest</em>
+                </>
+              )}
+            </h1>
           </div>
-          <div className="hero-meta">
-            <span className="meta-kicker">YOUR PERSONAL BEST</span>
-            <strong>{String(bestKills).padStart(3, "0")} <small>KILLS</small></strong>
-            <span className="meta-foot">Stored on this device only</span>
-          </div>
+          <p>
+            {definition && stage ? (
+              `${definition.name} · ${stage.difficulty.toUpperCase()} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? "then defeat the guardian" : "survival"}`
+            ) : (
+              <>
+                Survive until <strong>08:00</strong>. Defeat the Forest
+                Guardian.
+              </>
+            )}
+          </p>
         </div>
-
         <section className="game-card" aria-label="NowRift playable game">
           <div className="game-topbar">
-            <div className="sector-heading"><span className="sector-icon">◈</span> SECTOR 01 <span className="sector-separator">/</span> THE BREACH</div>
+            <div className="sector-heading">
+              <span className="live-dot" />{" "}
+              {world?.name.toUpperCase() ?? "WHISPERING FOREST"}{" "}
+              <span className="game-state">
+                {hud.phase === "playing" ? "LIVE RUN" : hud.phase.toUpperCase()}
+              </span>
+            </div>
             <div className="game-actions">
-              <span className="game-state"><span className={hud.phase === "playing" ? "state-dot active" : "state-dot"} /> {hud.phase === "playing" ? "LIVE RUN" : hud.phase === "menu" ? "STANDBY" : hud.phase.toUpperCase()}</span>
-              <button className="action-button" onClick={pause} disabled={hud.phase !== "playing" && hud.phase !== "paused"} type="button">
-                {hud.phase === "paused" ? "▶ RESUME" : "Ⅱ PAUSE"}
+              <button
+                className="action-button"
+                onClick={pause}
+                disabled={!ready || !["playing", "paused"].includes(hud.phase)}
+                type="button"
+              >
+                {hud.phase === "paused" ? "RESUME" : "PAUSE"}
               </button>
               <button
-                className="action-button focus-button"
-                onClick={() => setImmersive((current) => !current)}
-                aria-pressed={immersive}
+                className="action-button"
+                onClick={() => setImmersive((v) => !v)}
                 aria-label={immersive ? "Exit focus mode" : "Enter focus mode"}
+                aria-pressed={immersive}
                 type="button"
-              >{immersive ? "✕ EXIT" : "⛶ FOCUS"}</button>
-              <button className="action-button restart-button" onClick={start} type="button">↻ RESTART</button>
-              {onExitToMenu && (
-                <button className="action-button nr-return-menu-button" onClick={requestReturnToMenu} type="button">
-                  ← MAIN MENU
-                </button>
-              )}
+              >
+                {immersive ? "EXIT FOCUS" : "FOCUS"}
+              </button>
+              <button
+                className="action-button"
+                aria-label="Settings"
+                onClick={openSettings}
+                type="button"
+              >
+                SETTINGS
+              </button>
+              <button
+                className="action-button"
+                onClick={start}
+                disabled={!ready}
+                type="button"
+              >
+                RESTART
+              </button>
+              <button
+                className="action-button compact-menu"
+                onClick={requestLeave}
+                type="button"
+              >
+                MAIN MENU
+              </button>
             </div>
           </div>
-
           <div className="hud-row">
-            <div className="level-shape">LV <strong>{String(hud.level).padStart(2, "0")}</strong></div>
+            <div className="level-shape">
+              <small>LEVEL</small>
+              <strong>{String(hud.level).padStart(2, "0")}</strong>
+            </div>
             <div className="bars">
-              <div className="bar-heading"><span><span className="bar-pip health" /> INTEGRITY</span><span>{hud.hp} / {hud.maxHp}</span></div>
-              <div className="bar-track"><div className="bar-fill health-fill" style={{ width: String(Math.max(0, (hud.hp / hud.maxHp) * 100)) + "%" }} /></div>
-              <div className="bar-heading xp-heading"><span><span className="bar-pip xp" /> EXPERIENCE</span><span>{hud.xp} / {hud.xpToNext}</span></div>
-              <div className="bar-track small-track"><div className="bar-fill xp-fill" style={{ width: String(Math.min(100, (hud.xp / hud.xpToNext) * 100)) + "%" }} /></div>
+              <div className="bar-heading">
+                <span>RIFT WANDERER</span>
+                <strong>
+                  {hud.hp} <small>/ {hud.maxHp} HP</small>
+                </strong>
+              </div>
+              <div className="bar-track">
+                <div
+                  className="bar-fill health-fill"
+                  style={{ width: `${(hud.hp / hud.maxHp) * 100}%` }}
+                />
+              </div>
+              <div className="bar-track xp-track">
+                <div
+                  className="bar-fill xp-fill"
+                  style={{
+                    width: `${Math.min(100, (hud.xp / hud.xpToNext) * 100)}%`,
+                  }}
+                />
+              </div>
+              <span className="xp-label">
+                {hud.xp} / {hud.xpToNext} XP
+              </span>
             </div>
             <div className="hud-stats">
-              <Stat label="TIME" value={formatClock(hud.time)} />
-              <Stat label="WAVE" value={String(hud.wave).padStart(2, "0")} />
-              <Stat label="KILLS" value={String(hud.kills).padStart(3, "0")} />
-              <Stat label="CREDITS" value={hud.gold} />
+              {[
+                ["TIME", clock(hud.time)],
+                ["KILLS", hud.kills],
+                ["ENEMIES", hud.enemies],
+              ].map(([label, value]) => (
+                <div className="stat" key={label}>
+                  <span className="stat-label">{label}</span>
+                  <strong className="stat-value">{value}</strong>
+                </div>
+              ))}
             </div>
           </div>
-
           <div className="arena">
-            <canvas
-              ref={canvasRef}
-              className="game-canvas"
-              data-touch-active={touchEngaged}
-              aria-label="Game arena. Use WASD or arrow keys to move, or drag on a touch screen. Weapons fire automatically."
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerEnd}
-              onPointerCancel={onPointerEnd}
-              onLostPointerCapture={onPointerEnd}
-              onContextMenu={(event) => event.preventDefault()}
-            />
-
-            {hud.phase === "menu" && (
+            {hud.statuses.length > 0 && (
+              <span className="campaign-status">
+                {hud.statuses.join(" · ")}
+              </span>
+            )}
+            <PhaserHost bridge={bridge} />
+            {!ready && (
               <div className="arena-overlay">
-                <div className="overlay-orbit">✦</div>
-                <span className="overlay-eyebrow">RIFT CONNECTION ESTABLISHED</span>
-                <h2>THE BREACH<br /><span>AWAITS.</span></h2>
-                <p>Defeat enemies, gather XP, and choose upgrades to survive escalating waves.</p>
-                <button className="primary-button" onClick={start} type="button">ENTER THE RIFT <span>↗</span></button>
-                <span className="overlay-hint">NO ACCOUNT · OFFLINE AFTER FIRST LOAD</span>
+                <span className="eyebrow">ENTERING THE FOREST</span>
+                <h2>Through the veil…</h2>
+                <progress
+                  max={1}
+                  value={loading}
+                  aria-label="Loading game assets"
+                />
+                <p>{Math.round(loading * 100)}% · Preparing your journey</p>
+                {error && <p role="alert">{error}</p>}
               </div>
             )}
-
-            {hud.phase === "paused" && (
-              <div className="arena-overlay compact">
-                <span className="overlay-eyebrow">SYSTEM SUSPENDED</span>
-                <h2>PAUSED<span>.</span></h2>
-                <p>Your run is safe for now.</p>
-                <button className="primary-button" onClick={pause} type="button">RESUME RUN <span>▶</span></button>
+            {hud.boss && (
+              <div
+                className="boss-hud"
+                aria-label={`${world?.boss.name ?? "Forest Guardian"} health`}
+              >
+                <span>
+                  {world?.boss.name.toUpperCase() ?? "FOREST GUARDIAN"}{" "}
+                  <small>
+                    {hud.boss.phase === 2
+                      ? "ENRAGED · PHASE II"
+                      : "THE ANCIENT WARDEN"}
+                  </small>
+                </span>
+                <div className="bar-track">
+                  <div
+                    className="bar-fill boss-fill"
+                    style={{
+                      width: `${Math.max(0, (hud.boss.hp / hud.boss.maxHp) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <small>
+                  {hud.boss.hp} / {hud.boss.maxHp}
+                </small>
               </div>
             )}
-
-            {hud.phase === "gameover" && (
-              <div className="arena-overlay compact">
-                <span className="overlay-eyebrow defeat">SIGNAL LOST / RUN COMPLETE</span>
-                <h2>RIFT <span>FALLEN.</span></h2>
-                <div className="result-row"><span>{hud.kills} KILLS</span><span>{formatClock(hud.time)} SURVIVED</span><span>LVL {hud.level}</span></div>
-                <button className="primary-button" onClick={start} type="button">TRY AGAIN <span>↻</span></button>
+            {hud.phase === "playing" && (
+              <>
+                <span className="in-game-hint">
+                  {hud.time < 120
+                    ? "THE FOREST STIRS"
+                    : hud.time < 240
+                      ? "THE HUNT BEGINS"
+                      : hud.time < 360
+                        ? "THORNS AWAKEN"
+                        : hud.time < 480
+                          ? "THE LAST STAND"
+                          : "BREAK THE GUARDIAN"}
+                </span>
+                <span className="touch-hint">
+                  {touch ? "MOVING" : "DRAG TO MOVE"}
+                </span>
+              </>
+            )}
+            {hud.phase === "paused" && !confirmLeave && !settings && (
+              <div className="arena-overlay">
+                <span className="eyebrow">TAKE A BREATH</span>
+                <h2>Paused</h2>
+                <p>The forest will wait.</p>
+                <button
+                  className="primary-button"
+                  onClick={pause}
+                  type="button"
+                >
+                  RESUME RUN <span>→</span>
+                </button>
+                <button
+                  className="quiet-button"
+                  onClick={openSettings}
+                  type="button"
+                >
+                  Settings
+                </button>
+                <button
+                  className="quiet-button"
+                  onClick={requestLeave}
+                  type="button"
+                >
+                  Return to main menu
+                </button>
               </div>
             )}
-
-            {hud.phase === "upgrade" && (
-              <div className="arena-overlay upgrade-overlay">
-                <span className="overlay-eyebrow">LEVEL {String(hud.level).padStart(2, "0")} REACHED</span>
-                <h2>CHOOSE YOUR <span>POWER.</span></h2>
-                <p>Select one enhancement to continue your run.</p>
+            {hud.phase === "upgrade" && !confirmLeave && !settings && (
+              <div
+                className="arena-overlay upgrade-overlay"
+                role="dialog"
+                aria-label="Choose an upgrade"
+                aria-modal="true"
+              >
+                <span className="eyebrow">
+                  LEVEL {hud.level} / A NEW AWAKENING
+                </span>
+                <h2>
+                  Choose your <em>power.</em>
+                </h2>
+                <p>One choice. A different path.</p>
                 <div className="upgrade-grid">
-                  {upgrades.map((upgrade) => (
-                    <button className="upgrade-card" key={upgrade.id} onClick={() => selectUpgrade(upgrade.id)} type="button">
-                      <span className="upgrade-symbol" style={{ color: upgrade.accent }}>{upgrade.symbol}</span>
-                      <strong>{upgrade.name}</strong>
-                      <small>{upgrade.description}</small>
-                      <span className="upgrade-select">SELECT ↗</span>
-                    </button>
-                  ))}
+                  {hud.offers.map((id) => {
+                    const u = UPGRADES.find((u) => u.id === id)!;
+                    return (
+                      <button
+                        className="upgrade-card"
+                        key={id}
+                        onClick={() =>
+                          bridge.emit("command", { type: "upgrade", id })
+                        }
+                        type="button"
+                      >
+                        <span className="card-rarity">
+                          BLESSING · {(hud.stacks[id] ?? 0) + 1}/{u.max}
+                        </span>
+                        <PixelIcon index={u.icon} large />
+                        <strong>{u.name}</strong>
+                        <small>{u.description}</small>
+                        <span className="upgrade-select">EMBRACE →</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
-
-            {confirmLeave && (
-              <div className="nr-game-exit-overlay">
-                <section className="nr-game-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="nr-exit-title">
-                  <span className="nr-kicker">RUN INTERRUPTION</span>
-                  <h2 id="nr-exit-title">RETURN TO <em>HUB?</em></h2>
-                  <p>Your current run will end. Only your best kill record stays on this browser.</p>
-                  <div className="nr-game-exit-actions">
-                    <button type="button" className="nr-exit-cancel" onClick={cancelReturnToMenu}>CONTINUE RUN</button>
-                    <button type="button" className="nr-exit-confirm" onClick={onExitToMenu}>EXIT TO HUB ↗</button>
-                  </div>
-                </section>
+            {terminal && (
+              <div className="arena-overlay results-overlay">
+                <span className="eyebrow">
+                  {hud.phase === "victory"
+                    ? "THE FOREST REMEMBERS"
+                    : "EVERY END IS A BEGINNING"}
+                </span>
+                <h2>
+                  {hud.phase === "victory"
+                    ? "The veil is lifted."
+                    : "Your light fades."}
+                </h2>
+                <p>
+                  {hud.phase === "victory"
+                    ? definition
+                      ? "Stage cleared. Campaign rewards are banked locally."
+                      : "Forest Guardian defeated. +150 victory gold."
+                    : "The Rift Wanderer will rise again."}
+                </p>
+                {reward && (
+                  <p className="campaign-reward" role="status">
+                    {reward.firstClear
+                      ? "FIRST CLEAR · "
+                      : "FARMING REWARDS · "}
+                    {reward.gold} gold · {reward.xp} XP
+                    <br />
+                    {Object.entries(reward.materials)
+                      .map(([id, n]) => `${id.replaceAll("-", " ")} ×${n}`)
+                      .join(" · ")}
+                  </p>
+                )}
+                <div className="result-row">
+                  <span>
+                    <strong>{clock(hud.time)}</strong>SURVIVED
+                  </span>
+                  <span>
+                    <strong>{hud.kills}</strong>ENEMIES SLAIN
+                  </span>
+                  <span>
+                    <strong>{hud.gold}</strong>RUN GOLD
+                  </span>
+                </div>
+                <p className="save-message" role="status">
+                  {save}
+                </p>
+                <button
+                  className="primary-button"
+                  onClick={start}
+                  type="button"
+                >
+                  TRY AGAIN <span>→</span>
+                </button>
+                <button
+                  className="quiet-button"
+                  onClick={onExitToMenu}
+                  type="button"
+                >
+                  RETURN TO MAIN MENU
+                </button>
+                <small className="muted">
+                  Run gold is a score in Phase 1; it has no permanent spending
+                  system.
+                </small>
               </div>
             )}
-
-            {hud.phase === "playing" && (
-              <>
-                <div className="in-game-hint">AUTO FIRE <span>●</span> ENABLED</div>
-                <div className="touch-hint" aria-hidden="true">{touchEngaged ? "◆ MOVING" : "◎ DRAG TO MOVE"}</div>
-              </>
-            )}
           </div>
-
           <div className="arena-footer">
-            <div className="control-hint"><span className="keycaps"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>MOVE</span><span className="control-divider">/</span><span>ARROW KEYS OR TOUCH DRAG</span></div>
-            <div className="footer-info">AUTO ATTACK <span>◆</span> PICK UP XP <span>◆</span> SURVIVE</div>
+            <div className="active-weapon">
+              <PixelIcon index={WEAPONS[weapon].icon} />
+              <span>
+                <strong>{WEAPONS[weapon].name}</strong>
+                <small>
+                  {hud.damage.toFixed(1)} DMG · {hud.interval.toFixed(2)}s ·{" "}
+                  {Math.round(hud.crit * 100)}% CRIT
+                </small>
+              </span>
+            </div>
+            <div className="control-hint">
+              <kbd>W</kbd>
+              <kbd>A</kbd>
+              <kbd>S</kbd>
+              <kbd>D</kbd>
+              <span>MOVE</span>
+              <kbd>ESC</kbd>
+              <span>PAUSE</span>
+            </div>
+            <span className="auto-attack">AUTO ATTACK ACTIVE</span>
           </div>
         </section>
-
-        <section className="below-game" aria-label="Prototype features">
-          <div className="build-status">
-            <span className="eyebrow">WHAT'S INSIDE</span>
-            <h3>A small start.<br /><span>A bigger world ahead.</span></h3>
-            <p>Phase 01 is designed to validate the core combat loop before accounts, multiplayer, trading, and persistent progression are added.</p>
+        {error && ready && (
+          <p role="alert" className="notice">
+            {error}
+          </p>
+        )}
+        <p className="field-note">
+          FIELD NOTES{" "}
+          <span>
+            Collect emerald crystals to grow stronger. Red roots warn of an
+            incoming strike. Keep moving.
+          </span>
+        </p>
+      </section>
+      {settings && <Settings onClose={closeSettings} />}
+      {confirmLeave && (
+        <Modal title="Return to hub" onClose={cancelLeave}>
+          <span className="eyebrow">LEAVE THE FOREST?</span>
+          <h2>Return to hub?</h2>
+          <p>
+            Your active run will end. Completed run records and your best score
+            remain on this device.
+          </p>
+          <div className="dialog-actions">
+            <button
+              className="quiet-button"
+              onClick={cancelLeave}
+              type="button"
+            >
+              CONTINUE RUN
+            </button>
+            <button
+              className="primary-button"
+              onClick={onExitToMenu}
+              type="button"
+            >
+              EXIT TO HUB →
+            </button>
           </div>
-          <div className="feature-list">
-            <div className="feature"><span className="feature-number">01</span><div><strong>Auto-combat arena</strong><small>Move freely, kite enemies, survive wave after wave.</small></div><span className="feature-check">✓</span></div>
-            <div className="feature"><span className="feature-number">02</span><div><strong>Level-up choices</strong><small>Collect experience and shape your build mid-run.</small></div><span className="feature-check">✓</span></div>
-            <div className="feature"><span className="feature-number">03</span><div><strong>Device-local record</strong><small>Personal best saved in browser storage only.</small></div><span className="feature-check">✓</span></div>
-            <div className="feature future"><span className="feature-number">04</span><div><strong>Online worlds & economy</strong><small>Accounts, inventory, trading and PvP come later.</small></div><span className="future-label">LATER</span></div>
-          </div>
-        </section>
-      </div>
-      <footer className="site-footer"><span>© NOWRIFT / PHASE 01</span><span>CRAFTED FOR THE BROWSER · NO DATABASE</span><span>GUEST DEMO BUILD</span></footer>
+        </Modal>
+      )}
     </main>
   );
 }
