@@ -46,6 +46,7 @@ export class RiftAudio {
   private mounts = 0;
   private unlockPending?: Promise<void>;
   private detach?: () => void;
+  private events: Partial<Record<SoundId, number>> = {};
   private accepted = 0;
   private dropped = 0;
   private transitions = 0;
@@ -68,6 +69,7 @@ export class RiftAudio {
       world: this.world,
       paused: this.paused,
       mounts: this.mounts,
+      events: { ...this.events },
       accepted: this.accepted,
       dropped: this.dropped,
       transitions: this.transitions,
@@ -299,6 +301,7 @@ export class RiftAudio {
       return false;
     }
     this.accepted++;
+    this.events[id] = (this.events[id] ?? 0) + 1;
     return true;
   }
   private tone(
@@ -367,7 +370,7 @@ export class RiftAudio {
       this.ambience();
     }
     // Do not schedule silence or a backlog after a browser interruption.
-    if (this.preferences.muted) {
+    if (this.preferences.muted || this.preferences.music === 0) {
       this.nextNote = c.currentTime;
       return;
     }

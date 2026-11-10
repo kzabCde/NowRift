@@ -624,6 +624,8 @@ export class GameScene extends Phaser.Scene {
   keys?: Record<string, Phaser.Input.Keyboard.Key>;
   joystick: { x: number; y: number; dx: number; dy: number } | null = null;
   pointer: number | null = null;
+  lastFrameAt = 0;
+  renderFrames = 0;
   lastHud = 0;
   lastPhase = "";
   terminalTime = 0;
@@ -637,6 +639,8 @@ export class GameScene extends Phaser.Scene {
       ? loadStage(data.stage, data.weapon)
       : makeGame(FOREST.width, FOREST.height, data.weapon);
     applyLoadout(this.simulation, data.loadout);
+    this.lastFrameAt = performance.now();
+    this.renderFrames = 0;
     this.lastHud = 0;
     this.lastPhase = "";
     this.terminalTime = 0;
@@ -730,7 +734,11 @@ export class GameScene extends Phaser.Scene {
     this.scale.on("resize", this.resize, this);
     const setQuality = () =>
       this.game.loop.setFPSLimit(
-        useSettings.getState().quality === "low" ? 30 : 60,
+        ["paused", "upgrade"].includes(g.phase)
+          ? 15
+          : useSettings.getState().quality === "low"
+            ? 30
+            : 60,
       );
     setQuality();
     const unsubSettings = useSettings.subscribe((next, previous) => {
@@ -759,6 +767,14 @@ export class GameScene extends Phaser.Scene {
         state: () => this.simulation,
         audio: () => audio.diagnostics(),
         effects: () => this.visuals.vfx.count,
+        metrics: () => ({
+          frames: this.renderFrames,
+          fpsLimit: this.game.loop.fpsLimit,
+          effects: this.visuals.vfx.count,
+          particles: g.sparks.length,
+          feedback: g.feedback.length,
+          textObjects: this.visuals.texts.length,
+        }),
         scenario: (name) => {
           if (name === "boss") {
             g.time =
@@ -866,7 +882,14 @@ export class GameScene extends Phaser.Scene {
   publish() {
     this.bridge.emit("hud", snapshot(this.simulation));
   }
-  update(time: number, delta: number) {
+  update(_time: number, _delta: number) {
+    // Phaser smooths and accumulates delta when FPS-limited. Combat uses elapsed
+    // monotonic wall time so Low quality changes rendering, never game speed.
+    const now = performance.now();
+    const delta = Math.max(0, now - this.lastFrameAt);
+    this.lastFrameAt = now;
+    const time = now;
+    this.renderFrames++;
     const g = this.simulation,
       k = this.keys;
     const x =
@@ -974,6 +997,14 @@ declare global {
       state: () => Simulation;
       audio?: () => ReturnType<typeof audio.diagnostics>;
       effects?: () => number;
+      metrics?: () => {
+        frames: number;
+        fpsLimit: number;
+        effects: number;
+        particles: number;
+        feedback: number;
+        textObjects: number;
+      };
       scenario: (name: "boss" | "upgrade" | "defeat" | "stress") => void;
       strikeBoss: () => void;
     };

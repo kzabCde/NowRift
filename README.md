@@ -1,12 +1,12 @@
-# NowRift — Phase II: Worlds and Stage Progression
+# NowRift — Guest Adventure & Audiovisual Polish
 
-A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four weapons and explore four worlds with twenty stages and persistent campaign unlocks. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
+A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of three character profiles, four weapons and an earned relic; explore four worlds with twenty stages and local campaign unlocks. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
 
 ## Campaign
 
 Enter as a guest, choose your weapon, then open **World Map**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. The original **Start New Run** button remains a Phase I practice route.
 
-World-specific materials, gold, profile XP, first-clear bonuses and boss equipment candidates are stored locally. Full inventory/equipment mechanics are deferred to Phase III. See [Phase II architecture and validation](docs/phase-2-validation.md).
+World-specific materials, gold, profile XP, first-clear bonuses and guardian relics are stored locally. **Wanderer** selects a real character stat profile. **Inventory & equipment** equips one earned relic and enhances it from +0 to +3 using campaign gold and materials. See the [audit](docs/polish-audit.md), [presentation and audio specification](docs/presentation-design.md), and [current validation report](docs/polish-validation.md). Earlier campaign architecture remains in [Phase II notes](docs/phase-2-validation.md).
 
 ## Run locally
 
@@ -28,20 +28,22 @@ Use the guest gateway, choose your weapon in the Hub, and select **Start New Run
 
 ## Controls
 
-| Action | Desktop | Mobile |
-| --- | --- | --- |
-| Move | WASD / arrow keys | Touch and drag anywhere in the arena |
-| Attack | Automatic nearest-target attacks | Automatic |
-| Level up | Select one of three blessings | Tap one blessing |
-| Pause / resume | Escape / Pause | Pause / Resume |
-| Focus mode | Focus / Exit Focus | Focus / Exit Focus |
-| Settings | Reduced effects and camera scale | Same; saved per browser |
+| Action         | Desktop                                                                                | Mobile                               |
+| -------------- | -------------------------------------------------------------------------------------- | ------------------------------------ |
+| Move           | WASD / arrow keys                                                                      | Touch and drag anywhere in the arena |
+| Attack         | Automatic nearest-target attacks                                                       | Automatic                            |
+| Level up       | Select one of three blessings                                                          | Tap one blessing                     |
+| Pause / resume | Escape / Pause                                                                         | Pause / Resume                       |
+| Focus mode     | Focus / Exit Focus                                                                     | Focus / Exit Focus                   |
+| Settings       | Audio buses, mute, graphics, particles, glow, shake, numbers, reduced effects and zoom | Same; saved per browser              |
 
 Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or rotating changes the camera viewport without resizing/resetting the simulation world. Trees and rocks have collision footprints at their bases; foliage is depth-sorted above characters.
 
 ## Combat and content
 
-- **Rift Wanderer:** 100 HP, 180 units/s, level 1. Arcane Bolt starts at 10 damage / 0.8 seconds.
+- **Characters:** Rift Wanderer (100 HP / 180 speed / 5% critical), Ash Sentinel (130 / 162 / 5%), Dusk Strider (80 / 207 / 10%). All use the original wanderer sprite with class tint.
+- **Relics:** Heartwood Sigil grants regeneration, Sunken Sun grants damage, Warden’s Tear grants health, Cinder Crown grants critical chance. Earn them from campaign world guardians; enhance with the displayed resources in Inventory.
+- **Default weapon:** Arcane Bolt starts at 10 damage / 0.8 seconds.
 - **Arcane Bolt:** precise targeted magic projectiles.
 - **Twin Daggers:** paired fast projectiles, shorter range.
 - **Fire Orb:** slower projectile with splash damage on impact.
@@ -54,21 +56,25 @@ Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or 
 
 ## Architecture
 
-| Location | Responsibility |
-| --- | --- |
-| `src/game/campaign/` | World/stage/difficulty definitions, seeded maps, hazards, unlocks, rewards and atomic campaign saves |
-| `src/components/WorldMap.tsx` | World atlas, stage selection, locks, boss preview and material wallet |
-| `src/game/content/forest.ts` | Enemy, weapon, blessing, obstacle, and stage definitions |
-| `src/game/engine.ts` | Framework-independent simulation, targeting, swept collisions, spatial buckets, object pools, XP and boss logic |
-| `src/game/phaser/` | Boot, Preload, MainMenu, Game, and Results scenes; rendering, camera and input |
-| `src/game/bridge.ts` | Typed, per-instance React ↔ Phaser commands and events |
-| `src/components/PhaserHost.tsx` | Browser-only dynamic import, instance ownership and teardown |
-| `src/components/NowRiftGame.tsx` | HUD, blessings, pause, settings, results and exit confirmation |
-| `src/components/NowRiftMainMenu.tsx` | Gateway, Hub, weapon selection and local records |
-| `src/game/services/` | Replaceable run repository backed by versioned IndexedDB; legacy score metadata |
-| `src/state/settings.ts` | Zustand preference state with validated localStorage reads |
-| `public/assets/forest/` | Original local art and CC0 asset notice |
-| `scripts/generate-assets.py` | Editable procedural pixel-art source; requires Pillow only to regenerate |
+| Location                                           | Responsibility                                                                                                    |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `src/game/audio/`                                  | Original procedural music, ambient profiles, event palette, cooldowns, voice limits and one browser audio context |
+| `src/game/feedback.ts` / `phaser/combat-vfx.ts`    | Bounded semantic event queue and pooled/batched combat feedback                                                   |
+| `src/game/loadout.ts` / `components/Sanctuary.tsx` | Character stat profiles, real local relic slot and enhancement transactions                                       |
+| `src/components/Soundscape.tsx`                    | App-owned audio lifecycle; no duplicate scheduler on navigation                                                   |
+| `src/game/campaign/`                               | World/stage/difficulty definitions, seeded maps, hazards, unlocks, rewards and atomic campaign saves              |
+| `src/components/WorldMap.tsx`                      | World atlas, stage selection, locks, boss preview and material wallet                                             |
+| `src/game/content/forest.ts`                       | Enemy, weapon, blessing, obstacle, and stage definitions                                                          |
+| `src/game/engine.ts`                               | Framework-independent simulation, targeting, swept collisions, spatial buckets, object pools, XP and boss logic   |
+| `src/game/phaser/`                                 | Boot, Preload, MainMenu, Game, and Results scenes; rendering, camera and input                                    |
+| `src/game/bridge.ts`                               | Typed, per-instance React ↔ Phaser commands and events                                                           |
+| `src/components/PhaserHost.tsx`                    | Browser-only dynamic import, instance ownership and teardown                                                      |
+| `src/components/NowRiftGame.tsx`                   | HUD, blessings, pause, settings, results and exit confirmation                                                    |
+| `src/components/NowRiftMainMenu.tsx`               | Gateway, Hub, weapon selection and local records                                                                  |
+| `src/game/services/`                               | Replaceable run repository backed by versioned IndexedDB; legacy score metadata                                   |
+| `src/state/settings.ts`                            | Zustand preference state with validated localStorage reads                                                        |
+| `public/assets/forest/`                            | Original local art and CC0 asset notice                                                                           |
+| `scripts/generate-assets.py`                       | Editable procedural pixel-art source; requires Pillow only to regenerate                                          |
 
 Phaser owns the frame loop, input, camera, scenes, and pooled visual objects. The simulation owns all combat state. React receives snapshots at approximately 10 Hz or on phase changes, never per-frame combat updates. Instances and listeners are scoped to a mount/run; no shared game singleton is created. Phaser uses its Canvas2D renderer for this sprite-only stage: it avoided costly software WebGL rendering in cloud Chromium while retaining the Phaser scene lifecycle.
 
@@ -76,7 +82,13 @@ Phaser owns the frame loop, input, camera, scenes, and pooled visual objects. Th
 
 Completed run records are stored in IndexedDB (`nowrift-saves`, schema version 1). The Hub displays the latest 20. Stable run IDs make result writes idempotent. Invalid records are reported and preserved, not silently reset. Storage failure leaves the game playable and reports that saving failed.
 
-Small preferences use `nowrift-preferences-v1`; the legacy best-kill key `nowrift-phase1-best-kills` is retained. Preference and metadata reads validate malformed values. Active runs and temporary blessings are in-memory and end on refresh/exit. Campaign unlocks and farming materials now persist separately in `nowrift-campaign` (schema version 1). Equipment, permanent character stats and enhancement remain later-phase work.
+Small preferences use `nowrift-preferences-v1`; the legacy best-kill key `nowrift-phase1-best-kills` is retained. Preference and metadata reads validate malformed values. Active runs and temporary blessings are in-memory and end on refresh/exit. Campaign unlocks and farming materials now persist separately in `nowrift-campaign` (schema version 1). Optional equipment fields migrate existing campaign saves without resetting them. The selected character uses `nowrift-character-v1`. Relic enhancements are permanent on this device; level blessings remain temporary.
+
+## Sound and accessibility
+
+Audio starts on the first keyboard or pointer interaction. Master, Music, Sound effects and Ambient buses, mute, and Gentle/Balanced/Full intensity persist locally. One Web Audio engine handles procedural sound events, adaptive music and world ambience; it pauses on hidden tabs and resumes on a fresh gesture. This is functional original synthesis, not a finished recorded or mastered soundtrack.
+
+Low quality targets 30 FPS; Medium and High target 60 where the device permits. Paused/upgrade/result views use 15 FPS. Effects and damage numbers are bounded and configurable. Reduced effects and OS reduced motion suppress decorative motion and shake. Boss warnings remain visible. Poison and chain-lightning VFX primitives are available for future mechanics; these damage types are not part of the current weapons.
 
 ## Checks
 
@@ -105,4 +117,4 @@ Without the flags, the ordinary guest/input/responsive/settings/PWA smoke tests 
 
 Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Phase I validation](docs/phase-1-validation.md) for measured results and limitations.
 
-Production target: `https://nowrift-one.vercel.app/`. Deployment requires Vercel project access; see the Phase II release notes. Application deployment is separate from publishing this development environment.
+No merge or deployment is performed by this polish branch. Review locally before approving a release.

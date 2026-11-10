@@ -512,7 +512,7 @@ function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
   e.hp -= amount;
   e.hit = 0.14;
   const angle = Math.atan2(e.y - g.player.y, e.x - g.player.x);
-  if (e.kind !== "boss") {
+  if (g.weaponId === "daggers" && e.kind !== "boss") {
     e.x += Math.cos(angle) * (critical ? 7 : 3);
     e.y += Math.sin(angle) * (critical ? 7 : 3);
   }
@@ -1059,7 +1059,7 @@ export function updateGame(
     g.enemies.splice(i, 1);
     feedback(
       g,
-      e.kind === "boss" ? "bossDeath" : e.kind === "elite" ? "rare" : "death",
+      e.kind === "boss" ? "bossDeath" : "death",
       e.x,
       e.y,
       0xc5d3a0,

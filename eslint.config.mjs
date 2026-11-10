@@ -5,6 +5,7 @@ export default tseslint.config(
   {
     ignores: [
       "node_modules/**",
+      "work/**",
       ".next/**",
       "test-results/**",
       "playwright-report/**",

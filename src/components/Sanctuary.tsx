@@ -225,9 +225,8 @@ export function Inventory({
         {busy ? "Saving equipment…" : notice}
       </p>
       <p className="muted">
-        Campaign rewards and equipment stay in IndexedDB on this device.
-        Enhancements spend the displayed resources immediately. Run blessings
-        are temporary.
+        Campaign rewards and equipment are saved on this device. Enhancements
+        spend the displayed resources immediately. Run blessings are temporary.
       </p>
       <button className="primary-button" onClick={onClose} type="button">
         DONE

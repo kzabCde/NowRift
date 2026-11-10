@@ -25,6 +25,30 @@ describe("bounded semantic combat feedback", () => {
     feedback(g, "heal", 0, 0);
     expect(objects.has(g.feedback[0])).toBe(true);
   });
+  test("directional knockback belongs to daggers and preserves the existing fire trajectory", () => {
+    for (const weapon of ["daggers", "fire"] as const) {
+      const g = makeGame(1800, 1400, weapon, () => 0.99);
+      beginGame(g);
+      g.enemies = [];
+      g.obstacles = [];
+      g.spawnCooldown = 999;
+      g.weapon.cooldown = 999;
+      const e = spawnEnemy(g, "elite", 1000, 700)!;
+      e.speed = 0;
+      g.bullets.push({
+        x: 1000,
+        y: 700,
+        vx: 0,
+        vy: 0,
+        r: 8,
+        life: 1,
+        damage: 3,
+        color: "#fff",
+      });
+      advanceGame(g, 0.01, 0, 0);
+      expect(e.x).toBe(weapon === "daggers" ? 1003 : 1000);
+    }
+  });
   test("hits emit semantic feedback and damage text recycles", () => {
     const g = makeGame(1800, 1400, "arcane", () => 0.99);
     beginGame(g);

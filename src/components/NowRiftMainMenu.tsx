@@ -382,7 +382,7 @@ export default function NowRiftMainMenu() {
             </div>
             <div className="embark-row">
               <p>
-                <span className="live-dot" /> Ready when you are.
+                <span className="live-dot" /> Survival practice · 8 minutes.
                 <small>
                   {CHARACTERS[character].hp} HP · {CHARACTERS[character].speed}{" "}
                   movement ·{" "}
@@ -402,6 +402,10 @@ export default function NowRiftMainMenu() {
                 START NEW RUN <span>→</span>
               </button>
             </div>
+            <p className="practice-note">
+              Campaign rewards and stage unlocks are earned through the World
+              Map.
+            </p>
             {warning && (
               <p className="notice" role="status">
                 {warning}
@@ -492,7 +496,7 @@ export default function NowRiftMainMenu() {
           <span className="eyebrow">REMEMBER EVERY JOURNEY</span>
           <h2>Run records</h2>
           <p className="muted">
-            Your latest 20 completed runs, stored in IndexedDB on this device.
+            Your latest 20 completed runs, saved only on this device.
           </p>
           {runs.length ? (
             <div className="run-records">

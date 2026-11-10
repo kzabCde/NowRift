@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CHARACTERS, type Loadout } from "@/game/loadout";
+import { CHARACTERS, RELICS, type RelicId, type Loadout } from "@/game/loadout";
 import PhaserHost from "./PhaserHost";
 import {
   Brand,
@@ -449,6 +449,17 @@ export default function NowRiftGame({
                       .join(" · ")}
                   </p>
                 )}
+                {reward?.candidates.map((id, index) => (
+                  <div className="earned-relic" key={`${id}-${index}`}>
+                    <PixelIcon index={RELICS[id as RelicId]?.icon ?? 7} />
+                    <span>
+                      <small>GUARDIAN RELIC EARNED</small>
+                      <strong>
+                        {RELICS[id as RelicId]?.name ?? id.replaceAll("-", " ")}
+                      </strong>
+                    </span>
+                  </div>
+                ))}
                 <div className="result-row">
                   <span>
                     <strong>{clock(hud.time)}</strong>SURVIVED
