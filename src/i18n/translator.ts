@@ -22,8 +22,8 @@ export function translate<N extends Namespace>(locale: Locale, namespace: N, key
 export function translateText(locale: Locale, source: string): string {
   if (locale === "en" || !source) return source;
   const exact = content[source];
-  const missingArt = /^Missing art: (.+)$/.exec(source);
-  if (missingArt) return translate(locale, "game", "Missing art: {asset}", { asset: missingArt[1] });
+  const missingArt = /^Missing art: (.+)\. A fallback is in use; reload to retry\.$/.exec(source);
+  if (missingArt) return translate(locale, "errors", "Missing art: {asset}. A fallback is in use; reload to retry.", { asset: missingArt[1] });
   if (exact) return exact;
   // Existing progression messages keep their stable English return values for saved-state compatibility.
   const all = /^Clear all five (NORMAL|HARD|NIGHTMARE) stages in this world\.$/.exec(source);

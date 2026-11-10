@@ -371,7 +371,10 @@ export const th = {
     "Campaign save interrupted": "การบันทึกแคมเปญถูกขัดจังหวะ",
     "Save transaction interrupted": "การบันทึกเซฟถูกขัดจังหวะ",
     "Invalid run result": "ผลการเล่นไม่ถูกต้อง",
-    "Invalid result": "ผลลัพธ์ไม่ถูกต้อง"
+    "Invalid result": "ผลลัพธ์ไม่ถูกต้อง",
+    "Missing art: {asset}. A fallback is in use; reload to retry.": "ไม่พบภาพเกม: {asset} ระบบใช้ภาพทดแทนชั่วคราว โปรดโหลดหน้าใหม่เพื่อลองอีกครั้ง",
+    "The game renderer could not start. Reload to retry, or enable browser graphics acceleration.": "ไม่สามารถเริ่มระบบแสดงภาพเกมได้ โปรดโหลดหน้าใหม่หรือเปิดการเร่งประมวลผลกราฟิกของเบราว์เซอร์",
+    "Campaign save is damaged. Original data was preserved; stage entry is disabled.": "ข้อมูลเซฟแคมเปญเสียหาย ระบบเก็บข้อมูลเดิมไว้ แต่ปิดการเข้าเล่นด่านชั่วคราว"
   },
   "content": {
     "Whispering Forest": "ป่ากระซิบ",
