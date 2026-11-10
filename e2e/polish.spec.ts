@@ -61,6 +61,10 @@ test.describe("real audio and game integration", () => {
     page,
   }) => {
     await page.goto("/");
+    // Audio instrumentation registers during client hydration, which can follow the load event.
+    await expect.poll(
+      () => page.evaluate(() => typeof window.__NOWRIFT_AUDIO__),
+    ).toBe("object");
     expect(
       await page.evaluate(
         () => window.__NOWRIFT_AUDIO__!.diagnostics().contexts,

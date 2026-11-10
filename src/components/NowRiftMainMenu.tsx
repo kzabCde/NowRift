@@ -1,5 +1,6 @@
 "use client";
 import LanguageSwitcher from "./LanguageSwitcher";
+import Image from "next/image";
 import { useI18n } from "@/i18n/useI18n";
 import Atmosphere from "./Atmosphere";
 import { CharacterSelection, Inventory } from "./Sanctuary";
@@ -186,6 +187,15 @@ export default function NowRiftMainMenu() {
           <div className="gateway-art" aria-hidden="true" />
           <Atmosphere />
           <div className="gateway-content">
+            <Image
+              src="/branding/nowrift-logo-black.png"
+              width={384}
+              height={384}
+              className="gateway-official-logo"
+              alt="NowRift official fantasy pixel-art logo"
+              priority
+              unoptimized
+            />
             <span className="eyebrow">
               <span className="eyebrow-rule" />{" "}{t("main","A LIGHT IN THE FORGOTTEN WOODS")}{" "}</span>
             <h1>{t("main","Beyond the breach.")}{" "}<br />

@@ -2666,3 +2666,46 @@ button[aria-busy="true"] {
 html[lang="th"] body{font-family:Tahoma,"Noto Sans Thai","Leelawadee UI",system-ui,sans-serif;line-height:1.55}
 html[lang="th"] button,html[lang="th"] input,html[lang="th"] select{font-family:inherit}
 @media(max-width:600px){.language-switcher.compact button{min-width:28px;padding:5px}.topbar .header-right{flex-wrap:wrap;justify-content:flex-end;gap:6px}}
+
+/* Official NowRift identity — transparent logotype in every app header, dark emblem on the guest gateway. */
+.wordmark {
+  min-width: 70px;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+.nowrift-header-logo {
+  display: block;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.gateway-official-logo {
+  position: absolute;
+  right: clamp(26px, 6vw, 120px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(35vw, 440px);
+  height: auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 760px) {
+  .nowrift-header-logo { width: 64px; height: 64px; }
+  .wordmark { min-width: 64px; }
+  .gateway-official-logo {
+    position: relative;
+    inset: auto;
+    transform: none;
+    width: min(42vw, 178px);
+    margin: -36px 0 10px -9px;
+  }
+  .gateway-content { padding-right: 26px; }
+}
+@media (max-width: 380px) {
+  .nowrift-header-logo { width: 50px; height: 50px; }
+  .wordmark { min-width: 50px; }
+}
