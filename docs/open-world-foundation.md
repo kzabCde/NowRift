@@ -150,6 +150,6 @@ Abrupt termination can lose the last uncommitted interval, and browser storage e
 
 ## Release and rollback
 
-Work is isolated on `feature/open-world-rpg-foundation`, based on `c752c7c`. The previous launcher/campaign remains available as a fallback. Roll back code through version control rather than deleting browser data; export a save first. Parent save and backup formats remain compatible, with the additive world extension documented above. Draft PR creation will be attempted after final verification. No main merge or production deployment is authorized by this expansion request.
+Work is pushed to `feature/open-world-rpg-foundation`, based on `c752c7c`. The previous launcher/campaign remains available as a fallback. Roll back code through version control rather than deleting browser data; export a save first. Parent save and backup formats remain compatible, with the additive world extension documented above. Draft PR creation was attempted after verification but returned `403 Forbidden` for `https://api.github.com/graphql`; the environment's enforced network policy does not allow `api.github.com`. The branch and prepared PR description are ready for review, but no PR was created. No main merge or production deployment is authorized by this expansion request.
 
 Finish or explicitly abandon expansion expeditions before rolling back to an older runtime; older releases do not understand the new farming activity. Keep the exported backup and permanent character data rather than resetting IndexedDB.
