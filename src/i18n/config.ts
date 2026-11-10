@@ -10,3 +10,7 @@ export function resolveLocale(value: string | readonly string[] | null | undefin
   }
   return defaultLocale;
 }
+
+export function preferredLocale(saved: string | null, languages: readonly string[]): Locale {
+  return isLocale(saved) ? saved : resolveLocale(languages);
+}

@@ -1,6 +1,6 @@
 "use client";
 import { create } from "zustand";
-import { defaultLocale, isLocale, resolveLocale, type Locale } from "@/i18n/config";
+import { defaultLocale, isLocale, preferredLocale, type Locale } from "@/i18n/config";
 export const LOCALE_STORAGE_KEY = "nowrift-locale-v1";
 export type LocaleState = {
   locale: Locale;
@@ -8,9 +8,6 @@ export type LocaleState = {
   initialize: () => void;
   setLocale: (locale: Locale) => void;
 };
-export function preferredLocale(saved: string | null, languages: readonly string[]): Locale {
-  return isLocale(saved) ? saved : resolveLocale(languages);
-}
 export const useLocale = create<LocaleState>((set) => ({
   locale: defaultLocale,
   hydrated: false,

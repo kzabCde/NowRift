@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { th } from "./dictionaries/th";
-import { resolveLocale } from "./config";
+import { resolveLocale, preferredLocale } from "./config";
 import { date, number, translate, translateText } from "./translator";
-import { preferredLocale } from "@/state/locale";
 describe("offline internationalization", () => {
   it("supports English fallback and Thai translations", () => {
     expect(translate("en", "main", "Settings")).toBe("Settings");
