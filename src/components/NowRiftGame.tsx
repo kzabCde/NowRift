@@ -1,4 +1,9 @@
 "use client";
+import SaveIndicator from "./SaveIndicator";
+import { profileRepository } from "@/game/persistence/repository";
+import type { RunOwner } from "@/game/persistence/model";
+import type { RunCheckpoint } from "@/game/persistence/checkpoint";
+import { practiceLoadout } from "@/game/rpg/stats";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -26,18 +31,21 @@ import { campaignRepository } from "@/game/campaign/persistence";
 import { campaignLoadout } from "@/game/rpg/stats";
 import type { Rewards } from "@/game/campaign/rewards";
 import { runRepository } from "@/game/services/saves";
-import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 
 type Props = {
   loadout?: Loadout;
+  slotId?: string;
+  recovery?: RunCheckpoint;
   stage?: StageSelection;
   autoStart?: boolean;
-  onExitToMenu?: () => void;
+  onExitToMenu?: (warning?: string) => void;
   weapon?: WeaponId;
 };
 export default function NowRiftGame({
   stage,
   loadout,
+  slotId,
+  recovery,
   autoStart = true,
   onExitToMenu,
   weapon = "arcane",
@@ -46,9 +54,14 @@ export default function NowRiftGame({
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
   const resultRun = useRef<string | null>(null);
+  const runContext = useRef<RunOwner | null>(null),
+    pendingCheckpoint = useRef<Promise<unknown> | null>(null),
+    bootStart = useRef<() => void>(() => {}),
+    didRecover = useRef(false);
   const pendingResult = useRef<Promise<void> | null>(null),
     startGuard = useRef(false);
   const [starting, setStarting] = useState(false);
+  const [saveBlocked, setSaveBlocked] = useState(false);
   const [reward, setReward] = useState<Rewards | null>(null);
   const [tonics, setTonics] = useState<Record<string, number>>({}),
     [tonicBusy, setTonicBusy] = useState(false);
@@ -76,13 +89,29 @@ export default function NowRiftGame({
       bridge.on("touch", setTouch),
       bridge.on("ready", (value) => {
         setReady(value);
-        if (value && autoStart)
-          bridge.emit("command", { type: "start", weapon, stage, loadout });
+        if (value && autoStart) bootStart.current();
+      }),
+      bridge.on("checkpoint", (checkpoint) => {
+        pendingCheckpoint.current = profileRepository
+          .checkpoint(checkpoint)
+          .then(() => {
+            setSaveBlocked(false);
+            setError((message) =>
+              message.startsWith("Checkpoint save failed.") ? "" : message,
+            );
+            bridge.emit("command", { type: "storage-ready" });
+          })
+          .catch((error) => {
+            setSaveBlocked(true);
+            setError("Checkpoint save failed. " + String(error));
+            bridge.emit("command", { type: "storage-blocked" });
+          });
       }),
       bridge.on("result", (run) => {
         resultRun.current = run.id;
         setSave("Saving run record…");
         pendingResult.current = (async () => {
+          await pendingCheckpoint.current;
           let recordedGold = run.gold;
           if (run.campaign) {
             try {
@@ -109,15 +138,6 @@ export default function NowRiftGame({
               );
           }
         })();
-        try {
-          const best = Math.max(
-            parseBestKills(localStorage.getItem(BEST_SCORE_KEY)),
-            run.kills,
-          );
-          localStorage.setItem(BEST_SCORE_KEY, String(best));
-        } catch {
-          /* Record storage is optional. */
-        }
       }),
     ];
     return () => {
@@ -132,7 +152,7 @@ export default function NowRiftGame({
   useEffect(() => {
     if (stage && (hud.phase === "paused" || hud.phase === "playing"))
       campaignRepository
-        .load()
+        .load(runContext.current?.slotId ?? slotId)
         .then((p) => setTonics(p.rpg?.consumables ?? {}))
         .catch(() => {});
   }, [stage, hud.phase]);
@@ -145,11 +165,15 @@ export default function NowRiftGame({
       id = "tonic-" + crypto.randomUUID();
     bridge.emit("command", { type: "tonic-lock", runId });
     try {
-      const p = await campaignRepository.load();
+      const p = await campaignRepository.load(
+        runContext.current?.slotId ?? slotId,
+      );
       const result = await campaignRepository.act({
         id,
         at: Date.now(),
         expectedRevision: p.rpg!.revision,
+        slotId: p.local?.id,
+        run: runContext.current ?? undefined,
         action: { type: "consume", definitionId },
       });
       setTonics(result.progress.rpg!.consumables);
@@ -176,36 +200,95 @@ export default function NowRiftGame({
     setStarting(true);
     try {
       await pendingResult.current;
-      let selection = stage;
-      if (stage) {
-        const p = await campaignRepository.load();
-        selection = {
-          ...stage,
-          clears: p.clears,
-          ...campaignLoadout(p, weapon, loadout?.character),
-        };
-      }
+      await pendingCheckpoint.current;
+      const p = await profileRepository.load(
+        slotId ?? runContext.current?.slotId,
+      );
+      const recovering = !!recovery && !didRecover.current;
+      const prepared = await profileRepository.beginRun(
+        p.local.id,
+        recovering,
+        runContext.current?.id,
+      );
+      runContext.current = prepared.run;
+      didRecover.current = true;
+      const c = prepared.checkpoint;
+      const selection =
+        c?.stage ??
+        (stage
+          ? {
+              ...stage,
+              clears: p.clears,
+              ...campaignLoadout(p, weapon, p.local.character),
+            }
+          : undefined);
       resultRun.current = null;
       setSave("");
       setReward(null);
-      setError("");
+      setError((previous) =>
+        previous.startsWith("Missing art:") ? previous : "",
+      );
       bridge.emit("command", {
         type: "start",
-        weapon,
+        weapon: c?.weapon ?? weapon,
         stage: selection,
-        loadout,
+        loadout: c?.loadout ?? practiceLoadout(p, p.local.character),
+        run: prepared.run,
+        checkpoint: c,
       });
     } catch (e) {
       setError("Run could not start. " + String(e));
+      if (
+        !stage &&
+        !recovery &&
+        /storage (?:is )?unavailable|indexedDB|QuotaExceededError|SecurityError/i.test(
+          String(e),
+        )
+      ) {
+        runContext.current = null;
+        setError(
+          "Temporary practice: progress and recovery cannot be saved. " +
+            String(e),
+        );
+        bridge.emit("command", { type: "start", weapon, loadout });
+      }
     } finally {
       startGuard.current = false;
       setStarting(false);
     }
   };
+  bootStart.current = () => {
+    void start();
+  };
+  const leave = async () => {
+    if (tonicGuard.current || startGuard.current) return;
+    await pendingResult.current;
+    const run = runContext.current;
+    let warning: string | undefined;
+    if (
+      run &&
+      !["victory", "gameover", "menu"].includes(currentHud.current.phase)
+    ) {
+      bridge.emit("command", { type: "checkpoint" });
+      await pendingCheckpoint.current;
+      try {
+        await profileRepository.discardRun(run.slotId, run);
+      } catch (error) {
+        warning = /another tab|replaced|deleted|no longer exists/.test(
+          String(error),
+        )
+          ? "This run is owned by another tab. Its saved checkpoint was preserved."
+          : "The saved checkpoint was kept because it could not be discarded. " +
+            String(error);
+      }
+    }
+    bridge.emit("command", { type: "exit" });
+    onExitToMenu?.(warning);
+  };
   const requestLeave = () => {
     if (tonicGuard.current) return;
     if (["gameover", "victory", "menu"].includes(hud.phase)) {
-      onExitToMenu?.();
+      void leave();
       return;
     }
     resume.current = hud.phase === "playing";
@@ -235,6 +318,7 @@ export default function NowRiftGame({
       <header className="topbar">
         <Brand />
         <div className="header-right">
+          <SaveIndicator />
           <LanguageSwitcher compact />
           <span className="eyebrow">
             {t("game", "A JOURNEY BEYOND THE BREACH")}
@@ -291,7 +375,11 @@ export default function NowRiftGame({
               <button
                 className="action-button"
                 onClick={pause}
-                disabled={!ready || !["playing", "paused"].includes(hud.phase)}
+                disabled={
+                  saveBlocked ||
+                  !ready ||
+                  !["playing", "paused"].includes(hud.phase)
+                }
                 type="button"
               >
                 {hud.phase === "paused"
@@ -490,6 +578,7 @@ export default function NowRiftGame({
                 <button
                   className="primary-button"
                   onClick={pause}
+                  disabled={saveBlocked || tonicBusy}
                   type="button"
                 >
                   {t("game", "RESUME RUN")} <span>→</span>
@@ -634,7 +723,7 @@ export default function NowRiftGame({
                 </button>
                 <button
                   className="quiet-button"
-                  onClick={onExitToMenu}
+                  onClick={() => void leave()}
                   type="button"
                 >
                   {t("game", "RETURN TO MAIN MENU")}{" "}
@@ -674,9 +763,17 @@ export default function NowRiftGame({
           </div>
         </section>
         {error && ready && (
-          <p role="alert" className="notice">
+          <div role="alert" className="notice">
             {error}
-          </p>
+            {saveBlocked && (
+              <button
+                className="quiet-button"
+                onClick={() => bridge.emit("command", { type: "checkpoint" })}
+              >
+                {text("Retry checkpoint")}
+              </button>
+            )}
+          </div>
         )}
         <p className="field-note">
           {t("game", "FIELD NOTES")}{" "}
@@ -709,7 +806,7 @@ export default function NowRiftGame({
             </button>
             <button
               className="primary-button"
-              onClick={onExitToMenu}
+              onClick={() => void leave()}
               type="button"
             >
               {t("game", "EXIT TO HUB →")}{" "}

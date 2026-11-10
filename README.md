@@ -1,6 +1,8 @@
-# NowRift — Phase III: RPG, Inventory and Economy
+# NowRift — Phase IV: Local Profiles and Daily Progression
 
-A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four attack styles, explore four worlds with twenty stages, and grow stronger through real equipment, character progression and a local economy. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
+A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four attack styles, explore four worlds with twenty stages, and grow stronger through real equipment, character progression and a local economy. Three local characters, recoverable runs, daily rewards, quests, achievements and JSON backups keep progression on your device. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
+
+Open **Profile & Saves** in the Hub to customize your guest name, create/select/rename characters, claim rewards, inspect actual statistics, and export or restore a save. Check-in rewards are shared across the local player’s three slots and reset at midnight in **Asia/Bangkok**. Daily quests and achievements use actual combat and inventory actions. See [Phase IV persistence rules, validation and limitations](docs/phase-4-validation.md).
 
 ## Campaign
 
@@ -30,16 +32,16 @@ Use the guest gateway, choose your weapon in the Hub, and select **Start New Run
 
 ## Controls
 
-| Action         | Desktop                                                      | Mobile                               |
-| -------------- | ------------------------------------------------------------ | ------------------------------------ |
-| Move           | WASD / arrow keys                                            | Touch and drag anywhere in the arena |
-| Attack         | Automatic nearest-target attacks                             | Automatic                            |
-| Level up       | Select one of three blessings                                | Tap one blessing                     |
-| Pause / resume | Escape / Pause                                               | Pause / Resume                       |
-| Focus mode     | Focus / Exit Focus                                           | Focus / Exit Focus                   |
-| Settings       | Reduced effects and camera scale                             | Same; saved per browser              |
-| Inventory      | Hub → Inventory & equipment; click an item or equipment slot | Tap; details scroll into view        |
-| Tonics         | Pause a campaign, then select a tonic                        | Same; real inventory is consumed     |
+| Action         | Desktop                                                      | Mobile                                              |
+| -------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| Move           | WASD / arrow keys; choose either set in Settings             | Touch and drag; optional left/right starting region |
+| Attack         | Automatic nearest-target attacks                             | Automatic                                           |
+| Level up       | Select one of three blessings                                | Tap one blessing                                    |
+| Pause / resume | Escape / Pause                                               | Pause / Resume                                      |
+| Focus mode     | Focus / Exit Focus                                           | Focus / Exit Focus                                  |
+| Settings       | Audio, effects, quality, input, language and fullscreen      | Same; fullscreen where supported                    |
+| Inventory      | Hub → Inventory & equipment; click an item or equipment slot | Tap; details scroll into view                       |
+| Tonics         | Pause a campaign, then select a tonic                        | Same; real inventory is consumed                    |
 
 Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or rotating changes the camera viewport without resizing/resetting the simulation world. Trees and rocks have collision footprints at their bases; foliage is depth-sorted above characters.
 
@@ -60,35 +62,39 @@ Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or 
 
 ## Architecture
 
-| Location                                                | Responsibility                                                                                                  |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `src/game/rpg/`                                         | Typed items, seeded loot, inventory, stat engine, enhancement, economy commands and migration                   |
-| `src/components/RpgScreen.tsx`, `src/app/rpg.css`       | Responsive equipment, inventory, character, trader, blacksmith and journal                                      |
-| `public/assets/items/`, `scripts/generate-items.py`     | Original CC0 item atlas and editable generator                                                                  |
-| `src/game/audio/`, `src/components/Soundscape.tsx`      | One shared audio context, music, ambience, combat and enhancement cues                                          |
-| `src/game/loadout.ts`, `src/components/Sanctuary.tsx`   | Three character archetypes and the retained practice character/relic loadout                                    |
-| `src/game/feedback.ts`, `src/game/phaser/combat-vfx.ts` | Bounded semantic feedback and pooled visual effects                                                             |
-| `src/game/campaign/`                                    | World/stage/difficulty definitions, seeded maps, hazards, unlocks, rewards and atomic campaign saves            |
-| `src/components/WorldMap.tsx`                           | World atlas, stage selection, locks, boss preview and material wallet                                           |
-| `src/game/content/forest.ts`                            | Enemy, weapon, blessing, obstacle, and stage definitions                                                        |
-| `src/game/engine.ts`                                    | Framework-independent simulation, targeting, swept collisions, spatial buckets, object pools, XP and boss logic |
-| `src/game/phaser/`                                      | Boot, Preload, MainMenu, Game, and Results scenes; rendering, camera and input                                  |
-| `src/game/bridge.ts`                                    | Typed, per-instance React ↔ Phaser commands and events                                                         |
-| `src/components/PhaserHost.tsx`                         | Browser-only dynamic import, instance ownership and teardown                                                    |
-| `src/components/NowRiftGame.tsx`                        | HUD, blessings, pause, settings, results and exit confirmation                                                  |
-| `src/components/NowRiftMainMenu.tsx`                    | Gateway, Hub, weapon selection and local records                                                                |
-| `src/game/services/`                                    | Replaceable run repository backed by versioned IndexedDB; legacy score metadata                                 |
-| `src/state/settings.ts`                                 | Zustand preference state with validated localStorage reads                                                      |
-| `public/assets/forest/`                                 | Original local art and CC0 asset notice                                                                         |
-| `scripts/generate-assets.py`                            | Editable procedural pixel-art source; requires Pillow only to regenerate                                        |
+| Location                                                | Responsibility                                                                                                        |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `src/game/rpg/`                                         | Typed items, seeded loot, inventory, stat engine, enhancement, economy commands and migration                         |
+| `src/components/RpgScreen.tsx`, `src/app/rpg.css`       | Responsive equipment, inventory, character, trader, blacksmith and journal                                            |
+| `public/assets/items/`, `scripts/generate-items.py`     | Original CC0 item atlas and editable generator                                                                        |
+| `src/game/audio/`, `src/components/Soundscape.tsx`      | One shared audio context, music, ambience, combat and enhancement cues                                                |
+| `src/game/loadout.ts`, `src/components/Sanctuary.tsx`   | Three character archetypes and the retained practice character/relic loadout                                          |
+| `src/game/feedback.ts`, `src/game/phaser/combat-vfx.ts` | Bounded semantic feedback and pooled visual effects                                                                   |
+| `src/game/campaign/`                                    | World/stage/difficulty definitions, seeded maps, hazards, unlocks, rewards and atomic campaign saves                  |
+| `src/components/WorldMap.tsx`                           | World atlas, stage selection, locks, boss preview and material wallet                                                 |
+| `src/game/content/forest.ts`                            | Enemy, weapon, blessing, obstacle, and stage definitions                                                              |
+| `src/game/engine.ts`                                    | Framework-independent simulation, targeting, swept collisions, spatial buckets, object pools, XP and boss logic       |
+| `src/game/phaser/`                                      | Boot, Preload, MainMenu, Game, and Results scenes; rendering, camera and input                                        |
+| `src/game/bridge.ts`                                    | Typed, per-instance React ↔ Phaser commands and events                                                               |
+| `src/components/PhaserHost.tsx`                         | Browser-only dynamic import, instance ownership and teardown                                                          |
+| `src/components/NowRiftGame.tsx`                        | HUD, blessings, pause, settings, results and exit confirmation                                                        |
+| `src/components/NowRiftMainMenu.tsx`                    | Gateway, Hub, weapon selection and local records                                                                      |
+| `src/game/services/`                                    | Replaceable run repository backed by versioned IndexedDB; legacy score metadata                                       |
+| `src/game/persistence/`                                 | Profile/slot repository, atomic IndexedDB adapter, schema migration, daily systems, checkpoints and validated backups |
+| `src/components/ProfileScreen.tsx`, `SaveIndicator.tsx` | Guest dashboard, save slots, rewards, recovery, import/export and confirmed storage status                            |
+| `src/state/settings.ts`                                 | Zustand preference state with validated localStorage reads                                                            |
+| `public/assets/forest/`                                 | Original local art and CC0 asset notice                                                                               |
+| `scripts/generate-assets.py`                            | Editable procedural pixel-art source; requires Pillow only to regenerate                                              |
 
 Phaser owns the frame loop, input, camera, scenes, and pooled visual objects. The simulation owns all combat state. React receives snapshots at approximately 10 Hz or on phase changes, never per-frame combat updates. Instances and listeners are scoped to a mount/run; no shared game singleton is created. Phaser uses its Canvas2D renderer for this sprite-only stage: it avoided costly software WebGL rendering in cloud Chromium while retaining the Phaser scene lifecycle.
 
 ## Local data
 
-Completed run records are stored in IndexedDB (`nowrift-saves`, schema version 1). The Hub displays the latest 20. Stable run IDs make result writes idempotent. Invalid records are reported and preserved, not silently reset. Storage failure leaves the game playable and reports that saving failed.
+IndexedDB `nowrift-campaign` holds the schema-2 local player, three independent character records and automatic recovery backups. Each character keeps one canonical wallet, inventory, equipment, progression, enhancement journal, statistics, daily objectives, achievements and run history. Original Phase II/III data migrates in place into the first character; the original `nowrift-saves` history is imported once and preserved. The Hub displays the active character’s latest 20 records.
 
-Small preferences use `nowrift-preferences-v1`; the legacy best-kill key `nowrift-phase1-best-kills` is retained. Preference and metadata reads validate malformed values. Active runs and temporary blessings are in-memory and end on refresh/exit. Campaign unlocks, currency, materials, character XP and RPG state share one canonical profile in `nowrift-campaign` (database version 1; nested RPG schema 1). Existing Phase II profiles migrate without resetting balances or clears; prior boss candidates become owned relic equipment. Commands use atomic IndexedDB transactions, stable receipts and revision checks. This offline single-player economy is not tamper-proof. Active runs are not saved; cross-device saves and Phase IV features are outside this release.
+Runs checkpoint every ten seconds and on pause, upgrades and safe lifecycle events. After a reload, use **Recover Run → Resume checkpoint**; recovery starts paused with the saved combat state and random stream. Stable receipts, run ownership and atomic settlement prevent duplicate rewards. Another tab must explicitly take over a checkpoint; its old writer is blocked. Storage failures keep the latest committed checkpoint. Denied storage permits clearly labeled temporary practice, while permanent campaign progression requires working storage.
+
+Small preferences and active-slot metadata use the shared localStorage abstraction, with debounced writes and lifecycle flushing. JSON exports include the selected character, profile metadata, shared check-in history and SHA-256 integrity checksum. Imports validate and preview the file, require confirmation, and create a recovery copy before replacement. Other slots are preserved. Keep external backups: browser eviction or clearing site data can remove every local copy. Local files and device time are editable; checksums and local Player IDs provide no server verification or competitive anti-cheat.
 
 ## Sound and accessibility
 
@@ -127,6 +133,6 @@ npm run build
 
 Without the flags, the ordinary guest/input/responsive/settings/PWA smoke tests run and the instrumented tests are explicitly skipped. The fixtures set up scenarios; damage, telegraphs, outcomes, and persistence still execute real game code. A separate deterministic movement-and-upgrade bot (`test:playthrough`) completes the full eight-minute survival and boss encounter using normal combat stats; it does not establish human difficulty balance.
 
-Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Phase III validation](docs/phase-3-validation.md) for the current 196 unit tests and the expanded 42-case browser suite, ordinary production checks and measured performance; [Phase I validation](docs/phase-1-validation.md) records the original slice.
+Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Phase IV validation](docs/phase-4-validation.md) for current persistence tests and browser results; [Phase III validation](docs/phase-3-validation.md) records the preceding RPG implementation, and [Phase I validation](docs/phase-1-validation.md) records the original slice.
 
 Production target: `https://nowrift-one.vercel.app/`. Deployment requires Vercel project access; see the Phase III release notes. Application deployment is separate from publishing this development environment.

@@ -1,4 +1,5 @@
 "use client";
+import { toggleFullscreen } from "@/game/persistence/display";
 import LanguageSwitcher from "./LanguageSwitcher";
 import Image from "next/image";
 import { useI18n } from "@/i18n/useI18n";
@@ -125,6 +126,18 @@ export function Settings({ onClose }: { onClose: () => void }) {
   const { t, text, locale } = useI18n();
   const prefs = useSettings();
   const [status, setStatus] = useState(() => audio.diagnostics());
+  const [fullscreenSupported, setFullscreenSupported] = useState(false),
+    [displayError, setDisplayError] = useState("");
+  useEffect(
+    () =>
+      setFullscreenSupported(
+        Boolean(
+          document.fullscreenEnabled &&
+            document.documentElement.requestFullscreen,
+        ),
+      ),
+    [],
+  );
   useEffect(() => {
     const timer = setInterval(() => setStatus(audio.diagnostics()), 500);
     return () => clearInterval(timer);
@@ -294,6 +307,66 @@ export function Settings({ onClose }: { onClose: () => void }) {
           </label>
         </section>
       </div>
+      <section className="input-settings">
+        <h3>{text("Input & display")}</h3>
+        <label className="setting-row">
+          <span>{text("Keyboard controls")}</span>
+          <select
+            aria-label={text("Keyboard controls")}
+            value={prefs.keyboard}
+            onChange={(e) =>
+              prefs.set({ keyboard: e.target.value as typeof prefs.keyboard })
+            }
+          >
+            <option value="both">{text("WASD + arrows")}</option>
+            <option value="wasd">WASD</option>
+            <option value="arrows">{text("Arrow keys")}</option>
+          </select>
+        </label>
+        <label className="setting-row">
+          <span>{text("Touch movement area")}</span>
+          <select
+            aria-label={text("Touch movement area")}
+            value={prefs.touchArea}
+            onChange={(e) =>
+              prefs.set({ touchArea: e.target.value as typeof prefs.touchArea })
+            }
+          >
+            <option value="anywhere">{text("Anywhere")}</option>
+            <option value="left">{text("Left half")}</option>
+            <option value="right">{text("Right half")}</option>
+          </select>
+        </label>
+        <label className="setting-row">
+          <span>{text("Prefer fullscreen on start")}</span>
+          <input
+            type="checkbox"
+            aria-label={text("Prefer fullscreen on start")}
+            checked={prefs.fullscreen}
+            onChange={(e) => prefs.set({ fullscreen: e.target.checked })}
+          />
+        </label>
+        <button
+          className="action-button"
+          type="button"
+          disabled={!fullscreenSupported}
+          onClick={() =>
+            void toggleFullscreen()
+              .then(() => setDisplayError(""))
+              .catch(() =>
+                setDisplayError(
+                  "Fullscreen was blocked by the browser. Use Focus mode or allow fullscreen access.",
+                ),
+              )
+          }
+        >
+          {text("TOGGLE FULLSCREEN")}
+        </button>
+        <p className="muted">
+          {text("Fullscreen requires browser support and a user gesture.")}
+        </p>
+        {displayError && <p role="status">{text(displayError)}</p>}
+      </section>
       <p className="muted">
         {t(
           "settings",

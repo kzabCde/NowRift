@@ -9,8 +9,11 @@ export type Command =
       weapon: WeaponId;
       stage?: StageSelection;
       loadout?: Loadout;
+      run?: import("./persistence/model").RunOwner;
+      checkpoint?: import("./persistence/checkpoint").RunCheckpoint | null;
     }
   | { type: "pause" }
+  | { type: "checkpoint" | "storage-blocked" | "storage-ready" }
   | { type: "upgrade"; id: UpgradeId }
   | { type: "exit" }
   | {
@@ -21,6 +24,7 @@ export type Command =
     }
   | { type: "tonic-lock" | "tonic-unlock"; runId: string };
 export type RunResult = {
+  run?: import("./persistence/model").RunOwner;
   campaign?: CampaignResult;
   id: string;
   at: number;
@@ -39,6 +43,7 @@ export type GameEvents = {
   error: string;
   result: RunResult;
   touch: boolean;
+  checkpoint: import("./persistence/checkpoint").RunCheckpoint;
 };
 /** One bridge per mounted game; no global scene singleton or shared simulation. */
 export class GameBridge {

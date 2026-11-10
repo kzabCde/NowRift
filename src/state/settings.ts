@@ -1,3 +1,4 @@
+import { preferences } from "../game/persistence/preferences";
 import { create } from "zustand";
 export type Quality = "low" | "medium" | "high";
 export type Preferences = {
@@ -14,6 +15,9 @@ export type Preferences = {
   ambient: number;
   muted: boolean;
   audioIntensity: "gentle" | "balanced" | "full";
+  keyboard: "both" | "wasd" | "arrows";
+  touchArea: "anywhere" | "left" | "right";
+  fullscreen: boolean;
 };
 export const defaults: Preferences = {
   reducedEffects: false,
@@ -29,6 +33,9 @@ export const defaults: Preferences = {
   ambient: 0.4,
   muted: false,
   audioIntensity: "balanced",
+  keyboard: "both",
+  touchArea: "anywhere",
+  fullscreen: false,
 };
 export const QUALITY = {
   low: {
@@ -56,18 +63,22 @@ export function parsePreferences(value: unknown): Preferences {
     const valid =
       key === "zoom"
         ? [0.85, 1, 1.15].includes(v as number)
-        : key === "quality"
-          ? ["low", "medium", "high"].includes(v as string)
-          : key === "damageNumbers"
-            ? ["off", "sparse", "all"].includes(v as string)
-            : key === "audioIntensity"
-              ? ["gentle", "balanced", "full"].includes(v as string)
-              : typeof defaults[key] === "boolean"
-                ? typeof v === "boolean"
-                : typeof v === "number" &&
-                  Number.isFinite(v) &&
-                  v >= 0 &&
-                  v <= 1;
+        : key === "keyboard"
+          ? ["both", "wasd", "arrows"].includes(v as string)
+          : key === "touchArea"
+            ? ["anywhere", "left", "right"].includes(v as string)
+            : key === "quality"
+              ? ["low", "medium", "high"].includes(v as string)
+              : key === "damageNumbers"
+                ? ["off", "sparse", "all"].includes(v as string)
+                : key === "audioIntensity"
+                  ? ["gentle", "balanced", "full"].includes(v as string)
+                  : typeof defaults[key] === "boolean"
+                    ? typeof v === "boolean"
+                    : typeof v === "number" &&
+                      Number.isFinite(v) &&
+                      v >= 0 &&
+                      v <= 1;
     if (!valid) throw new Error("Invalid preference: " + key);
     Object.assign(out, { [key]: v });
   }
@@ -85,7 +96,7 @@ export const useSettings = create<
   set(p) {
     const next = parsePreferences({ ...get(), ...p });
     try {
-      localStorage.setItem("nowrift-preferences-v1", JSON.stringify(next));
+      preferences.queue("nowrift-preferences-v1", JSON.stringify(next));
       set({ ...next, warning: "" });
     } catch {
       set({
@@ -97,7 +108,7 @@ export const useSettings = create<
   },
   load() {
     try {
-      const raw = localStorage.getItem("nowrift-preferences-v1");
+      const raw = preferences.get("nowrift-preferences-v1");
       const next = raw
         ? parsePreferences(JSON.parse(raw))
         : {

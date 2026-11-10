@@ -331,7 +331,9 @@ test.describe("instrumented gameplay (NEXT_PUBLIC_E2E=1 build only)", () => {
     await expect(
       page.getByRole("heading", { name: "The veil is lifted." }),
     ).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Run record saved");
+    await expect(page.locator(".save-message")).toContainText(
+      "Run record saved",
+    );
     await page.screenshot({ path: info.outputPath("victory.png") });
     await page.waitForTimeout(1000);
     await page.getByRole("button", { name: "TRY AGAIN" }).click();
@@ -341,7 +343,9 @@ test.describe("instrumented gameplay (NEXT_PUBLIC_E2E=1 build only)", () => {
     await expect(
       page.getByRole("heading", { name: "Your light fades." }),
     ).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Run record saved");
+    await expect(page.locator(".save-message")).toContainText(
+      "Run record saved",
+    );
     await page
       .getByRole("button", { name: "RETURN TO MAIN MENU", exact: true })
       .click();
@@ -366,7 +370,9 @@ test.describe("instrumented gameplay (NEXT_PUBLIC_E2E=1 build only)", () => {
     );
     await start(page);
     await page.evaluate(() => window.__NOWRIFT_TEST__!.scenario("defeat"));
-    await expect(page.getByRole("status")).toContainText("could not be saved");
+    await expect(page.locator(".save-message")).toContainText(
+      "could not be saved",
+    );
     await page.getByRole("button", { name: "TRY AGAIN" }).click();
     await expect(page.locator(".game-state")).toContainText("LIVE RUN");
   });

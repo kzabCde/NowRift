@@ -51,10 +51,10 @@ test("atlas discovers locked worlds, explains locks, and supports mobile layout"
   await expect(
     page.getByRole("button", { name: "START STAGE →" }),
   ).toBeDisabled();
-  await expect(page.getByRole("status")).toContainText("previous world");
+  await expect(page.locator(".notice")).toContainText("previous world");
   await page.locator(".world-card").first().click();
   await page.getByRole("button", { name: "HARD", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("five NORMAL");
+  await expect(page.locator(".notice")).toContainText("five NORMAL");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(

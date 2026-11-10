@@ -1,4 +1,5 @@
 "use client";
+import { preferences } from "../game/persistence/preferences";
 import { create } from "zustand";
 import {
   defaultLocale,
@@ -20,7 +21,7 @@ export const useLocale = create<LocaleState>((set) => ({
     if (typeof window === "undefined") return;
     let saved: string | null = null;
     try {
-      saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+      saved = preferences.get(LOCALE_STORAGE_KEY);
     } catch {
       /* private browsing */
     }
@@ -34,7 +35,7 @@ export const useLocale = create<LocaleState>((set) => ({
     if (!isLocale(locale)) return;
     set({ locale, hydrated: true });
     try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      preferences.set(LOCALE_STORAGE_KEY, locale);
     } catch {
       /* session-only */
     }

@@ -34,6 +34,8 @@ import {
 } from "@/game/rpg/actions";
 import { audio } from "@/game/audio/engine";
 import { CHARACTERS, type CharacterId } from "@/game/loadout";
+import { preferences } from "@/game/persistence/preferences";
+import SaveIndicator from "./SaveIndicator";
 import { useI18n } from "@/i18n/useI18n";
 import LanguageSwitcher from "./LanguageSwitcher";
 import {
@@ -180,7 +182,7 @@ export default function RpgScreen({
         if (!cancelled) setError(String(e));
       });
     try {
-      setSound(localStorage.getItem("nowrift-rpg-sfx") !== "off");
+      setSound(preferences.get("nowrift-rpg-sfx") !== "off");
     } catch {
       /* Optional preference. */
     }
@@ -202,6 +204,7 @@ export default function RpgScreen({
         const result = await campaignRepository.act({
           id: "action-" + crypto.randomUUID(),
           at: Date.now(),
+          slotId: profile.local?.id,
           expectedRevision: revision ?? profile.rpg!.revision,
           action,
         });
@@ -345,6 +348,7 @@ export default function RpgScreen({
       <header className="topbar">
         <Brand />
         <div className="header-right">
+          <SaveIndicator />
           <LanguageSwitcher compact />
           <button
             className="quiet-button"
@@ -353,7 +357,7 @@ export default function RpgScreen({
               const next = !sound;
               setSound(next);
               try {
-                localStorage.setItem("nowrift-rpg-sfx", next ? "on" : "off");
+                preferences.set("nowrift-rpg-sfx", next ? "on" : "off");
               } catch {
                 /* optional */
               }

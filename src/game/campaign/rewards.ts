@@ -15,6 +15,7 @@ export type Rewards = {
   firstClear: boolean;
 };
 export type CampaignResult = {
+  run?: import("../persistence/model").RunOwner;
   id: string;
   stageId: string;
   difficulty: DifficultyId;

@@ -1,5 +1,11 @@
 "use client";
-import { practiceLoadout } from "@/game/rpg/stats";
+import ProfileScreen from "./ProfileScreen";
+import SaveIndicator from "./SaveIndicator";
+import { profileRepository } from "@/game/persistence/repository";
+import type { SaveData } from "@/game/persistence/model";
+import type { RunCheckpoint } from "@/game/persistence/checkpoint";
+import { enterPreferredFullscreen } from "@/game/persistence/display";
+import { practiceLoadout, characterLevel } from "@/game/rpg/stats";
 import RpgScreen from "./RpgScreen";
 import LanguageSwitcher from "./LanguageSwitcher";
 import Image from "next/image";
@@ -19,13 +25,12 @@ import PwaControls from "./PwaControls";
 import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
 import { WEAPONS, type WeaponId } from "@/game/content/forest";
 import { runRepository } from "@/game/services/saves";
-import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
   const { t, text, date, plural } = useI18n();
   const [screen, setScreen] = useState<
-    "gateway" | "lobby" | "game" | "worlds" | "rpg"
+    "gateway" | "lobby" | "game" | "worlds" | "rpg" | "profile"
   >("gateway");
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -46,6 +51,12 @@ export default function NowRiftMainMenu() {
     [character, progress],
   );
   const [selection, setSelection] = useState<StageSelection | undefined>();
+  const [recovery, setRecovery] = useState<RunCheckpoint | undefined>();
+  const onProfileChange = useCallback((p: SaveData) => {
+    setProgress(p);
+    setCharacter(p.local.character);
+    setWeapon(p.local.weapon);
+  }, []);
   const [weapon, setWeapon] = useState<WeaponId>("arcane"),
     [controls, setControls] = useState(false),
     [settings, setSettings] = useState(false),
@@ -58,13 +69,6 @@ export default function NowRiftMainMenu() {
     closeHistory = useCallback(() => setHistory(false), []);
   useEffect(() => {
     useSettings.getState().load();
-    try {
-      const saved = localStorage.getItem("nowrift-character-v1");
-      if (saved && Object.hasOwn(CHARACTERS, saved))
-        setCharacter(saved as CharacterId);
-    } catch {
-      /* session choice still works */
-    }
     // Warm browser-only async gameplay chunks as well as the initial app shell.
     import("@/game/phaser/create-game")
       .then(async () => {
@@ -96,6 +100,16 @@ export default function NowRiftMainMenu() {
       .then((p) => {
         if (!cancelled) {
           setProgress(p);
+          if (p.local) {
+            setCharacter(p.local.character);
+            setWeapon(p.local.weapon);
+            setBest(p.local.stats.bestKills);
+            if (p.local.legacyWarning) setWarning(p.local.legacyWarning);
+          }
+          void runRepository
+            .list(p.local?.id)
+            .then(setRuns)
+            .catch((e) => setWarning(String(e)));
         }
       })
       .catch(() => {
@@ -105,33 +119,25 @@ export default function NowRiftMainMenu() {
           );
         }
       });
-    runRepository
-      .list()
-      .then((r) => {
-        if (!cancelled) setRuns(r);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setWarning(
-            e instanceof Error
-              ? e.message
-              : t(
-                  "main",
-                  "Local records are unavailable; gameplay still works.",
-                ),
-          );
-      });
-    try {
-      setBest(parseBestKills(localStorage.getItem(BEST_SCORE_KEY)));
-    } catch {
-      setWarning(
-        "Browser storage is unavailable. Runs remain playable without saving.",
-      );
-    }
     return () => {
       cancelled = true;
     };
   }, [screen]);
+  if (screen === "profile")
+    return (
+      <ProfileScreen
+        onBack={() => setScreen("lobby")}
+        onChanged={onProfileChange}
+        onResume={(save, checkpoint) => {
+          enterPreferredFullscreen();
+          onProfileChange(save);
+          setSelection(checkpoint.stage);
+          setWeapon(checkpoint.weapon);
+          setRecovery(checkpoint);
+          setScreen("game");
+        }}
+      />
+    );
   if (screen === "rpg")
     return (
       <RpgScreen
@@ -145,6 +151,7 @@ export default function NowRiftMainMenu() {
       <main className="nr-main">
         <header className="topbar">
           <Brand />
+          <SaveIndicator />
           <LanguageSwitcher compact />
         </header>
         <WorldMap
@@ -163,10 +170,15 @@ export default function NowRiftMainMenu() {
       <>
         <NowRiftGame
           autoStart
+          slotId={progress.local?.id}
+          recovery={recovery}
           loadout={loadout}
           stage={selection}
           weapon={weapon}
-          onExitToMenu={() => setScreen("lobby")}
+          onExitToMenu={(message) => {
+            if (message) setWarning(message);
+            setScreen("lobby");
+          }}
         />
       </>
     );
@@ -179,6 +191,7 @@ export default function NowRiftMainMenu() {
             {t("main", "GUEST EDITION")} <span>·</span>{" "}
             {t("main", "LOCAL ADVENTURE")}{" "}
           </span>
+          <SaveIndicator />
           <LanguageSwitcher compact />
           <PwaControls />
           <button
@@ -245,6 +258,13 @@ export default function NowRiftMainMenu() {
               <span className="gold">.</span>
             </h2>
             <nav aria-label={t("main", "Main navigation")}>
+              <button
+                className="nav-button"
+                onClick={() => setScreen("profile")}
+              >
+                {text("PROFILE & SAVES")}
+                <span>↗</span>
+              </button>
               <button
                 className="nav-button"
                 onClick={() => setScreen("worlds")}
@@ -404,7 +424,13 @@ export default function NowRiftMainMenu() {
                     className={`weapon-card ${weapon === id ? "selected" : ""}`}
                     aria-pressed={weapon === id}
                     key={id}
-                    onClick={() => setWeapon(id)}
+                    onClick={() => {
+                      setWeapon(id);
+                      void profileRepository
+                        .configure({ weapon: id }, progress.local?.id)
+                        .then(setProgress)
+                        .catch((e) => setWarning(String(e)));
+                    }}
                     type="button"
                   >
                     <span className="weapon-number">0{w.icon + 1}</span>
@@ -421,6 +447,35 @@ export default function NowRiftMainMenu() {
                 );
               })}
             </div>
+            {progress.local && (
+              <p className="profile-subtitle">
+                {progress.local.name} · {text("Level")}{" "}
+                {characterLevel(progress.xp).level}{" "}
+                <button
+                  className="quiet-button"
+                  onClick={() => setScreen("profile")}
+                >
+                  {text("PROFILES & DAILY REWARDS →")}
+                </button>
+              </p>
+            )}
+            {progress.local?.checkpoint && (
+              <div className="profile-lobby-recovery">
+                <div>
+                  <strong>{text("Saved run available")}</strong>
+                  <p>
+                    {clock(Math.floor(progress.local.checkpoint.state.time))} ·{" "}
+                    {text("Resume paused from your latest checkpoint.")}
+                  </p>
+                </div>
+                <button
+                  className="rpg-button"
+                  onClick={() => setScreen("profile")}
+                >
+                  {text("RECOVER RUN →")}
+                </button>
+              </div>
+            )}
             <div className="embark-row">
               <p>
                 <span className="live-dot" />{" "}
@@ -436,7 +491,9 @@ export default function NowRiftMainMenu() {
               <button
                 className="primary-button embark-button"
                 onClick={() => {
+                  enterPreferredFullscreen();
                   setSelection(undefined);
+                  setRecovery(undefined);
                   setScreen("game");
                 }}
                 type="button"
@@ -471,7 +528,10 @@ export default function NowRiftMainMenu() {
           onSelect={(id) => {
             setCharacter(id);
             try {
-              localStorage.setItem("nowrift-character-v1", id);
+              void profileRepository
+                .configure({ character: id }, progress.local?.id)
+                .then(setProgress)
+                .catch((e) => setWarning(String(e)));
             } catch {
               /* session choice */
             }
@@ -527,7 +587,7 @@ export default function NowRiftMainMenu() {
             <span>
               {t(
                 "main",
-                "At eight minutes, defeat the Forest Guardian. At half health it enrages. Run records are saved locally; active runs reset on exit.",
+                "At eight minutes, defeat the Forest Guardian. At half health it enrages. Interrupted runs can resume from a checkpoint in Profile & Saves. Exiting to the Hub discards the unfinished run.",
               )}{" "}
             </span>
           </div>
