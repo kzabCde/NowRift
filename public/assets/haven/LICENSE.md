@@ -1,0 +1,1 @@
+Original NowRift procedural pixel-art town kit, created for this project. CC0 1.0. No pixels from reference images or third-party game assets are included. Regenerate with scripts/generate-haven.py (Pillow).

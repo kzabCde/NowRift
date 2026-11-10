@@ -12,6 +12,8 @@ import { CHARACTERS, RELICS, type Loadout } from "../loadout";
 import { RARITIES } from "../rpg/content";
 import { validProgress, emptyProgress } from "../campaign/progression";
 import type { RunOwner } from "./model";
+import { validHarvest } from "../world/farming";
+import { OUTFITS } from "../world/save";
 type State = Pick<
   Game,
   | "phase"
@@ -42,6 +44,7 @@ type State = Pick<
 >;
 type EnvironmentState = Pick<
   NonNullable<Game["campaign"]>,
+  | "harvested"
   | "timer"
   | "slow"
   | "burn"
@@ -127,6 +130,7 @@ export function captureCheckpoint(
     state,
     environment: g.campaign
       ? {
+          ...(g.campaign.harvested ? { harvested: g.campaign.harvested } : {}),
           timer: g.campaign.timer,
           slow: g.campaign.slow,
           burn: g.campaign.burn,
@@ -161,6 +165,27 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
+  if (
+    c.stage?.activity !== undefined &&
+    (c.stage.activity !== "farming" || c.stage.stageId !== "forest-1")
+  )
+    return false;
+  if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
+    return false;
+  if (c.stage?.startingHp !== undefined && !finite(c.stage.startingHp, 1, 5000))
+    return false;
+  if (c.stage?.returnTo !== undefined && c.stage.returnTo !== "haven")
+    return false;
+  if (
+    c.environment?.harvested !== undefined &&
+    !validHarvest(c.environment.harvested)
+  )
+    return false;
+  if (
+    c.stage?.activity === "farming" &&
+    !validHarvest(c.environment?.harvested)
+  )
+    return false;
   if (
     c.schema !== 1 ||
     !obj(c.run) ||

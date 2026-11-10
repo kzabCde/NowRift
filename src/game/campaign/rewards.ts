@@ -15,6 +15,9 @@ export type Rewards = {
   firstClear: boolean;
 };
 export type CampaignResult = {
+  activity?: "farming";
+  harvested?: string[];
+  hp?: number;
   run?: import("../persistence/model").RunOwner;
   id: string;
   stageId: string;

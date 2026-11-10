@@ -1,8 +1,25 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v11-profiles";
+const VERSION = "nowrift-pwa-v12-haven";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
+  "/assets/haven/terrain.png",
+  "/assets/haven/fountain.png",
+  "/assets/haven/forge.png",
+  "/assets/haven/workshop.png",
+  "/assets/haven/wardrobe.png",
+  "/assets/haven/market.png",
+  "/assets/haven/inn.png",
+  "/assets/haven/store.png",
+  "/assets/haven/board.png",
+  "/assets/haven/portal.png",
+  "/assets/haven/dummy.png",
+  "/assets/haven/chest.png",
+  "/assets/haven/tree.png",
+  "/assets/haven/npc.png",
+  "/assets/haven/player-moss.png",
+  "/assets/haven/player-ember.png",
+  "/assets/haven/player-tide.png",
   "/assets/items/atlas.png",
   "/assets/worlds/forest/projectiles.png",
   "/assets/worlds/desert/projectiles.png",

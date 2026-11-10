@@ -1,10 +1,14 @@
-# NowRift — Phase IV: Local Profiles and Daily Progression
+# NowRift — Rift Haven Foundation
 
 A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four attack styles, explore four worlds with twenty stages, and grow stronger through real equipment, character progression and a local economy. Three local characters, recoverable runs, daily rewards, quests, achievements and JSON backups keep progression on your device. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
+
+**Enter Rift Haven** adds the first connected open-world RPG slice: walk around an original pixel-art town, meet Mara, visit working RPG stations, change your cloak palette, train against a real target, and travel through the portal to a repeatable forest expedition. Gather resources, extract, return, craft with the same inventory, and continue after a refresh. The existing launcher and all twenty campaign challenges remain available. See [implemented scope, architecture, controls, migration, tests and remaining expansion work](docs/open-world-foundation.md).
 
 Open **Profile & Saves** in the Hub to customize your guest name, create/select/rename characters, claim rewards, inspect actual statistics, and export or restore a save. Check-in rewards are shared across the local player’s three slots and reset at midnight in **Asia/Bangkok**. Daily quests and achievements use actual combat and inventory actions. See [Phase IV persistence rules, validation and limitations](docs/phase-4-validation.md).
 
 ## Campaign
+
+For the new journey, use **Continue as Guest → Profile & Saves** to select a character, then **Enter Rift Haven**. Move with WASD/arrows or touch drag; press **E** near a building, NPC or portal. **I** opens inventory, **M** opens the town map, and **Q** opens the journal. The portal’s forest expedition requires 20 seconds and 5 kills before returning to its extraction point. Successful extraction banks enemy loot and gathered supplies; defeat/abandonment loses unbanked expedition loot while existing equipment remains safe. The inn restores health for the next trip. The first prologue rewards one actual extraction.
 
 Enter as a guest, choose your weapon, then open **World Map**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. The original **Start New Run** button remains a Phase I practice route.
 
@@ -133,6 +137,6 @@ npm run build
 
 Without the flags, the ordinary guest/input/responsive/settings/PWA smoke tests run and the instrumented tests are explicitly skipped. The fixtures set up scenarios; damage, telegraphs, outcomes, and persistence still execute real game code. A separate deterministic movement-and-upgrade bot (`test:playthrough`) completes the full eight-minute survival and boss encounter using normal combat stats; it does not establish human difficulty balance.
 
-Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Phase IV validation](docs/phase-4-validation.md) for current persistence tests and browser results; [Phase III validation](docs/phase-3-validation.md) records the preceding RPG implementation, and [Phase I validation](docs/phase-1-validation.md) records the original slice.
+Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Rift Haven validation](docs/open-world-foundation.md) for current tests and browser results, and [Phase IV validation](docs/phase-4-validation.md) for the preceding persistence release; [Phase III validation](docs/phase-3-validation.md) records the preceding RPG implementation, and [Phase I validation](docs/phase-1-validation.md) records the original slice.
 
 Production target: `https://nowrift-one.vercel.app/`. Deployment requires Vercel project access; see the Phase III release notes. Application deployment is separate from publishing this development environment.

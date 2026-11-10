@@ -8,6 +8,8 @@ import {
 } from "./content";
 import { constructMap, type MapLayout } from "./maps";
 export type StageRuntime = {
+  activity?: "farming";
+  harvested?: string[];
   definition: StageDefinition;
   difficulty: DifficultyDefinition;
   world: WorldDefinition;

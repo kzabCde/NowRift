@@ -4,6 +4,8 @@ import type { CampaignResult } from "./campaign/rewards";
 import type { Snapshot } from "./engine";
 import type { UpgradeId, WeaponId } from "./content/forest";
 export type Command =
+  | import("./world/bridge").HavenCommand
+  | { type: "expedition-interact" }
   | {
       type: "start";
       weapon: WeaponId;
@@ -36,6 +38,11 @@ export type RunResult = {
   weapon: WeaponId;
 };
 export type GameEvents = {
+  haven: import("./world/bridge").HavenSnapshot;
+  interaction: { id: string; position: import("./world/content").Point };
+  "haven-save": import("./world/content").Point;
+  "haven-shortcut": "inventory" | "map" | "quests" | "pause";
+  expedition: import("./world/farming").ExpeditionPrompt;
   command: Command;
   hud: Snapshot;
   ready: boolean;

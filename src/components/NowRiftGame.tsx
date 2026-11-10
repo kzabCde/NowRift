@@ -3,6 +3,9 @@ import SaveIndicator from "./SaveIndicator";
 import { profileRepository } from "@/game/persistence/repository";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
+import type { ExpeditionPrompt } from "@/game/world/farming";
+import { FARM, travelReason } from "@/game/world/content";
+import { ITEMS } from "@/game/rpg/content";
 import { practiceLoadout } from "@/game/rpg/stats";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
@@ -62,6 +65,8 @@ export default function NowRiftGame({
     startGuard = useRef(false);
   const [starting, setStarting] = useState(false);
   const [saveBlocked, setSaveBlocked] = useState(false);
+  const [expedition, setExpedition] = useState<ExpeditionPrompt | null>(null);
+  const farming = stage?.activity === "farming";
   const [reward, setReward] = useState<Rewards | null>(null);
   const [tonics, setTonics] = useState<Record<string, number>>({}),
     [tonicBusy, setTonicBusy] = useState(false);
@@ -87,6 +92,7 @@ export default function NowRiftGame({
       bridge.on("loading", setLoading),
       bridge.on("error", setError),
       bridge.on("touch", setTouch),
+      bridge.on("expedition", setExpedition),
       bridge.on("ready", (value) => {
         setReady(value);
         if (value && autoStart) bootStart.current();
@@ -205,6 +211,10 @@ export default function NowRiftGame({
         slotId ?? runContext.current?.slotId,
       );
       const recovering = !!recovery && !didRecover.current;
+      if (stage) {
+        const reason = travelReason(stage, p.clears);
+        if (reason) throw new Error(reason);
+      }
       const prepared = await profileRepository.beginRun(
         p.local.id,
         recovering,
@@ -218,6 +228,12 @@ export default function NowRiftGame({
         (stage
           ? {
               ...stage,
+              ...(stage.activity === "farming"
+                ? {
+                    startingHp: p.local.world!.hp,
+                    outfit: p.local.world!.outfit,
+                  }
+                : {}),
               clears: p.clears,
               ...campaignLoadout(p, weapon, p.local.character),
             }
@@ -332,9 +348,11 @@ export default function NowRiftGame({
         <div className="run-heading hero">
           <div>
             <span className="eyebrow">
-              {definition
-                ? `${text(world!.name).toUpperCase()} / ${t("game", "STAGE")} ${definition.number}`
-                : t("game", "CHAPTER I / THE FIRST BREACH")}
+              {farming
+                ? t("haven", "Farming Expedition")
+                : definition
+                  ? `${text(world!.name).toUpperCase()} / ${t("game", "STAGE")} ${definition.number}`
+                  : t("game", "CHAPTER I / THE FIRST BREACH")}
             </span>
             <h1>
               {world ? (
@@ -347,7 +365,12 @@ export default function NowRiftGame({
             </h1>
           </div>
           <p>
-            {definition && stage ? (
+            {farming ? (
+              t(
+                "haven",
+                "Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.",
+              )
+            ) : definition && stage ? (
               `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game", "then defeat the guardian") : t("game", "survival")}`
             ) : (
               <>
@@ -472,6 +495,41 @@ export default function NowRiftGame({
             </div>
           </div>
           <div className="arena">
+            {farming && expedition && hud.phase === "playing" && (
+              <div className="expedition-context">
+                {expedition.target ? (
+                  <button
+                    disabled={
+                      expedition.target === "extract" && !expedition.ready
+                    }
+                    onClick={() =>
+                      bridge.emit("command", { type: "expedition-interact" })
+                    }
+                  >
+                    {t(
+                      "haven",
+                      expedition.target === "extract"
+                        ? "Extract to Rift Haven"
+                        : expedition.target === "fallen-wood"
+                          ? "Gather fallen wood"
+                          : expedition.target === "slime-nest"
+                            ? "Gather slime residue"
+                            : "Mine copper",
+                    )}{" "}
+                    <kbd>E</kbd>
+                  </button>
+                ) : (
+                  <p>
+                    {t(
+                      "haven",
+                      expedition.ready
+                        ? "Return to the marked portal to extract."
+                        : "Reach 20 seconds and 5 kills to extract.",
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
             {hud.statuses.length > 0 && (
               <span className="campaign-status">
                 {hud.statuses.map(text).join(" · ")}
@@ -655,22 +713,38 @@ export default function NowRiftGame({
                     : t("game", "EVERY END IS A BEGINNING")}
                 </span>
                 <h2>
-                  {hud.phase === "victory"
-                    ? t("game", "The veil is lifted.")
-                    : t("game", "Your light fades.")}
+                  {farming
+                    ? t(
+                        "haven",
+                        hud.phase === "victory"
+                          ? "Expedition complete"
+                          : "Expedition lost",
+                      )
+                    : hud.phase === "victory"
+                      ? t("game", "The veil is lifted.")
+                      : t("game", "Your light fades.")}
                 </h2>
                 <p>
-                  {hud.phase === "victory"
-                    ? definition
-                      ? t(
-                          "game",
-                          "Stage cleared. Campaign rewards are banked locally.",
-                        )
+                  {farming
+                    ? !reward
+                      ? t("haven", "Saving expedition results…")
                       : t(
-                          "game",
-                          "Forest Guardian defeated. +150 victory gold.",
+                          "haven",
+                          hud.phase === "victory"
+                            ? "Your supplies are banked. Return to Rift Haven to craft and rest."
+                            : "Unbanked expedition loot was lost. Previously owned items are safe.",
                         )
-                    : t("game", "The Rift Wanderer will rise again.")}
+                    : hud.phase === "victory"
+                      ? definition
+                        ? t(
+                            "game",
+                            "Stage cleared. Campaign rewards are banked locally.",
+                          )
+                        : t(
+                            "game",
+                            "Forest Guardian defeated. +150 victory gold.",
+                          )
+                      : t("game", "The Rift Wanderer will rise again.")}
                 </p>
                 {reward && (
                   <p className="campaign-reward" role="status">
@@ -726,7 +800,9 @@ export default function NowRiftGame({
                   onClick={() => void leave()}
                   type="button"
                 >
-                  {t("game", "RETURN TO MAIN MENU")}{" "}
+                  {farming
+                    ? t("haven", "RETURN TO HAVEN")
+                    : t("game", "RETURN TO MAIN MENU")}{" "}
                 </button>
                 <small className="muted">
                   {stage
@@ -736,6 +812,22 @@ export default function NowRiftGame({
               </DialogSurface>
             )}
           </div>
+          {farming && expedition && (
+            <p className="expedition-ledger">
+              {t("haven", "UNBANKED EXPEDITION")} ·{" "}
+              {expedition.gathered
+                .map((id) => {
+                  const n = FARM.nodes.find((n) => n.id === id)!;
+                  return `${text(ITEMS[n.item].name)} ×${n.amount}`;
+                })
+                .join(" · ")}
+              <br />
+              {t(
+                "haven",
+                "Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.",
+              )}
+            </p>
+          )}
           <div className="arena-footer">
             <div className="active-weapon">
               <PixelIcon index={WEAPONS[weapon].icon} />
@@ -791,10 +883,15 @@ export default function NowRiftGame({
           <span className="eyebrow">{t("game", "LEAVE THE FOREST?")}</span>
           <h2>{t("game", "Return to hub?")}</h2>
           <p>
-            {t(
-              "game",
-              "Your active run will end. Completed run records and your best score remain on this device.",
-            )}{" "}
+            {farming
+              ? t(
+                  "haven",
+                  "Abandoning loses all unbanked expedition loot. Previously owned items stay safe.",
+                )
+              : t(
+                  "game",
+                  "Your active run will end. Completed run records and your best score remain on this device.",
+                )}{" "}
           </p>
           <div className="dialog-actions">
             <button

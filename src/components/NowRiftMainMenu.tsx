@@ -1,5 +1,6 @@
 "use client";
 import ProfileScreen from "./ProfileScreen";
+import HavenGame from "./HavenGame";
 import SaveIndicator from "./SaveIndicator";
 import { profileRepository } from "@/game/persistence/repository";
 import type { SaveData } from "@/game/persistence/model";
@@ -30,7 +31,7 @@ import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
   const { t, text, date, plural } = useI18n();
   const [screen, setScreen] = useState<
-    "gateway" | "lobby" | "game" | "worlds" | "rpg" | "profile"
+    "gateway" | "lobby" | "game" | "worlds" | "rpg" | "profile" | "haven"
   >("gateway");
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -52,6 +53,7 @@ export default function NowRiftMainMenu() {
   );
   const [selection, setSelection] = useState<StageSelection | undefined>();
   const [recovery, setRecovery] = useState<RunCheckpoint | undefined>();
+  const [returnHaven, setReturnHaven] = useState(false);
   const onProfileChange = useCallback((p: SaveData) => {
     setProgress(p);
     setCharacter(p.local.character);
@@ -134,6 +136,7 @@ export default function NowRiftMainMenu() {
           setSelection(checkpoint.stage);
           setWeapon(checkpoint.weapon);
           setRecovery(checkpoint);
+          setReturnHaven(checkpoint.stage?.returnTo === "haven");
           setScreen("game");
         }}
       />
@@ -144,6 +147,19 @@ export default function NowRiftMainMenu() {
         weapon={weapon}
         character={character}
         onBack={() => setScreen("lobby")}
+      />
+    );
+  if (screen === "haven" && progress.local)
+    return (
+      <HavenGame
+        slotId={progress.local.id}
+        onMenu={(profiles) => setScreen(profiles ? "profile" : "lobby")}
+        onAdventure={(stage) => {
+          setReturnHaven(true);
+          setRecovery(undefined);
+          setSelection(stage);
+          setScreen("game");
+        }}
       />
     );
   if (screen === "worlds")
@@ -159,6 +175,7 @@ export default function NowRiftMainMenu() {
           character={character}
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
+            setReturnHaven(false);
             setSelection(s);
             setScreen("game");
           }}
@@ -177,7 +194,7 @@ export default function NowRiftMainMenu() {
           weapon={weapon}
           onExitToMenu={(message) => {
             if (message) setWarning(message);
-            setScreen("lobby");
+            setScreen(returnHaven ? "haven" : "lobby");
           }}
         />
       </>
@@ -448,6 +465,25 @@ export default function NowRiftMainMenu() {
               })}
             </div>
             {progress.local && (
+              <div className="haven-launch">
+                <div>
+                  <span className="eyebrow">
+                    {t("haven", "THE WORLD BETWEEN WORLDS")}
+                  </span>
+                  <h2>{t("haven", "Rift Haven")}</h2>
+                </div>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    setReturnHaven(true);
+                    setScreen("haven");
+                  }}
+                >
+                  {t("haven", "ENTER RIFT HAVEN →")}
+                </button>
+              </div>
+            )}
+            {progress.local && (
               <p className="profile-subtitle">
                 {progress.local.name} · {text("Level")}{" "}
                 {characterLevel(progress.xp).level}{" "}
@@ -493,6 +529,7 @@ export default function NowRiftMainMenu() {
                 onClick={() => {
                   enterPreferredFullscreen();
                   setSelection(undefined);
+                  setReturnHaven(false);
                   setRecovery(undefined);
                   setScreen("game");
                 }}

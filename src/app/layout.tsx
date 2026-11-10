@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./rpg.css";
 import "./profile.css";
+import "./haven.css";
 
 export const metadata: Metadata = {
   applicationName: "NowRift",
