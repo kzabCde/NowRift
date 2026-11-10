@@ -1,9 +1,15 @@
+import type { Loadout } from "./loadout";
 import type { StageSelection } from "./campaign/loader";
 import type { CampaignResult } from "./campaign/rewards";
 import type { Snapshot } from "./engine";
 import type { UpgradeId, WeaponId } from "./content/forest";
 export type Command =
-  | { type: "start"; weapon: WeaponId; stage?: StageSelection }
+  | {
+      type: "start";
+      weapon: WeaponId;
+      stage?: StageSelection;
+      loadout?: Loadout;
+    }
   | { type: "pause" }
   | { type: "upgrade"; id: UpgradeId }
   | { type: "exit" };

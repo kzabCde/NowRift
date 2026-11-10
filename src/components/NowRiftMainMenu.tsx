@@ -1,8 +1,14 @@
 "use client";
+import Atmosphere from "./Atmosphere";
+import { CharacterSelection, Inventory } from "./Sanctuary";
+import { CHARACTERS, type CharacterId, type Loadout } from "@/game/loadout";
+import { campaignRepository } from "@/game/campaign/persistence";
+import { emptyProgress, type Progress } from "@/game/campaign/progression";
 import WorldMap from "./WorldMap";
+import { audio } from "@/game/audio/engine";
 import type { StageSelection } from "@/game/campaign/loader";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import NowRiftGame from "./NowRiftGame";
 import PwaControls from "./PwaControls";
 import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
@@ -14,6 +20,33 @@ import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
   const [screen, setScreen] = useState<"gateway" | "lobby" | "game" | "worlds">(
     "gateway",
+  );
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    audio.setScene(
+      screen === "gateway"
+        ? "menu"
+        : screen === "game"
+          ? "exploration"
+          : "character",
+    );
+  }, [screen]);
+  const [character, setCharacter] = useState<CharacterId>("wanderer");
+  const [characterOpen, setCharacterOpen] = useState(false),
+    [inventoryOpen, setInventoryOpen] = useState(false);
+  const [progress, setProgress] = useState<Progress>(emptyProgress),
+    [profileReady, setProfileReady] = useState(false);
+  const closeCharacter = useCallback(() => setCharacterOpen(false), []),
+    closeInventory = useCallback(() => setInventoryOpen(false), []);
+  const loadout: Loadout = useMemo(
+    () => ({
+      character,
+      relic: progress.equipment?.equipped ?? null,
+      rank: progress.equipment?.equipped
+        ? (progress.equipment.ranks[progress.equipment.equipped] ?? 0)
+        : 0,
+    }),
+    [character, progress],
   );
   const [selection, setSelection] = useState<StageSelection | undefined>();
   const [weapon, setWeapon] = useState<WeaponId>("arcane"),
@@ -28,6 +61,13 @@ export default function NowRiftMainMenu() {
     closeHistory = useCallback(() => setHistory(false), []);
   useEffect(() => {
     useSettings.getState().load();
+    try {
+      const saved = localStorage.getItem("nowrift-character-v1");
+      if (saved && Object.hasOwn(CHARACTERS, saved))
+        setCharacter(saved as CharacterId);
+    } catch {
+      /* session choice still works */
+    }
     // Warm browser-only async gameplay chunks as well as the initial app shell.
     import("@/game/phaser/create-game")
       .then(async () => {
@@ -54,6 +94,22 @@ export default function NowRiftMainMenu() {
   useEffect(() => {
     if (screen !== "lobby") return;
     let cancelled = false;
+    campaignRepository
+      .load()
+      .then((p) => {
+        if (!cancelled) {
+          setProgress(p);
+          setProfileReady(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProfileReady(false);
+          setWarning(
+            "Campaign storage is unavailable. Survival remains playable; existing data was preserved.",
+          );
+        }
+      });
     runRepository
       .list()
       .then((r) => {
@@ -95,12 +151,15 @@ export default function NowRiftMainMenu() {
     );
   if (screen === "game")
     return (
-      <NowRiftGame
-        autoStart
-        stage={selection}
-        weapon={weapon}
-        onExitToMenu={() => setScreen("lobby")}
-      />
+      <>
+        <NowRiftGame
+          autoStart
+          loadout={loadout}
+          stage={selection}
+          weapon={weapon}
+          onExitToMenu={() => setScreen("lobby")}
+        />
+      </>
     );
   return (
     <main className="nr-main">
@@ -108,7 +167,7 @@ export default function NowRiftMainMenu() {
         <Brand />
         <div className="header-right">
           <span className="build-tag">
-            PHASE II <span>·</span> LOCAL ADVENTURE
+            GUEST EDITION <span>·</span> LOCAL ADVENTURE
           </span>
           <PwaControls />
           <button
@@ -124,6 +183,7 @@ export default function NowRiftMainMenu() {
       {screen === "gateway" ? (
         <div className="gateway">
           <div className="gateway-art" aria-hidden="true" />
+          <Atmosphere />
           <div className="gateway-content">
             <span className="eyebrow">
               <span className="eyebrow-rule" /> A LIGHT IN THE FORGOTTEN WOODS
@@ -183,6 +243,22 @@ export default function NowRiftMainMenu() {
               </button>
               <button
                 className="nav-button"
+                type="button"
+                onClick={() => setCharacterOpen(true)}
+              >
+                <PixelIcon index={4} />
+                Wanderer<span>↗</span>
+              </button>
+              <button
+                className="nav-button"
+                type="button"
+                onClick={() => setInventoryOpen(true)}
+              >
+                <PixelIcon index={7} />
+                Inventory & equipment<span>↗</span>
+              </button>
+              <button
+                className="nav-button"
                 onClick={() => setHistory(true)}
                 type="button"
               >
@@ -199,9 +275,12 @@ export default function NowRiftMainMenu() {
               </button>
             </nav>
             <div className="wanderer-card">
-              <span className="portrait" aria-hidden="true" />
+              <span
+                className={`portrait character-${character}`}
+                aria-hidden="true"
+              />
               <span className="eyebrow">LOCAL ADVENTURER</span>
-              <strong>Rift Wanderer</strong>
+              <strong>{CHARACTERS[character].name}</strong>
               <small>Some journeys begin alone.</small>
               <div className="nr-record">
                 <span>PERSONAL BEST</span>
@@ -232,6 +311,7 @@ export default function NowRiftMainMenu() {
             </div>
             <section className="expedition-card" aria-labelledby="forest-title">
               <div className="expedition-art" aria-hidden="true" />
+              <Atmosphere />
               <div className="expedition-top">
                 <span className="chapter-badge">CHAPTER I</span>
                 <span className="region-tag">THE VERDANT FRONTIER</span>
@@ -304,7 +384,11 @@ export default function NowRiftMainMenu() {
               <p>
                 <span className="live-dot" /> Ready when you are.
                 <small>
-                  100 HP · 180 movement speed · Temporary run upgrades
+                  {CHARACTERS[character].hp} HP · {CHARACTERS[character].speed}{" "}
+                  movement ·{" "}
+                  {progress.equipment?.equipped
+                    ? "Relic equipped"
+                    : "No relic equipped"}
                 </small>
               </p>
               <button
@@ -330,8 +414,30 @@ export default function NowRiftMainMenu() {
         <span>
           NOWRIFT <span className="gold">/</span> A WORLD BETWEEN WORLDS
         </span>
-        <span>PHASE I · FOREST SURVIVAL · NO CLOUD SAVE</span>
+        <span>FOUR WORLDS · GUEST ONLY · NO CLOUD SAVE</span>
       </footer>
+      {characterOpen && (
+        <CharacterSelection
+          selected={character}
+          onSelect={(id) => {
+            setCharacter(id);
+            try {
+              localStorage.setItem("nowrift-character-v1", id);
+            } catch {
+              /* session choice */
+            }
+          }}
+          onClose={closeCharacter}
+        />
+      )}
+      {inventoryOpen && (
+        <Inventory
+          progress={progress}
+          ready={profileReady}
+          onChange={setProgress}
+          onClose={closeInventory}
+        />
+      )}
       {settings && <Settings onClose={closeSettings} />}
       {controls && (
         <Modal title="How to survive" onClose={closeControls}>

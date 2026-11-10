@@ -1,3 +1,8 @@
+import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
+import { CombatVfx } from "./combat-vfx";
+import { audio } from "../audio/engine";
+import type { SoundId } from "../audio/palette";
+import { drainFeedback, type Feedback } from "../feedback";
 import { WORLDS } from "../campaign/content";
 import { loadStage, type StageSelection } from "../campaign/loader";
 import { buildWorld } from "./world-renderer";
@@ -50,7 +55,8 @@ export class PreloadScene extends Phaser.Scene {
         "Missing art: " + file.key + ". A fallback is in use; reload to retry.",
       ),
     );
-    for (const w of WORLDS) {
+    const selected = this.registry.get("world") ?? "forest";
+    for (const w of WORLDS.filter((w) => w.id === selected)) {
       this.load.spritesheet(
         w.id + "-projectiles",
         "/assets/worlds/" + w.id + "/projectiles.png",
@@ -132,13 +138,23 @@ class ForestRenderer {
   telegraphs: Phaser.GameObjects.Graphics;
   joystick: Phaser.GameObjects.Graphics;
   light: Phaser.GameObjects.Image;
+  vfx: CombatVfx;
+  atmosphere: Phaser.GameObjects.Graphics;
+  accents: Phaser.GameObjects.Graphics;
   tick = 0;
+  impactHold = 0;
+  lastShake = -1000;
+  world = "forest";
   lastHp = 100;
   skin = "";
   constructor(
     private scene: Phaser.Scene,
     g?: Simulation,
   ) {
+    this.vfx = new CombatVfx(scene);
+    this.atmosphere = scene.add.graphics().setDepth(4500);
+    this.accents = scene.add.graphics().setDepth(6100);
+    this.world = g?.campaign?.world.id ?? "forest";
     this.skin = g?.campaign ? g.campaign.world.id + "-" : "";
     if (g?.campaign) buildWorld(scene, g.campaign);
     else {
@@ -191,7 +207,7 @@ class ForestRenderer {
     border.strokeRect(9, 9, FOREST.width - 18, FOREST.height - 18);
     this.player = scene.add.image(900, 700, "player").setScale(2);
     this.health = scene.add.graphics();
-    this.telegraphs = scene.add.graphics().setDepth(8);
+    this.telegraphs = scene.add.graphics().setDepth(8500);
     this.joystick = scene.add.graphics().setScrollFactor(0).setDepth(9000);
     if (!scene.textures.exists("shade")) {
       const tex = scene.textures.createCanvas("shade", 256, 256);
@@ -226,6 +242,52 @@ class ForestRenderer {
   trim(pool: { setVisible: (v: boolean) => unknown }[], length: number) {
     for (let i = length; i < pool.length; i++) pool[i].setVisible(false);
   }
+  consume(event: Feedback) {
+    const prefs = useSettings.getState();
+    this.vfx.emit(event, prefs);
+    const sounds: Partial<Record<Feedback["kind"], SoundId>> = {
+      slash: "attack",
+      magic: "magic",
+      burn: "fire",
+      freeze: "ice",
+      explosion: "explosion",
+      shield: "shield",
+      lightning: "lightning",
+      heal: "heal",
+      level: "level",
+      pickup: "pickup",
+      bossSpawn: "bossIntro",
+      bossDeath: "bossDeath",
+      telegraph: "anticipation",
+      phase: "phase",
+      shockwave: "heavy",
+      damage: "damage",
+      death: "enemyDeath",
+      rare: "unlock",
+      spark: "enemyHit",
+    };
+    const sound =
+      event.kind === "death" && event.important
+        ? "death"
+        : event.kind === "spark" && event.important
+          ? "critical"
+          : sounds[event.kind];
+    if (sound) audio.play(sound);
+    if (event.kind === "damage" || (event.kind === "spark" && event.important))
+      this.impactHold = 0.035;
+    if (
+      event.important &&
+      !prefs.reducedEffects &&
+      prefs.shake > 0 &&
+      this.tick - this.lastShake > 160
+    ) {
+      this.scene.cameras.main.shake(
+        event.kind === "bossDeath" ? 220 : 90,
+        0.004 * prefs.shake,
+      );
+      this.lastShake = this.tick;
+    }
+  }
   draw(
     g: Simulation,
     delta: number,
@@ -237,7 +299,13 @@ class ForestRenderer {
       g.phase === "victory"
     )
       this.tick += delta;
-    const reduced = useSettings.getState().reducedEffects;
+    const prefs = useSettings.getState();
+    const reduced = prefs.reducedEffects;
+    const dt = ["paused", "upgrade"].includes(g.phase)
+      ? 0
+      : Math.min(0.05, delta / 1000);
+    this.impactHold = Math.max(0, this.impactHold - dt);
+    this.vfx.draw(dt, prefs);
     const camera = this.scene.cameras.main;
     this.light
       .setPosition(
@@ -268,8 +336,68 @@ class ForestRenderer {
                 : 8;
     if (!this.scene.textures.get("player").has(String(playerFrame)))
       playerFrame = 0;
-    this.player.setFrame(playerFrame);
-    if (g.player.hp < this.lastHp && !reduced) camera.shake(110, 0.0025);
+    this.player.setFrame(
+      this.impactHold > 0 && !reduced && g.player.hp > 0 ? 4 : playerFrame,
+    );
+    this.player.setTint(
+      g.player.hit > 0
+        ? 0xffbab0
+        : g.campaign?.slow
+          ? 0x9cd7ec
+          : CHARACTERS[g.character].tint,
+    );
+    this.light.setAlpha(0.7 + prefs.glow * 0.3);
+    const accent = this.accents.clear();
+    const charge = 1 - Math.max(0, g.weapon.cooldown) / g.weapon.delay;
+    if (charge > 0.72 && g.phase === "playing") {
+      accent.lineStyle(1, 0xd8ceb0, 0.22 + (charge - 0.72) * 1.1);
+      accent.strokeCircle(g.player.x, g.player.y + 10, 17 + (1 - charge) * 15);
+    }
+    for (
+      let n = 0;
+      n < Math.min(g.bullets.length, prefs.quality === "low" ? 32 : 120);
+      n++
+    ) {
+      const b = g.bullets[n];
+      accent.lineStyle(
+        b.hostile ? 2 : 1.5,
+        b.hostile ? 0xf1ac9a : Number.parseInt(b.color.slice(1), 16),
+        b.hostile ? 0.65 : 0.4,
+      );
+      const length = b.hostile ? 0.06 : 0.035;
+      accent.lineBetween(b.x, b.y, b.x - b.vx * length, b.y - b.vy * length);
+    }
+    if (g.player.invincible > 0) {
+      accent.lineStyle(1, 0xb6dce1, 0.5);
+      accent.strokeCircle(g.player.x, g.player.y, 22);
+    }
+    if (g.campaign?.burn) {
+      accent.lineStyle(2, 0xf9a26b, 0.8);
+      accent.strokeCircle(g.player.x, g.player.y, 18);
+    }
+    const ambient = this.atmosphere.clear();
+    const colors: Record<string, number> = {
+      forest: 0xadd4ae,
+      desert: 0xe4c28b,
+      frozen: 0xc8e9ee,
+      infernal: 0xf4a35e,
+    };
+    const count = reduced
+      ? 0
+      : Math.round((prefs.quality === "low" ? 10 : 28) * prefs.particles);
+    const view = camera.worldView;
+    for (let n = 0; n < count; n++) {
+      const x =
+        view.x + ((n * 197 + this.tick * 0.013) % Math.max(1, view.width));
+      const y =
+        view.y +
+        ((n * 109 +
+          this.tick * (this.world === "infernal" ? -0.016 : 0.008) +
+          100000) %
+          Math.max(1, view.height));
+      ambient.fillStyle(colors[this.world], 0.18 + (n % 3) * 0.08);
+      ambient.fillRect(x, y, this.world === "frozen" ? 2 : 3, 2);
+    }
     this.lastHp = g.player.hp;
     const hp = this.health;
     hp.clear().setDepth(7000);
@@ -289,7 +417,12 @@ class ForestRenderer {
         .setScale(2)
         .setDepth(e.y)
         .setFlipX(e.x > g.player.x);
-      if ((e.slow ?? 0) > 0) image.setTint(0xa4e2ed);
+      if ((e.hit ?? 0) > 0) image.setTint(0xf6e6bc).setTintFill();
+      else if ((e.slow ?? 0) > 0) {
+        image.setTint(0xa4e2ed);
+        accent.lineStyle(1, 0xafe2ec, 0.65);
+        accent.strokeCircle(e.x, e.y + e.r * 0.4, e.r + 4);
+      }
       if (e.hp < e.maxHp && e.kind !== "boss") {
         hp.fillStyle(0x172b2b, 0.9);
         hp.fillRect(e.x - 15, e.y - e.r - 23, 30, 3);
@@ -330,7 +463,7 @@ class ForestRenderer {
     this.trim(this.drops, i);
     i = 0;
     for (const p of g.sparks) {
-      if (reduced && i > 32) break;
+      if (i >= (reduced ? 20 : Math.round(240 * prefs.particles))) break;
       this.image(
         this.sparks,
         i++,
@@ -374,6 +507,12 @@ class ForestRenderer {
           .setAlpha(1 - t.age / t.life);
         continue;
       }
+      if (
+        t.kind === "damage" &&
+        (prefs.damageNumbers === "off" ||
+          (prefs.damageNumbers === "sparse" && !t.critical && i >= 6))
+      )
+        continue;
       let label = this.texts[i];
       if (!label) {
         label = this.scene.add
@@ -391,7 +530,14 @@ class ForestRenderer {
       label
         .setVisible(true)
         .setText(t.value + (t.critical ? "!" : ""))
-        .setColor(t.critical ? "#ffe0a2" : "#e8e8c9")
+        .setColor(
+          t.critical
+            ? "#ffe0a2"
+            : t.color === "#dbbf8b"
+              ? "#e8e8c9"
+              : (t.color ?? "#e8e8c9"),
+        )
+        .setScale(t.critical ? 1.2 : 1)
         .setPosition(t.x, t.y - t.age * 34)
         .setDepth(7100)
         .setAlpha(1 - t.age / t.life);
@@ -400,12 +546,36 @@ class ForestRenderer {
     this.trim(this.deaths, deaths);
     for (const h of g.hazards) {
       const ratio = h.age / h.delay;
-      this.telegraphs.fillStyle(0xe68b74, 0.08 + ratio * 0.18);
+      this.telegraphs.lineStyle(5, 0x181b20, 0.95);
+      this.telegraphs.strokeCircle(h.x, h.y, h.r + 1);
+      this.telegraphs.fillStyle(0xe68b74, 0.12 + ratio * 0.2);
       this.telegraphs.fillCircle(h.x, h.y, h.r);
-      this.telegraphs.lineStyle(2, h.color ?? 0xf2bd86, 0.8);
+      this.telegraphs.lineStyle(3, 0xffd6a0, 1);
       this.telegraphs.strokeCircle(h.x, h.y, h.r);
-      this.telegraphs.strokeCircle(h.x, h.y, h.r * ratio);
+      this.telegraphs.strokeCircle(h.x, h.y, h.r * Math.min(1, ratio));
+      this.telegraphs.lineBetween(h.x - 5, h.y, h.x + 5, h.y);
+      this.telegraphs.lineBetween(h.x, h.y - 5, h.x, h.y + 5);
     }
+    // Draw the entire dash corridor, not just the destination circle.
+    for (const e of g.enemies)
+      if (e.charge && e.charge.delay > 0) {
+        const c = e.charge,
+          len = Math.hypot(c.vx, c.vy),
+          nx = (-c.vy / len) * 22,
+          ny = (c.vx / len) * 22;
+        const tx = e.x + c.vx * c.left,
+          ty = e.y + c.vy * c.left;
+        this.telegraphs.fillStyle(0xe8b18b, 0.24);
+        this.telegraphs.beginPath();
+        this.telegraphs.moveTo(e.x + nx, e.y + ny);
+        this.telegraphs.lineTo(tx + nx, ty + ny);
+        this.telegraphs.lineTo(tx - nx, ty - ny);
+        this.telegraphs.lineTo(e.x - nx, e.y - ny);
+        this.telegraphs.closePath();
+        this.telegraphs.fillPath();
+        this.telegraphs.lineStyle(3, 0xffd6a0, 1);
+        this.telegraphs.lineBetween(e.x, e.y, tx, ty);
+      }
     this.joystick.clear();
     if (joy) {
       const z = camera.zoom;
@@ -440,6 +610,7 @@ export class MainMenuScene extends Phaser.Scene {
         this.scene.start("GameScene", {
           weapon: command.weapon,
           stage: command.stage,
+          loadout: command.loadout,
         });
     });
     this.events.once("shutdown", off);
@@ -461,10 +632,11 @@ export class GameScene extends Phaser.Scene {
   constructor() {
     super("GameScene");
   }
-  init(data: { weapon: WeaponId; stage?: StageSelection }) {
+  init(data: { weapon: WeaponId; stage?: StageSelection; loadout?: Loadout }) {
     this.simulation = data.stage
       ? loadStage(data.stage, data.weapon)
       : makeGame(FOREST.width, FOREST.height, data.weapon);
+    applyLoadout(this.simulation, data.loadout);
     this.lastHud = 0;
     this.lastPhase = "";
     this.terminalTime = 0;
@@ -519,7 +691,7 @@ export class GameScene extends Phaser.Scene {
     canvas.className = "game-canvas";
     canvas.setAttribute(
       "aria-label",
-      "Forest arena. WASD, arrow keys, or touch drag to move. Weapons attack automatically.",
+      `${g.campaign?.world.name ?? "Forest"} arena. WASD, arrow keys, or touch drag to move. Weapons attack automatically.`,
     );
     canvas.setAttribute("data-touch-active", "false");
     const point = (e: PointerEvent) => {
@@ -556,7 +728,15 @@ export class GameScene extends Phaser.Scene {
     canvas.addEventListener("pointercancel", up);
     canvas.addEventListener("lostpointercapture", up);
     this.scale.on("resize", this.resize, this);
-    const unsubSettings = useSettings.subscribe(() => this.resize());
+    const setQuality = () =>
+      this.game.loop.setFPSLimit(
+        useSettings.getState().quality === "low" ? 30 : 60,
+      );
+    setQuality();
+    const unsubSettings = useSettings.subscribe((next, previous) => {
+      if (next.zoom !== previous.zoom) this.resize();
+      if (next.quality !== previous.quality) setQuality();
+    });
     this.events.once("shutdown", () => {
       off();
       unsubSettings();
@@ -577,6 +757,8 @@ export class GameScene extends Phaser.Scene {
     if (process.env.NEXT_PUBLIC_E2E === "1") {
       window.__NOWRIFT_TEST__ = {
         state: () => this.simulation,
+        audio: () => audio.diagnostics(),
+        effects: () => this.visuals.vfx.count,
         scenario: (name) => {
           if (name === "boss") {
             g.time =
@@ -660,7 +842,11 @@ export class GameScene extends Phaser.Scene {
   command(command: Command) {
     switch (command.type) {
       case "start":
-        this.scene.restart({ weapon: command.weapon, stage: command.stage });
+        this.scene.restart({
+          weapon: command.weapon,
+          stage: command.stage,
+          loadout: command.loadout,
+        });
         break;
       case "pause":
         togglePause(this.simulation);
@@ -692,8 +878,31 @@ export class GameScene extends Phaser.Scene {
       Number(k?.W.isDown || k?.UP.isDown) +
       (this.joystick?.dy ?? 0);
     advanceGame(g, delta / 1000, x, y);
+    drainFeedback(g, (event) => this.visuals.consume(event));
+    audio.setScene(
+      g.phase === "victory"
+        ? "victory"
+        : g.phase === "gameover"
+          ? "defeat"
+          : g.bossSpawned
+            ? "boss"
+            : g.enemies.length > 6
+              ? "combat"
+              : "exploration",
+      g.campaign?.world.id ?? "forest",
+      g.phase === "paused" || g.phase === "upgrade",
+    );
+    if (g.player.moving && g.phase === "playing") audio.play("step");
     if (g.phase !== "playing" && this.pointer !== null) this.clearInput();
     this.visuals.draw(g, delta, this.joystick);
+    if (g.phase !== this.lastPhase)
+      this.game.loop.setFPSLimit(
+        ["paused", "upgrade"].includes(g.phase)
+          ? 15
+          : useSettings.getState().quality === "low"
+            ? 30
+            : 60,
+      );
     if (time - this.lastHud > 100 || g.phase !== this.lastPhase) {
       this.publish();
       this.lastHud = time;
@@ -738,6 +947,7 @@ export class ResultsScene extends Phaser.Scene {
     super("ResultsScene");
   }
   create(data: { simulation: Simulation }) {
+    this.game.loop.setFPSLimit(15);
     const renderer = new ForestRenderer(this, data.simulation);
     renderer.draw(data.simulation, 0, null);
     this.cameras.main.centerOn(
@@ -751,6 +961,7 @@ export class ResultsScene extends Phaser.Scene {
         this.scene.start("GameScene", {
           weapon: command.weapon,
           stage: command.stage,
+          loadout: command.loadout,
         });
       if (command.type === "exit") this.scene.start("MainMenuScene");
     });
@@ -761,6 +972,8 @@ declare global {
   interface Window {
     __NOWRIFT_TEST__?: {
       state: () => Simulation;
+      audio?: () => ReturnType<typeof audio.diagnostics>;
+      effects?: () => number;
       scenario: (name: "boss" | "upgrade" | "defeat" | "stress") => void;
       strikeBoss: () => void;
     };

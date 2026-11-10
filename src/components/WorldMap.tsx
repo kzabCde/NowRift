@@ -1,4 +1,6 @@
 "use client";
+import Atmosphere from "./Atmosphere";
+import { audio } from "@/game/audio/engine";
 import { useEffect, useState } from "react";
 import {
   WORLDS,
@@ -46,6 +48,9 @@ export default function WorldMap({
       cancelled = true;
     };
   }, []);
+  useEffect(() => {
+    audio.setScene("character", world);
+  }, [world]);
   const w = worldById(world),
     stage = STAGES.find((s) => s.id === selected)!,
     reason = lockedReason(selected, difficulty, progress.clears);
@@ -82,6 +87,7 @@ export default function WorldMap({
                 backgroundImage: `linear-gradient(0deg,#0e1918,transparent),url(/assets/worlds/${w.id}/preview.png)`,
               }}
             >
+              <Atmosphere world={w.id} />
               <span>
                 WORLD 0{i + 1} ·{" "}
                 {lockedReason(`${w.id}-1`, difficulty, progress.clears)
@@ -181,11 +187,11 @@ export default function WorldMap({
           <p>
             {w.materials.map((x) => x.replaceAll("-", " ")).join(" · ")}
             <br />
-            Boss candidate: {w.boss.reward.replaceAll("-", " ")}
+            Guardian relic: {w.boss.reward.replaceAll("-", " ")}
           </p>
           <p className="muted">
-            First clears grant additional gold, XP and materials. Equipment
-            candidates are stored for Phase 3; no inventory is simulated.
+            First clears grant additional gold, XP and materials. Equip guardian
+            relics and enhance them in the sanctuary inventory.
           </p>
           <div className="campaign-wallet">
             {progress.gold} GOLD · {progress.xp} PROFILE XP
