@@ -1,5 +1,5 @@
 /* NowRift Phase 2 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v6-soundscape";
+const VERSION = "nowrift-pwa-v7-locales";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -63,6 +63,7 @@ const CORE_URLS = [
   "/assets/forest/key-art.png",
   "/",
   "/manifest.webmanifest",
+  "/manifest.th.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",

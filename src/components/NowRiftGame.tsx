@@ -1,4 +1,6 @@
 "use client";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useI18n } from "@/i18n/useI18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CHARACTERS, RELICS, type RelicId, type Loadout } from "@/game/loadout";
 import PhaserHost from "./PhaserHost";
@@ -39,6 +41,7 @@ export default function NowRiftGame({
   onExitToMenu,
   weapon = "arcane",
 }: Props) {
+  const { t, text } = useI18n();
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
   const [reward, setReward] = useState<Rewards | null>(null);
@@ -148,10 +151,9 @@ export default function NowRiftGame({
       <header className="topbar">
         <Brand />
         <div className="header-right">
-          <span className="eyebrow">A JOURNEY BEYOND THE BREACH</span>
-          <button className="quiet-button" onClick={requestLeave} type="button">
-            ← MAIN MENU
-          </button>
+          <LanguageSwitcher compact />
+          <span className="eyebrow">{t("game","A JOURNEY BEYOND THE BREACH")}</span>
+          <button className="quiet-button" onClick={requestLeave} type="button">{t("game","← MAIN MENU")}{" "}</button>
         </div>
       </header>
       <section className="content">
@@ -159,37 +161,32 @@ export default function NowRiftGame({
           <div>
             <span className="eyebrow">
               {definition
-                ? `${world!.name.toUpperCase()} / STAGE ${definition.number}`
-                : "CHAPTER I / THE FIRST BREACH"}
+                ? `${text(world!.name).toUpperCase()} / ${t("game","STAGE")} ${definition.number}`
+                : t("game","CHAPTER I / THE FIRST BREACH")}
             </span>
             <h1>
               {world ? (
-                world.name
+                text(world.name)
               ) : (
-                <>
-                  Whispering <em>Forest</em>
-                </>
+                <>{t("main","Whispering")} <em>{t("main","Forest")}</em></>
               )}
             </h1>
           </div>
           <p>
             {definition && stage ? (
-              `${definition.name} · ${stage.difficulty.toUpperCase()} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? "then defeat the guardian" : "survival"}`
+              `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game","then defeat the guardian") : t("game","survival")}`
             ) : (
-              <>
-                Survive until <strong>08:00</strong>. Defeat the Forest
-                Guardian.
-              </>
+              <>{t("game","Survive until")}{" "}<strong>08:00</strong>{t("game",". Defeat the Forest Guardian.")}{" "}</>
             )}
           </p>
         </div>
-        <section className="game-card" aria-label="NowRift playable game">
+        <section className="game-card" aria-label={t("game","NowRift playable game")}>
           <div className="game-topbar">
             <div className="sector-heading">
               <span className="live-dot" />{" "}
-              {world?.name.toUpperCase() ?? "WHISPERING FOREST"}{" "}
+              {text(world?.name ?? "Whispering Forest").toUpperCase()}{" "}
               <span className="game-state">
-                {hud.phase === "playing" ? "LIVE RUN" : hud.phase.toUpperCase()}
+                {hud.phase === "playing" ? t("game","LIVE RUN") : text(hud.phase.toUpperCase())}
               </span>
             </div>
             <div className="game-actions">
@@ -199,53 +196,45 @@ export default function NowRiftGame({
                 disabled={!ready || !["playing", "paused"].includes(hud.phase)}
                 type="button"
               >
-                {hud.phase === "paused" ? "RESUME" : "PAUSE"}
+                {hud.phase === "paused" ? t("game","RESUME") : t("game","PAUSE")}
               </button>
               <button
                 className="action-button"
                 onClick={() => setImmersive((v) => !v)}
-                aria-label={immersive ? "Exit focus mode" : "Enter focus mode"}
+                aria-label={immersive ? t("game","Exit focus mode") : t("game","Enter focus mode")}
                 aria-pressed={immersive}
                 type="button"
               >
-                {immersive ? "EXIT FOCUS" : "FOCUS"}
+                {immersive ? t("game","EXIT FOCUS") : t("game","FOCUS")}
               </button>
               <button
                 className="action-button"
-                aria-label="Settings"
+                aria-label={t("game","Settings")}
                 onClick={openSettings}
                 type="button"
-              >
-                SETTINGS
-              </button>
+              >{t("game","SETTINGS")}{" "}</button>
               <button
                 className="action-button"
                 onClick={start}
                 disabled={!ready}
                 type="button"
-              >
-                RESTART
-              </button>
+              >{t("game","RESTART")}{" "}</button>
               <button
                 className="action-button compact-menu"
                 onClick={requestLeave}
                 type="button"
-              >
-                MAIN MENU
-              </button>
+              >{t("game","MAIN MENU")}{" "}</button>
             </div>
           </div>
           <div className="hud-row">
             <div className="level-shape">
-              <small>LEVEL</small>
+              <small>{t("game","LEVEL")}</small>
               <strong>{String(hud.level).padStart(2, "0")}</strong>
             </div>
             <div className="bars">
               <div className="bar-heading">
                 <span>
-                  {CHARACTERS[
-                    loadout?.character ?? "wanderer"
-                  ].name.toUpperCase()}
+                  {text(CHARACTERS[loadout?.character ?? "wanderer"].name).toUpperCase()}
                 </span>
                 <strong>
                   {hud.hp} <small>/ {hud.maxHp} HP</small>
@@ -271,9 +260,9 @@ export default function NowRiftGame({
             </div>
             <div className="hud-stats">
               {[
-                ["TIME", clock(hud.time)],
-                ["KILLS", hud.kills],
-                ["ENEMIES", hud.enemies],
+                [t("game","TIME"), clock(hud.time)],
+                [t("game","KILLS"), hud.kills],
+                [t("game","ENEMIES"), hud.enemies],
               ].map(([label, value]) => (
                 <div className="stat" key={label}>
                   <span className="stat-label">{label}</span>
@@ -285,34 +274,34 @@ export default function NowRiftGame({
           <div className="arena">
             {hud.statuses.length > 0 && (
               <span className="campaign-status">
-                {hud.statuses.join(" · ")}
+                {hud.statuses.map(text).join(" · ")}
               </span>
             )}
             <PhaserHost bridge={bridge} world={world?.id} />
             {!ready && (
               <div className="arena-overlay">
-                <span className="eyebrow">ENTERING THE FOREST</span>
-                <h2>Through the veil…</h2>
+                <span className="eyebrow">{t("game","ENTERING THE FOREST")}</span>
+                <h2>{t("game","Through the veil…")}</h2>
                 <progress
                   max={1}
                   value={loading}
-                  aria-label="Loading game assets"
+                  aria-label={t("game","Loading game assets")}
                 />
-                <p>{Math.round(loading * 100)}% · Preparing your journey</p>
-                {error && <p role="alert">{error}</p>}
+                <p>{Math.round(loading * 100)}% · {t("game","Preparing your journey")}</p>
+                {error && <p role="alert">{text(error)}</p>}
               </div>
             )}
             {hud.boss && (
               <div
                 className="boss-hud"
-                aria-label={`${world?.boss.name ?? "Forest Guardian"} health`}
+                aria-label={`${text(world?.boss.name ?? "Forest Guardian")} ${t("game","health")}`}
               >
                 <span>
-                  {world?.boss.name.toUpperCase() ?? "FOREST GUARDIAN"}{" "}
+                  {world?.boss.name.toUpperCase() ?? t("game","FOREST GUARDIAN")}{" "}
                   <small>
                     {hud.boss.phase === 2
-                      ? "ENRAGED · PHASE II"
-                      : "THE ANCIENT WARDEN"}
+                      ? t("game","ENRAGED · PHASE II")
+                      : t("game","THE ANCIENT WARDEN")}
                   </small>
                 </span>
                 <div className="bar-track">
@@ -332,64 +321,58 @@ export default function NowRiftGame({
               <>
                 <span className="in-game-hint">
                   {hud.time < 120
-                    ? "THE FOREST STIRS"
+                    ? t("game","THE FOREST STIRS")
                     : hud.time < 240
-                      ? "THE HUNT BEGINS"
+                      ? t("game","THE HUNT BEGINS")
                       : hud.time < 360
-                        ? "THORNS AWAKEN"
+                        ? t("game","THORNS AWAKEN")
                         : hud.time < 480
-                          ? "THE LAST STAND"
-                          : "BREAK THE GUARDIAN"}
+                          ? t("game","THE LAST STAND")
+                          : t("game","BREAK THE GUARDIAN")}
                 </span>
                 <span className="touch-hint">
-                  {touch ? "MOVING" : "DRAG TO MOVE"}
+                  {touch ? t("game","MOVING") : t("game","DRAG TO MOVE")}
                 </span>
               </>
             )}
             {hud.phase === "paused" && !confirmLeave && !settings && (
               <DialogSurface
                 className="arena-overlay"
-                title="Paused"
+                title={t("game","Paused")}
                 onClose={pause}
               >
-                <span className="eyebrow">TAKE A BREATH</span>
-                <h2>Paused</h2>
-                <p>The forest will wait.</p>
+                <span className="eyebrow">{t("game","TAKE A BREATH")}</span>
+                <h2>{t("game","Paused")}</h2>
+                <p>{t("game","The forest will wait.")}</p>
                 <button
                   className="primary-button"
                   onClick={pause}
                   type="button"
-                >
-                  RESUME RUN <span>→</span>
+                >{t("game","RESUME RUN")}{" "}<span>→</span>
                 </button>
                 <button
                   className="quiet-button"
                   onClick={openSettings}
                   type="button"
-                >
-                  Settings
-                </button>
+                >{t("game","Settings")}{" "}</button>
                 <button
                   className="quiet-button"
                   onClick={requestLeave}
                   type="button"
-                >
-                  Return to main menu
-                </button>
+                >{t("game","Return to main menu")}{" "}</button>
               </DialogSurface>
             )}
             {hud.phase === "upgrade" && !confirmLeave && !settings && (
               <DialogSurface
                 className="arena-overlay upgrade-overlay"
-                title="Choose an upgrade"
+                title={t("game","Choose an upgrade")}
               >
                 <span className="eyebrow">
-                  LEVEL {hud.level} / A NEW AWAKENING
+                  {t("game","LEVEL")} {hud.level} / {t("game","A NEW AWAKENING")}
                 </span>
-                <h2>
-                  Choose your <em>power.</em>
+                <h2>{t("game","Choose your")}{" "}<em>{t("game","power.")}</em>
                 </h2>
-                <p>One choice. A different path.</p>
+                <p>{t("game","One choice. A different path.")}</p>
                 <div className="upgrade-grid">
                   {hud.offers.map((id) => {
                     const u = UPGRADES.find((u) => u.id === id)!;
@@ -403,12 +386,12 @@ export default function NowRiftGame({
                         type="button"
                       >
                         <span className="card-rarity">
-                          BLESSING · {(hud.stacks[id] ?? 0) + 1}/{u.max}
+                          {t("game","BLESSING")} · {(hud.stacks[id] ?? 0) + 1}/{u.max}
                         </span>
                         <PixelIcon index={u.icon} large />
-                        <strong>{u.name}</strong>
-                        <small>{u.description}</small>
-                        <span className="upgrade-select">EMBRACE →</span>
+                        <strong>{text(u.name)}</strong>
+                        <small>{text(u.description)}</small>
+                        <span className="upgrade-select">{t("game","EMBRACE →")}</span>
                       </button>
                     );
                   })}
@@ -418,34 +401,34 @@ export default function NowRiftGame({
             {terminal && (
               <DialogSurface
                 className="arena-overlay results-overlay"
-                title={hud.phase === "victory" ? "Victory" : "Defeat"}
+                title={hud.phase === "victory" ? t("game","Victory") : t("game","Defeat")}
               >
                 <span className="eyebrow">
                   {hud.phase === "victory"
-                    ? "THE FOREST REMEMBERS"
-                    : "EVERY END IS A BEGINNING"}
+                    ? t("game","THE FOREST REMEMBERS")
+                    : t("game","EVERY END IS A BEGINNING")}
                 </span>
                 <h2>
                   {hud.phase === "victory"
-                    ? "The veil is lifted."
-                    : "Your light fades."}
+                    ? t("game","The veil is lifted.")
+                    : t("game","Your light fades.")}
                 </h2>
                 <p>
                   {hud.phase === "victory"
                     ? definition
-                      ? "Stage cleared. Campaign rewards are banked locally."
-                      : "Forest Guardian defeated. +150 victory gold."
-                    : "The Rift Wanderer will rise again."}
+                      ? t("game","Stage cleared. Campaign rewards are banked locally.")
+                      : t("game","Forest Guardian defeated. +150 victory gold.")
+                    : t("game","The Rift Wanderer will rise again.")}
                 </p>
                 {reward && (
                   <p className="campaign-reward" role="status">
                     {reward.firstClear
-                      ? "FIRST CLEAR · "
-                      : "FARMING REWARDS · "}
-                    {reward.gold} gold · {reward.xp} XP
+                      ? t("game","FIRST CLEAR · ")
+                      : t("game","FARMING REWARDS · ")}
+                    {reward.gold} {t("main","gold")} · {reward.xp} XP
                     <br />
                     {Object.entries(reward.materials)
-                      .map(([id, n]) => `${id.replaceAll("-", " ")} ×${n}`)
+                      .map(([id, n]) => `${text(id)} ×${n}`)
                       .join(" · ")}
                   </p>
                 )}
@@ -453,45 +436,39 @@ export default function NowRiftGame({
                   <div className="earned-relic" key={`${id}-${index}`}>
                     <PixelIcon index={RELICS[id as RelicId]?.icon ?? 7} />
                     <span>
-                      <small>GUARDIAN RELIC EARNED</small>
+                      <small>{t("game","GUARDIAN RELIC EARNED")}</small>
                       <strong>
-                        {RELICS[id as RelicId]?.name ?? id.replaceAll("-", " ")}
+                        {text(RELICS[id as RelicId]?.name ?? id)}
                       </strong>
                     </span>
                   </div>
                 ))}
                 <div className="result-row">
                   <span>
-                    <strong>{clock(hud.time)}</strong>SURVIVED
-                  </span>
+                    <strong>{clock(hud.time)}</strong>{t("game","SURVIVED")}{" "}</span>
                   <span>
-                    <strong>{hud.kills}</strong>ENEMIES SLAIN
-                  </span>
+                    <strong>{hud.kills}</strong>{t("game","ENEMIES SLAIN")}{" "}</span>
                   <span>
-                    <strong>{hud.gold}</strong>RUN GOLD
-                  </span>
+                    <strong>{hud.gold}</strong>{t("game","RUN GOLD")}{" "}</span>
                 </div>
                 <p className="save-message" role="status">
-                  {save}
+                  {text(save)}
                 </p>
                 <button
                   className="primary-button"
                   onClick={start}
                   type="button"
-                >
-                  TRY AGAIN <span>→</span>
+                >{t("game","TRY AGAIN")}{" "}<span>→</span>
                 </button>
                 <button
                   className="quiet-button"
                   onClick={onExitToMenu}
                   type="button"
-                >
-                  RETURN TO MAIN MENU
-                </button>
+                >{t("game","RETURN TO MAIN MENU")}{" "}</button>
                 <small className="muted">
                   {definition
-                    ? "Campaign gold can enhance relics at the sanctuary."
-                    : "Survival gold is a run score. Play campaign stages to bank rewards."}
+                    ? t("game","Campaign gold can enhance relics at the sanctuary.")
+                    : t("game","Survival gold is a run score. Play campaign stages to bank rewards.")}
                 </small>
               </DialogSurface>
             )}
@@ -500,10 +477,10 @@ export default function NowRiftGame({
             <div className="active-weapon">
               <PixelIcon index={WEAPONS[weapon].icon} />
               <span>
-                <strong>{WEAPONS[weapon].name}</strong>
+                <strong>{text(WEAPONS[weapon].name)}</strong>
                 <small>
-                  {hud.damage.toFixed(1)} DMG · {hud.interval.toFixed(2)}s ·{" "}
-                  {Math.round(hud.crit * 100)}% CRIT
+                  {hud.damage.toFixed(1)} {t("game","DMG")} · {hud.interval.toFixed(2)}s ·{" "}
+                  {Math.round(hud.crit * 100)}% {t("game","CRIT")}
                 </small>
               </span>
             </div>
@@ -512,11 +489,11 @@ export default function NowRiftGame({
               <kbd>A</kbd>
               <kbd>S</kbd>
               <kbd>D</kbd>
-              <span>MOVE</span>
+              <span>{t("game","MOVE")}</span>
               <kbd>ESC</kbd>
-              <span>PAUSE</span>
+              <span>{t("game","PAUSE")}</span>
             </div>
-            <span className="auto-attack">AUTO ATTACK ACTIVE</span>
+            <span className="auto-attack">{t("game","AUTO ATTACK ACTIVE")}</span>
           </div>
         </section>
         {error && ready && (
@@ -525,37 +502,27 @@ export default function NowRiftGame({
           </p>
         )}
         <p className="field-note">
-          FIELD NOTES{" "}
-          <span>
-            Collect emerald crystals to grow stronger. Red roots warn of an
-            incoming strike. Keep moving.
-          </span>
+          {t("game","FIELD NOTES")}{" "}
+          <span>{t("game","Collect emerald crystals to grow stronger. Red roots warn of an incoming strike. Keep moving.")}{" "}</span>
         </p>
       </section>
       {settings && <Settings onClose={closeSettings} />}
       {confirmLeave && (
         <Modal title="Return to hub" onClose={cancelLeave}>
-          <span className="eyebrow">LEAVE THE FOREST?</span>
-          <h2>Return to hub?</h2>
-          <p>
-            Your active run will end. Completed run records and your best score
-            remain on this device.
-          </p>
+          <span className="eyebrow">{t("game","LEAVE THE FOREST?")}</span>
+          <h2>{t("game","Return to hub?")}</h2>
+          <p>{t("game","Your active run will end. Completed run records and your best score remain on this device.")}{" "}</p>
           <div className="dialog-actions">
             <button
               className="quiet-button"
               onClick={cancelLeave}
               type="button"
-            >
-              CONTINUE RUN
-            </button>
+            >{t("game","CONTINUE RUN")}{" "}</button>
             <button
               className="primary-button"
               onClick={onExitToMenu}
               type="button"
-            >
-              EXIT TO HUB →
-            </button>
+            >{t("game","EXIT TO HUB →")}{" "}</button>
           </div>
         </Modal>
       )}

@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/i18n/useI18n";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -19,6 +20,7 @@ function isIOS() {
 }
 
 export default function PwaControls() {
+  const {t} = useI18n();
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
   const [installed, setInstalled] = useState(false);
@@ -114,30 +116,30 @@ export default function PwaControls() {
 
   return (
     <div className="pwa-actions">
-      <span className={offline ? "network-status is-offline" : "network-status"} title={offline ? "No network connection" : "Network connected"}>
-        <span className="online-dot" />{offline ? "OFFLINE" : "ONLINE"}
+      <span className={offline ? "network-status is-offline" : "network-status"} title={offline ? t("pwa","No network connection") : t("pwa","Network connected")}>
+        <span className="online-dot" />{offline ? t("pwa","OFFLINE") : t("pwa","ONLINE")}
       </span>
       {updateWaiting && (
         <button className="pwa-button update-button" type="button" onClick={() => {
           requestedReload.current = true;
           waitingWorker.current?.postMessage({ type: "SKIP_WAITING" });
-        }}>UPDATE ↻</button>
+        }}>{t("pwa","UPDATE ↻")}</button>
       )}
-      {!installed && <button type="button" className="pwa-button" onClick={install}>⇩ <span>{canInstall ? "INSTALL" : "ADD TO HOME"}</span></button>}
-      {installed && <span className="installed-badge">✓ INSTALLED</span>}
+      {!installed && <button type="button" className="pwa-button" onClick={install}>⇩ <span>{canInstall ? t("pwa","INSTALL") : t("pwa","ADD TO HOME")}</span></button>}
+      {installed && <span className="installed-badge">{t("pwa","✓ INSTALLED")}</span>}
       {showGuide && (
         <div className="install-modal-backdrop" onClick={() => setShowGuide(false)}>
           <div className="install-modal" role="dialog" aria-modal="true" aria-labelledby="install-title" onClick={(event) => event.stopPropagation()}>
-            <button className="modal-close" aria-label="Close install instructions" type="button" onClick={() => setShowGuide(false)}>✕</button>
-            <span className="eyebrow">PWA / INSTALLATION</span>
-            <h2 id="install-title">Take NowRift with you.</h2>
+            <button className="modal-close" aria-label={t("pwa","Close install instructions")} type="button" onClick={() => setShowGuide(false)}>✕</button>
+            <span className="eyebrow">{t("pwa","PWA / INSTALLATION")}</span>
+            <h2 id="install-title">{t("pwa","Take NowRift with you.")}</h2>
             {isIOS() ? (
-              <p>Open this page in Safari, tap the <strong>Share</strong> icon, then select <strong>Add to Home Screen</strong> and confirm.</p>
+              <p>{t("pwa","Open this page in Safari, tap the")}{" "}<strong>{t("pwa","Share")}</strong>{" "}{t("pwa","icon, then select")}{" "}<strong>{t("pwa","Add to Home Screen")}</strong>{" "}{t("pwa","and confirm.")}</p>
             ) : (
-              <p>Open your browser menu and choose <strong>Install app</strong> or <strong>Add to Home Screen</strong>. If the option is missing, try Chrome or Edge over HTTPS.</p>
+              <p>{t("pwa","Open your browser menu and choose")}{" "}<strong>{t("pwa","Install app")}</strong>{" "}{t("pwa","or")}{" "}<strong>{t("pwa","Add to Home Screen")}</strong>{t("pwa",". If the option is missing, try Chrome or Edge over HTTPS.")}</p>
             )}
-            <p className="install-footnote">Visit once while online to cache game assets for future offline play. Progress remains on this device and active runs are not saved on exit.</p>
-            <button className="primary-button" type="button" onClick={() => setShowGuide(false)}>GOT IT <span>✓</span></button>
+            <p className="install-footnote">{t("pwa","Visit once while online to cache game assets for future offline play. Progress remains on this device and active runs are not saved on exit.")}</p>
+            <button className="primary-button" type="button" onClick={() => setShowGuide(false)}>{t("pwa","GOT IT")}{" "}<span>✓</span></button>
           </div>
         </div>
       )}
