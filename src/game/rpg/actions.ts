@@ -27,6 +27,8 @@ export type ActionBody =
   | { type: "claim"; parcelId: string }
   | { type: "consume"; definitionId: "health-tonic" | "focus-tonic" };
 export type RpgCommand = {
+  slotId?: string;
+  run?: import("../persistence/model").RunOwner;
   id: string;
   expectedRevision: number;
   at: number;
@@ -65,7 +67,7 @@ export function shopEquipment(offerId: string, id: string) {
 export function applyCommand(
   profile: Progress,
   command: RpgCommand,
-  rng = seeded(hash(command.id)),
+  rng: () => number = seeded(hash(command.id)),
 ) {
   const current = initializeRpg(profile);
   if (

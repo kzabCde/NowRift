@@ -379,7 +379,7 @@ test("corrupt RPG inventory is reported and never silently reset", async ({
   await expect(
     page
       .getByRole("alert")
-      .filter({ hasText: "Original data has been preserved" }),
+      .filter({ hasText: /Original data (?:has been|was) preserved/ }),
   ).toBeVisible();
   const s = await saved(page);
   expect(s.rpg!.equipment).toHaveLength(p.rpg!.equipment.length);

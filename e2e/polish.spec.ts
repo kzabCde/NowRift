@@ -283,7 +283,9 @@ test.describe("real audio and game integration", () => {
     expect(stats).toEqual({ hp: 130, speed: 162, regen: 0.5 });
     await page.reload();
     await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
-    await run(page);
+    await page.getByRole("button", { name: "RECOVER RUN →" }).click();
+    await page.getByRole("button", { name: "RESUME CHECKPOINT →" }).click();
+    await expect(page.locator(".game-state")).toContainText("PAUSED");
     expect(
       await page.evaluate(() => window.__NOWRIFT_TEST__!.state().regen),
     ).toBe(0.5);

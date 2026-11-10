@@ -138,7 +138,7 @@ export default function PwaControls() {
             ) : (
               <p>{t("pwa","Open your browser menu and choose")}{" "}<strong>{t("pwa","Install app")}</strong>{" "}{t("pwa","or")}{" "}<strong>{t("pwa","Add to Home Screen")}</strong>{t("pwa",". If the option is missing, try Chrome or Edge over HTTPS.")}</p>
             )}
-            <p className="install-footnote">{t("pwa","Visit once while online to cache game assets for future offline play. Progress remains on this device and active runs are not saved on exit.")}</p>
+            <p className="install-footnote">{t("pwa","Visit once while online to cache game assets for future offline play. Progress stays on this device. Use Profile & Saves for checkpoint recovery and external backups.")}</p>
             <button className="primary-button" type="button" onClick={() => setShowGuide(false)}>{t("pwa","GOT IT")}{" "}<span>✓</span></button>
           </div>
         </div>

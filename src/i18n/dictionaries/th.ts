@@ -1,6 +1,8 @@
+import { profileTh } from "./profile-th";
 import { rpgTh } from "./rpg-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  profile: profileTh,
   rpg: rpgTh,
   main: {
     "GUEST EDITION": "โหมดผู้เล่นทั่วไป",
@@ -79,8 +81,8 @@ export const th = {
     "Use Pause or Escape. Focus mode fills your screen. Red root circles warn before the Guardian strikes.":
       "กด Pause หรือ Escape เพื่อหยุดเกม โหมดโฟกัสขยายพื้นที่เล่น วงรากไม้สีแดงเป็นสัญญาณเตือนก่อนการโจมตี",
     WIN: "ชนะ",
-    "At eight minutes, defeat the Forest Guardian. At half health it enrages. Run records are saved locally; active runs reset on exit.":
-      "เมื่อครบแปดนาที ให้ปราบผู้พิทักษ์ป่า บอสจะคลุ้มคลั่งเมื่อพลังชีวิตเหลือครึ่งหนึ่ง ประวัติจะบันทึกในเครื่อง แต่รอบที่กำลังเล่นจะเริ่มใหม่เมื่อออก",
+    "At eight minutes, defeat the Forest Guardian. At half health it enrages. Interrupted runs can resume from a checkpoint in Profile & Saves. Exiting to the Hub discards the unfinished run.":
+      "เมื่อครบแปดนาที ให้ปราบผู้พิทักษ์ป่า บอสจะคลุ้มคลั่งเมื่อพลังชีวิตเหลือครึ่งหนึ่ง กู้คืนรอบที่หยุดชะงักจากจุดบันทึกได้ในโปรไฟล์และบันทึก การออกไปยังศูนย์กลางจะยกเลิกรอบที่ยังไม่จบ",
     "UNDERSTOOD →": "เข้าใจแล้ว →",
     "REMEMBER EVERY JOURNEY": "จดจำทุกการเดินทาง",
     "Your latest 20 completed runs, saved only on this device.":
@@ -398,8 +400,8 @@ export const th = {
     or: "หรือ",
     ". If the option is missing, try Chrome or Edge over HTTPS.":
       "หากไม่มีตัวเลือก ให้ลองใช้ Chrome หรือ Edge ผ่าน HTTPS",
-    "Visit once while online to cache game assets for future offline play. Progress remains on this device and active runs are not saved on exit.":
-      "เข้าเกมขณะออนไลน์อย่างน้อยหนึ่งครั้งเพื่อเก็บไฟล์สำหรับเล่นออฟไลน์ ความคืบหน้าจะอยู่บนอุปกรณ์นี้ และรอบที่กำลังเล่นจะไม่ถูกบันทึกเมื่อออก",
+    "Visit once while online to cache game assets for future offline play. Progress stays on this device. Use Profile & Saves for checkpoint recovery and external backups.":
+      "เข้าเกมขณะออนไลน์อย่างน้อยหนึ่งครั้งเพื่อเก็บไฟล์สำหรับเล่นออฟไลน์ ความก้าวหน้าจะอยู่บนอุปกรณ์นี้ ใช้โปรไฟล์และบันทึกเพื่อกู้คืนจุดบันทึกและดาวน์โหลดไฟล์สำรอง",
     "GOT IT": "เข้าใจแล้ว",
   },
   errors: {

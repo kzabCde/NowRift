@@ -8,6 +8,7 @@ import {
   type DifficultyId,
 } from "./content";
 export type Progress = {
+  local?: import("../persistence/model").SlotState;
   rpg?: RpgState;
   equipment?: Equipment;
   version: 1;

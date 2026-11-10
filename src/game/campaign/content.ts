@@ -366,8 +366,14 @@ export const stageById = (id: string) => {
 export const worldById = (id: WorldId) => WORLDS.find((w) => w.id === id)!;
 export function seeded(seed: number) {
   let x = seed >>> 0;
-  return () => {
+  const next = () => {
     x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
     return x / 4294967296;
   };
+  return Object.assign(next, {
+    getState: () => x,
+    setState: (state: number) => {
+      x = state >>> 0;
+    },
+  });
 }

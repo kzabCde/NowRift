@@ -1,3 +1,10 @@
+import {
+  captureCheckpoint,
+  restoreCheckpoint,
+  type RunCheckpoint,
+} from "../persistence/checkpoint";
+import type { RunOwner } from "../persistence/model";
+import { seeded } from "../campaign/content";
 import { applyBuild } from "../engine";
 import { RARITIES } from "../rpg/content";
 import { translateText } from "../../i18n/translator";
@@ -647,6 +654,8 @@ export class MainMenuScene extends Phaser.Scene {
           weapon: command.weapon,
           stage: command.stage,
           loadout: command.loadout,
+          run: command.run,
+          checkpoint: command.checkpoint,
         });
     });
     this.events.once("shutdown", off);
@@ -667,28 +676,53 @@ export class GameScene extends Phaser.Scene {
   terminalTime = 0;
   reported = false;
   runId = "";
+  run?: RunOwner;
+  seed = 0;
+  stage?: StageSelection;
+  loadout?: Loadout;
+  lastCheckpoint = 0;
+  storageBlocked = false;
   tonicPending = false;
   tonicReceipts = new Set<string>();
   constructor() {
     super("GameScene");
   }
-  init(data: { weapon: WeaponId; stage?: StageSelection; loadout?: Loadout }) {
-    this.simulation = data.stage
-      ? loadStage(data.stage, data.weapon)
-      : makeGame(FOREST.width, FOREST.height, data.weapon);
-    if (this.simulation.build)
-      this.simulation.character = data.loadout?.character ?? "wanderer";
-    else applyLoadout(this.simulation, data.loadout);
+  init(data: {
+    weapon: WeaponId;
+    stage?: StageSelection;
+    loadout?: Loadout;
+    run?: RunOwner;
+    checkpoint?: RunCheckpoint | null;
+  }) {
+    this.seed =
+      data.checkpoint?.seed ??
+      data.stage?.seed ??
+      crypto.getRandomValues(new Uint32Array(1))[0];
+    this.run = data.run;
+    this.stage = data.checkpoint?.stage ?? data.stage;
+    this.loadout = data.checkpoint?.loadout ?? data.loadout;
+    this.lastCheckpoint = 0;
+    this.storageBlocked = false;
+    this.simulation = data.checkpoint
+      ? restoreCheckpoint(data.checkpoint)
+      : data.stage
+        ? loadStage(data.stage, data.weapon)
+        : makeGame(FOREST.width, FOREST.height, data.weapon, seeded(this.seed));
+    if (!data.checkpoint) {
+      if (this.simulation.build)
+        this.simulation.character = data.loadout?.character ?? "wanderer";
+      else applyLoadout(this.simulation, data.loadout);
+    }
     this.lastFrameAt = performance.now();
     this.renderFrames = 0;
     this.lastHud = 0;
     this.lastPhase = "";
     this.terminalTime = 0;
     this.reported = false;
-    this.runId = crypto.randomUUID();
+    this.runId = this.run?.id ?? crypto.randomUUID();
     this.simulation.id = this.runId;
     this.tonicPending = false;
-    this.tonicReceipts.clear();
+    this.tonicReceipts = new Set(data.checkpoint?.tonics ?? []);
     this.joystick = null;
     this.pointer = null;
   }
@@ -706,7 +740,7 @@ export class GameScene extends Phaser.Scene {
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     const escape = () => {
-      if (this.tonicPending) return;
+      if (this.tonicPending || this.storageBlocked) return;
       togglePause(g);
       this.clearInput();
       this.publish();
@@ -718,8 +752,16 @@ export class GameScene extends Phaser.Scene {
       this.publish();
     };
     const visibility = () => {
-      if (document.hidden) interrupt();
+      if (document.hidden) {
+        interrupt();
+        this.checkpoint();
+      }
     };
+    const pagehide = () => {
+      interrupt();
+      this.checkpoint();
+    };
+    window.addEventListener("pagehide", pagehide);
     const preventScroll = (event: KeyboardEvent) => {
       if (
         g.phase === "playing" &&
@@ -752,6 +794,13 @@ export class GameScene extends Phaser.Scene {
     const down = (e: PointerEvent) => {
       if (g.phase !== "playing" || this.pointer !== null) return;
       e.preventDefault();
+      const area = useSettings.getState().touchArea;
+      const bounds = canvas.getBoundingClientRect();
+      if (
+        (area === "left" && e.clientX > bounds.left + bounds.width / 2) ||
+        (area === "right" && e.clientX < bounds.left + bounds.width / 2)
+      )
+        return;
       this.pointer = e.pointerId;
       this.joystick = { ...point(e), dx: 0, dy: 0 };
       canvas.setPointerCapture(e.pointerId);
@@ -796,6 +845,7 @@ export class GameScene extends Phaser.Scene {
       this.keys?.ESC.off("down", escape);
       window.removeEventListener("keydown", preventScroll);
       window.removeEventListener("blur", interrupt);
+      window.removeEventListener("pagehide", pagehide);
       document.removeEventListener("visibilitychange", visibility);
       this.scale.off("resize", this.resize, this);
       canvas.removeEventListener("pointerdown", down);
@@ -806,6 +856,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.publish();
     // Test-only fixture control is excluded unless explicitly enabled at build time.
+    this.checkpoint();
     if (process.env.NEXT_PUBLIC_E2E === "1") {
       window.__NOWRIFT_TEST__ = {
         state: () => this.simulation,
@@ -899,7 +950,46 @@ export class GameScene extends Phaser.Scene {
     this.bridge?.emit("touch", false);
     this.input.keyboard?.resetKeys();
   }
+  checkpoint() {
+    const g = this.simulation;
+    if (!this.run || !["playing", "paused", "upgrade"].includes(g.phase))
+      return;
+    try {
+      this.run.sequence++;
+      this.bridge.emit(
+        "checkpoint",
+        captureCheckpoint(
+          g,
+          { ...this.run },
+          this.seed,
+          this.stage,
+          this.loadout,
+          [...this.tonicReceipts],
+        ),
+      );
+      this.lastCheckpoint = performance.now();
+    } catch (error) {
+      this.bridge.emit("error", String(error));
+    }
+  }
   command(command: Command) {
+    if (command.type === "checkpoint") {
+      this.checkpoint();
+      return;
+    }
+    if (command.type === "storage-blocked") {
+      this.storageBlocked = true;
+      if (this.simulation.phase === "playing") togglePause(this.simulation);
+      this.clearInput();
+      this.publish();
+      return;
+    }
+    if (command.type === "storage-ready") {
+      this.storageBlocked = false;
+      return;
+    }
+    if (this.storageBlocked && ["pause", "upgrade"].includes(command.type))
+      return;
     if (command.type === "tonic-lock") {
       if (command.runId === this.runId && this.simulation.phase === "paused")
         this.tonicPending = true;
@@ -926,6 +1016,7 @@ export class GameScene extends Phaser.Scene {
           applyBuild(this.simulation, this.simulation.build);
         }
         this.publish();
+        this.checkpoint();
       }
       this.tonicPending = false;
       return;
@@ -938,17 +1029,21 @@ export class GameScene extends Phaser.Scene {
           weapon: command.weapon,
           stage: command.stage,
           loadout: command.loadout,
+          run: command.run,
+          checkpoint: command.checkpoint,
         });
         break;
       case "pause":
         togglePause(this.simulation);
         this.clearInput();
         this.publish();
+        this.checkpoint();
         break;
       case "upgrade":
         chooseUpgrade(this.simulation, command.id);
         this.clearInput();
         this.publish();
+        this.checkpoint();
         break;
       case "exit":
         this.scene.start("MainMenuScene");
@@ -968,13 +1063,16 @@ export class GameScene extends Phaser.Scene {
     this.renderFrames++;
     const g = this.simulation,
       k = this.keys;
+    const preset = useSettings.getState().keyboard,
+      wasd = preset !== "arrows",
+      arrows = preset !== "wasd";
     const x =
-      Number(k?.D.isDown || k?.RIGHT.isDown) -
-      Number(k?.A.isDown || k?.LEFT.isDown) +
+      Number((wasd && k?.D.isDown) || (arrows && k?.RIGHT.isDown)) -
+      Number((wasd && k?.A.isDown) || (arrows && k?.LEFT.isDown)) +
       (this.joystick?.dx ?? 0);
     const y =
-      Number(k?.S.isDown || k?.DOWN.isDown) -
-      Number(k?.W.isDown || k?.UP.isDown) +
+      Number((wasd && k?.S.isDown) || (arrows && k?.DOWN.isDown)) -
+      Number((wasd && k?.W.isDown) || (arrows && k?.UP.isDown)) +
       (this.joystick?.dy ?? 0);
     advanceGame(g, delta / 1000, x, y);
     drainFeedback(g, (event) => this.visuals.consume(event));
@@ -1002,6 +1100,11 @@ export class GameScene extends Phaser.Scene {
             ? 30
             : 60,
       );
+    if (
+      (time - this.lastCheckpoint >= 10000 && g.phase === "playing") ||
+      (g.phase !== this.lastPhase && ["paused", "upgrade"].includes(g.phase))
+    )
+      this.checkpoint();
     if (time - this.lastHud > 100 || g.phase !== this.lastPhase) {
       this.publish();
       this.lastHud = time;
@@ -1014,6 +1117,7 @@ export class GameScene extends Phaser.Scene {
         this.reported = true;
         this.bridge.emit("result", {
           id: this.runId,
+          run: this.run ? { ...this.run } : undefined,
           at: Date.now(),
           outcome: g.phase,
           kills: g.kills,
@@ -1024,6 +1128,7 @@ export class GameScene extends Phaser.Scene {
           campaign: g.campaign
             ? {
                 id: this.runId,
+                run: this.run ? { ...this.run } : undefined,
                 stageId: g.campaign.definition.id,
                 difficulty: g.campaign.difficulty.id,
                 seed: g.campaign.seed,
@@ -1061,6 +1166,8 @@ export class ResultsScene extends Phaser.Scene {
           weapon: command.weapon,
           stage: command.stage,
           loadout: command.loadout,
+          run: command.run,
+          checkpoint: command.checkpoint,
         });
       if (command.type === "exit") this.scene.start("MainMenuScene");
     });
