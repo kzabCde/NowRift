@@ -65,8 +65,8 @@ export function CharacterSelection({
           ["MOVEMENT", c.speed],
           ["CRITICAL", `${Math.round(c.crit * 100)}%`],
         ].map(([label, value]) => (
-          <div key={text(label)}>
-            <span>{text(label)}</span>
+          <div key={String(label)}>
+            <span>{text(String(label))}</span>
             <strong>{value}</strong>
           </div>
         ))}
