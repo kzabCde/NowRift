@@ -23,6 +23,7 @@ import {
 import { stageById, worldById, DIFFICULTIES } from "@/game/campaign/content";
 import type { StageSelection } from "@/game/campaign/loader";
 import { campaignRepository } from "@/game/campaign/persistence";
+import { campaignLoadout } from "@/game/rpg/stats";
 import type { Rewards } from "@/game/campaign/rewards";
 import { runRepository } from "@/game/services/saves";
 import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
@@ -44,7 +45,14 @@ export default function NowRiftGame({
   const { t, text } = useI18n();
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
+  const resultRun = useRef<string | null>(null);
+  const pendingResult = useRef<Promise<void> | null>(null),
+    startGuard = useRef(false);
+  const [starting, setStarting] = useState(false);
   const [reward, setReward] = useState<Rewards | null>(null);
+  const [tonics, setTonics] = useState<Record<string, number>>({}),
+    [tonicBusy, setTonicBusy] = useState(false);
+  const tonicGuard = useRef(false);
   const bridge = useMemo(() => new GameBridge(), []);
   const [hud, setHud] = useState<Snapshot>(() =>
     snapshot(makeGame(FOREST.width, FOREST.height, weapon)),
@@ -72,25 +80,35 @@ export default function NowRiftGame({
           bridge.emit("command", { type: "start", weapon, stage, loadout });
       }),
       bridge.on("result", (run) => {
-        if (run.campaign)
-          campaignRepository
-            .settle(run.campaign)
-            .then((r) => setReward(r.reward))
-            .catch((e) =>
-              setError(
-                "Campaign save failed; progression was not changed. " +
-                  String(e),
-              ),
-            );
+        resultRun.current = run.id;
         setSave("Saving run record…");
-        runRepository
-          .put(run)
-          .then(() => setSave("Run record saved on this device."))
-          .catch(() =>
-            setSave(
-              "Run record could not be saved. You can keep playing; previous records are preserved.",
-            ),
-          );
+        pendingResult.current = (async () => {
+          let recordedGold = run.gold;
+          if (run.campaign) {
+            try {
+              const settled = await campaignRepository.settle(run.campaign);
+              recordedGold = settled.reward?.gold ?? 0;
+              if (resultRun.current === run.id) setReward(settled.reward);
+            } catch (e) {
+              recordedGold = 0;
+              if (resultRun.current === run.id)
+                setError(
+                  "Campaign save failed; progression was not changed. " +
+                    String(e),
+                );
+            }
+          }
+          try {
+            await runRepository.put({ ...run, gold: recordedGold });
+            if (resultRun.current === run.id)
+              setSave("Run record saved on this device.");
+          } catch {
+            if (resultRun.current === run.id)
+              setSave(
+                "Run record could not be saved. You can keep playing; previous records are preserved.",
+              );
+          }
+        })();
         try {
           const best = Math.max(
             parseBestKills(localStorage.getItem(BEST_SCORE_KEY)),
@@ -103,6 +121,7 @@ export default function NowRiftGame({
       }),
     ];
     return () => {
+      resultRun.current = null;
       off.forEach((fn) => fn());
     };
   }, [autoStart, bridge, weapon, stage, loadout]);
@@ -110,16 +129,81 @@ export default function NowRiftGame({
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
   }, [immersive]);
-  const pause = useCallback(
-    () => bridge.emit("command", { type: "pause" }),
-    [bridge],
-  );
-  const start = () => {
-    setSave("");
-    setReward(null);
-    bridge.emit("command", { type: "start", weapon, stage, loadout });
+  useEffect(() => {
+    if (stage && (hud.phase === "paused" || hud.phase === "playing"))
+      campaignRepository
+        .load()
+        .then((p) => setTonics(p.rpg?.consumables ?? {}))
+        .catch(() => {});
+  }, [stage, hud.phase]);
+  const useTonic = async (definitionId: "health-tonic" | "focus-tonic") => {
+    if (tonicGuard.current || !hud.runId || hud.phase !== "paused" || !stage)
+      return;
+    tonicGuard.current = true;
+    setTonicBusy(true);
+    const runId = hud.runId,
+      id = "tonic-" + crypto.randomUUID();
+    bridge.emit("command", { type: "tonic-lock", runId });
+    try {
+      const p = await campaignRepository.load();
+      const result = await campaignRepository.act({
+        id,
+        at: Date.now(),
+        expectedRevision: p.rpg!.revision,
+        action: { type: "consume", definitionId },
+      });
+      setTonics(result.progress.rpg!.consumables);
+      bridge.emit("command", {
+        type: "tonic",
+        runId,
+        receiptId: id,
+        definitionId,
+      });
+    } catch (e) {
+      setError("Tonic could not be used. " + String(e));
+      bridge.emit("command", { type: "tonic-unlock", runId });
+    } finally {
+      tonicGuard.current = false;
+      setTonicBusy(false);
+    }
+  };
+  const pause = useCallback(() => {
+    if (!tonicGuard.current) bridge.emit("command", { type: "pause" });
+  }, [bridge]);
+  const start = async () => {
+    if (tonicGuard.current || startGuard.current) return;
+    startGuard.current = true;
+    setStarting(true);
+    try {
+      await pendingResult.current;
+      let selection = stage;
+      if (stage) {
+        const p = await campaignRepository.load();
+        selection = {
+          ...stage,
+          clears: p.clears,
+          ...campaignLoadout(p, weapon, loadout?.character),
+        };
+      }
+      resultRun.current = null;
+      setSave("");
+      setReward(null);
+      setError("");
+      bridge.emit("command", {
+        type: "start",
+        weapon,
+        stage: selection,
+        loadout,
+      });
+    } catch (e) {
+      setError("Run could not start. " + String(e));
+    } finally {
+      startGuard.current = false;
+      setStarting(false);
+    }
   };
   const requestLeave = () => {
+    if (tonicGuard.current) return;
     if (["gameover", "victory", "menu"].includes(hud.phase)) {
       onExitToMenu?.();
       return;
@@ -152,8 +236,12 @@ export default function NowRiftGame({
         <Brand />
         <div className="header-right">
           <LanguageSwitcher compact />
-          <span className="eyebrow">{t("game","A JOURNEY BEYOND THE BREACH")}</span>
-          <button className="quiet-button" onClick={requestLeave} type="button">{t("game","← MAIN MENU")}{" "}</button>
+          <span className="eyebrow">
+            {t("game", "A JOURNEY BEYOND THE BREACH")}
+          </span>
+          <button className="quiet-button" onClick={requestLeave} type="button">
+            {t("game", "← MAIN MENU")}{" "}
+          </button>
         </div>
       </header>
       <section className="content">
@@ -161,32 +249,42 @@ export default function NowRiftGame({
           <div>
             <span className="eyebrow">
               {definition
-                ? `${text(world!.name).toUpperCase()} / ${t("game","STAGE")} ${definition.number}`
-                : t("game","CHAPTER I / THE FIRST BREACH")}
+                ? `${text(world!.name).toUpperCase()} / ${t("game", "STAGE")} ${definition.number}`
+                : t("game", "CHAPTER I / THE FIRST BREACH")}
             </span>
             <h1>
               {world ? (
                 text(world.name)
               ) : (
-                <>{t("main","Whispering")} <em>{t("main","Forest")}</em></>
+                <>
+                  {t("main", "Whispering")} <em>{t("main", "Forest")}</em>
+                </>
               )}
             </h1>
           </div>
           <p>
             {definition && stage ? (
-              `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game","then defeat the guardian") : t("game","survival")}`
+              `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game", "then defeat the guardian") : t("game", "survival")}`
             ) : (
-              <>{t("game","Survive until")}{" "}<strong>08:00</strong>{t("game",". Defeat the Forest Guardian.")}{" "}</>
+              <>
+                {t("game", "Survive until")} <strong>08:00</strong>
+                {t("game", ". Defeat the Forest Guardian.")}{" "}
+              </>
             )}
           </p>
         </div>
-        <section className="game-card" aria-label={t("game","NowRift playable game")}>
+        <section
+          className="game-card"
+          aria-label={t("game", "NowRift playable game")}
+        >
           <div className="game-topbar">
             <div className="sector-heading">
               <span className="live-dot" />{" "}
               {text(world?.name ?? "Whispering Forest").toUpperCase()}{" "}
               <span className="game-state">
-                {hud.phase === "playing" ? t("game","LIVE RUN") : text(hud.phase.toUpperCase())}
+                {hud.phase === "playing"
+                  ? t("game", "LIVE RUN")
+                  : text(hud.phase.toUpperCase())}
               </span>
             </div>
             <div className="game-actions">
@@ -196,45 +294,59 @@ export default function NowRiftGame({
                 disabled={!ready || !["playing", "paused"].includes(hud.phase)}
                 type="button"
               >
-                {hud.phase === "paused" ? t("game","RESUME") : t("game","PAUSE")}
+                {hud.phase === "paused"
+                  ? t("game", "RESUME")
+                  : t("game", "PAUSE")}
               </button>
               <button
                 className="action-button"
                 onClick={() => setImmersive((v) => !v)}
-                aria-label={immersive ? t("game","Exit focus mode") : t("game","Enter focus mode")}
+                aria-label={
+                  immersive
+                    ? t("game", "Exit focus mode")
+                    : t("game", "Enter focus mode")
+                }
                 aria-pressed={immersive}
                 type="button"
               >
-                {immersive ? t("game","EXIT FOCUS") : t("game","FOCUS")}
+                {immersive ? t("game", "EXIT FOCUS") : t("game", "FOCUS")}
               </button>
               <button
                 className="action-button"
-                aria-label={t("game","Settings")}
+                aria-label={t("game", "Settings")}
                 onClick={openSettings}
                 type="button"
-              >{t("game","SETTINGS")}{" "}</button>
+              >
+                {t("game", "SETTINGS")}{" "}
+              </button>
               <button
                 className="action-button"
                 onClick={start}
-                disabled={!ready}
+                disabled={!ready || starting}
                 type="button"
-              >{t("game","RESTART")}{" "}</button>
+              >
+                {t("game", "RESTART")}{" "}
+              </button>
               <button
                 className="action-button compact-menu"
                 onClick={requestLeave}
                 type="button"
-              >{t("game","MAIN MENU")}{" "}</button>
+              >
+                {t("game", "MAIN MENU")}{" "}
+              </button>
             </div>
           </div>
           <div className="hud-row">
             <div className="level-shape">
-              <small>{t("game","LEVEL")}</small>
+              <small>{t("game", "LEVEL")}</small>
               <strong>{String(hud.level).padStart(2, "0")}</strong>
             </div>
             <div className="bars">
               <div className="bar-heading">
                 <span>
-                  {text(CHARACTERS[loadout?.character ?? "wanderer"].name).toUpperCase()}
+                  {text(
+                    CHARACTERS[loadout?.character ?? "wanderer"].name,
+                  ).toUpperCase()}
                 </span>
                 <strong>
                   {hud.hp} <small>/ {hud.maxHp} HP</small>
@@ -260,9 +372,9 @@ export default function NowRiftGame({
             </div>
             <div className="hud-stats">
               {[
-                [t("game","TIME"), clock(hud.time)],
-                [t("game","KILLS"), hud.kills],
-                [t("game","ENEMIES"), hud.enemies],
+                [t("game", "TIME"), clock(hud.time)],
+                [t("game", "KILLS"), hud.kills],
+                [t("game", "ENEMIES"), hud.enemies],
               ].map(([label, value]) => (
                 <div className="stat" key={label}>
                   <span className="stat-label">{label}</span>
@@ -280,28 +392,34 @@ export default function NowRiftGame({
             <PhaserHost bridge={bridge} world={world?.id} />
             {!ready && (
               <div className="arena-overlay">
-                <span className="eyebrow">{t("game","ENTERING THE FOREST")}</span>
-                <h2>{t("game","Through the veil…")}</h2>
+                <span className="eyebrow">
+                  {t("game", "ENTERING THE FOREST")}
+                </span>
+                <h2>{t("game", "Through the veil…")}</h2>
                 <progress
                   max={1}
                   value={loading}
-                  aria-label={t("game","Loading game assets")}
+                  aria-label={t("game", "Loading game assets")}
                 />
-                <p>{Math.round(loading * 100)}% · {t("game","Preparing your journey")}</p>
+                <p>
+                  {Math.round(loading * 100)}% ·{" "}
+                  {t("game", "Preparing your journey")}
+                </p>
                 {error && <p role="alert">{text(error)}</p>}
               </div>
             )}
             {hud.boss && (
               <div
                 className="boss-hud"
-                aria-label={`${text(world?.boss.name ?? "Forest Guardian")} ${t("game","health")}`}
+                aria-label={`${text(world?.boss.name ?? "Forest Guardian")} ${t("game", "health")}`}
               >
                 <span>
-                  {world?.boss.name.toUpperCase() ?? t("game","FOREST GUARDIAN")}{" "}
+                  {world?.boss.name.toUpperCase() ??
+                    t("game", "FOREST GUARDIAN")}{" "}
                   <small>
                     {hud.boss.phase === 2
-                      ? t("game","ENRAGED · PHASE II")
-                      : t("game","THE ANCIENT WARDEN")}
+                      ? t("game", "ENRAGED · PHASE II")
+                      : t("game", "THE ANCIENT WARDEN")}
                   </small>
                 </span>
                 <div className="bar-track">
@@ -321,58 +439,90 @@ export default function NowRiftGame({
               <>
                 <span className="in-game-hint">
                   {hud.time < 120
-                    ? t("game","THE FOREST STIRS")
+                    ? t("game", "THE FOREST STIRS")
                     : hud.time < 240
-                      ? t("game","THE HUNT BEGINS")
+                      ? t("game", "THE HUNT BEGINS")
                       : hud.time < 360
-                        ? t("game","THORNS AWAKEN")
+                        ? t("game", "THORNS AWAKEN")
                         : hud.time < 480
-                          ? t("game","THE LAST STAND")
-                          : t("game","BREAK THE GUARDIAN")}
+                          ? t("game", "THE LAST STAND")
+                          : t("game", "BREAK THE GUARDIAN")}
                 </span>
                 <span className="touch-hint">
-                  {touch ? t("game","MOVING") : t("game","DRAG TO MOVE")}
+                  {touch ? t("game", "MOVING") : t("game", "DRAG TO MOVE")}
                 </span>
               </>
             )}
             {hud.phase === "paused" && !confirmLeave && !settings && (
               <DialogSurface
                 className="arena-overlay"
-                title={t("game","Paused")}
+                title={t("game", "Paused")}
                 onClose={pause}
               >
-                <span className="eyebrow">{t("game","TAKE A BREATH")}</span>
-                <h2>{t("game","Paused")}</h2>
-                <p>{t("game","The forest will wait.")}</p>
+                <span className="eyebrow">{t("game", "TAKE A BREATH")}</span>
+                <h2>{t("game", "Paused")}</h2>
+                <p>{t("game", "The forest will wait.")}</p>
+                {stage && (
+                  <div className="run-tonics" aria-label="Campaign consumables">
+                    <button
+                      className="rpg-button"
+                      disabled={
+                        tonicBusy ||
+                        !tonics["health-tonic"] ||
+                        hud.hp >= hud.maxHp
+                      }
+                      onClick={() => void useTonic("health-tonic")}
+                    >
+                      {text("CRIMSON TONIC")} ×{tonics["health-tonic"] ?? 0}
+                      <small>{text("Restore 35 HP")}</small>
+                    </button>
+                    <button
+                      className="rpg-button"
+                      disabled={tonicBusy || !tonics["focus-tonic"]}
+                      onClick={() => void useTonic("focus-tonic")}
+                    >
+                      {text("AZURE TONIC")} ×{tonics["focus-tonic"] ?? 0}
+                      <small>{text("30% faster attacks / 20s")}</small>
+                    </button>
+                  </div>
+                )}
+                {tonicBusy && <p role="status">{text("Using tonic…")}</p>}
                 <button
                   className="primary-button"
                   onClick={pause}
                   type="button"
-                >{t("game","RESUME RUN")}{" "}<span>→</span>
+                >
+                  {t("game", "RESUME RUN")} <span>→</span>
                 </button>
                 <button
                   className="quiet-button"
                   onClick={openSettings}
                   type="button"
-                >{t("game","Settings")}{" "}</button>
+                >
+                  {t("game", "Settings")}{" "}
+                </button>
                 <button
                   className="quiet-button"
                   onClick={requestLeave}
                   type="button"
-                >{t("game","Return to main menu")}{" "}</button>
+                >
+                  {t("game", "Return to main menu")}{" "}
+                </button>
               </DialogSurface>
             )}
             {hud.phase === "upgrade" && !confirmLeave && !settings && (
               <DialogSurface
                 className="arena-overlay upgrade-overlay"
-                title={t("game","Choose an upgrade")}
+                title={t("game", "Choose an upgrade")}
               >
                 <span className="eyebrow">
-                  {t("game","LEVEL")} {hud.level} / {t("game","A NEW AWAKENING")}
+                  {t("game", "LEVEL")} {hud.level} /{" "}
+                  {t("game", "A NEW AWAKENING")}
                 </span>
-                <h2>{t("game","Choose your")}{" "}<em>{t("game","power.")}</em>
+                <h2>
+                  {t("game", "Choose your")} <em>{t("game", "power.")}</em>
                 </h2>
-                <p>{t("game","One choice. A different path.")}</p>
+                <p>{t("game", "One choice. A different path.")}</p>
                 <div className="upgrade-grid">
                   {hud.offers.map((id) => {
                     const u = UPGRADES.find((u) => u.id === id)!;
@@ -386,12 +536,15 @@ export default function NowRiftGame({
                         type="button"
                       >
                         <span className="card-rarity">
-                          {t("game","BLESSING")} · {(hud.stacks[id] ?? 0) + 1}/{u.max}
+                          {t("game", "BLESSING")} · {(hud.stacks[id] ?? 0) + 1}/
+                          {u.max}
                         </span>
                         <PixelIcon index={u.icon} large />
                         <strong>{text(u.name)}</strong>
                         <small>{text(u.description)}</small>
-                        <span className="upgrade-select">{t("game","EMBRACE →")}</span>
+                        <span className="upgrade-select">
+                          {t("game", "EMBRACE →")}
+                        </span>
                       </button>
                     );
                   })}
@@ -401,31 +554,44 @@ export default function NowRiftGame({
             {terminal && (
               <DialogSurface
                 className="arena-overlay results-overlay"
-                title={hud.phase === "victory" ? t("game","Victory") : t("game","Defeat")}
+                title={
+                  hud.phase === "victory"
+                    ? t("game", "Victory")
+                    : t("game", "Defeat")
+                }
               >
                 <span className="eyebrow">
                   {hud.phase === "victory"
-                    ? t("game","THE FOREST REMEMBERS")
-                    : t("game","EVERY END IS A BEGINNING")}
+                    ? t("game", "THE FOREST REMEMBERS")
+                    : t("game", "EVERY END IS A BEGINNING")}
                 </span>
                 <h2>
                   {hud.phase === "victory"
-                    ? t("game","The veil is lifted.")
-                    : t("game","Your light fades.")}
+                    ? t("game", "The veil is lifted.")
+                    : t("game", "Your light fades.")}
                 </h2>
                 <p>
                   {hud.phase === "victory"
                     ? definition
-                      ? t("game","Stage cleared. Campaign rewards are banked locally.")
-                      : t("game","Forest Guardian defeated. +150 victory gold.")
-                    : t("game","The Rift Wanderer will rise again.")}
+                      ? t(
+                          "game",
+                          "Stage cleared. Campaign rewards are banked locally.",
+                        )
+                      : t(
+                          "game",
+                          "Forest Guardian defeated. +150 victory gold.",
+                        )
+                    : t("game", "The Rift Wanderer will rise again.")}
                 </p>
                 {reward && (
                   <p className="campaign-reward" role="status">
                     {reward.firstClear
-                      ? t("game","FIRST CLEAR · ")
-                      : t("game","FARMING REWARDS · ")}
-                    {reward.gold} {t("main","gold")} · {reward.xp} XP
+                      ? t("game", "FIRST CLEAR · ")
+                      : t("game", "FARMING REWARDS · ")}
+                    {reward.gold} {t("main", "gold")} · {reward.xp} XP
+                    <br />
+                    {reward.equipmentCount ?? 0} equipment ·{" "}
+                    {reward.overflow ?? 0} protected overflow parcels
                     <br />
                     {Object.entries(reward.materials)
                       .map(([id, n]) => `${text(id)} ×${n}`)
@@ -436,20 +602,24 @@ export default function NowRiftGame({
                   <div className="earned-relic" key={`${id}-${index}`}>
                     <PixelIcon index={RELICS[id as RelicId]?.icon ?? 7} />
                     <span>
-                      <small>{t("game","GUARDIAN RELIC EARNED")}</small>
-                      <strong>
-                        {text(RELICS[id as RelicId]?.name ?? id)}
-                      </strong>
+                      <small>{t("game", "GUARDIAN RELIC EARNED")}</small>
+                      <strong>{text(RELICS[id as RelicId]?.name ?? id)}</strong>
                     </span>
                   </div>
                 ))}
                 <div className="result-row">
                   <span>
-                    <strong>{clock(hud.time)}</strong>{t("game","SURVIVED")}{" "}</span>
+                    <strong>{clock(hud.time)}</strong>
+                    {t("game", "SURVIVED")}{" "}
+                  </span>
                   <span>
-                    <strong>{hud.kills}</strong>{t("game","ENEMIES SLAIN")}{" "}</span>
+                    <strong>{hud.kills}</strong>
+                    {t("game", "ENEMIES SLAIN")}{" "}
+                  </span>
                   <span>
-                    <strong>{hud.gold}</strong>{t("game","RUN GOLD")}{" "}</span>
+                    <strong>{stage ? (reward?.gold ?? "…") : hud.gold}</strong>
+                    {text(stage ? "BANKED GOLD" : "PRACTICE SCORE")}
+                  </span>
                 </div>
                 <p className="save-message" role="status">
                   {text(save)}
@@ -457,18 +627,22 @@ export default function NowRiftGame({
                 <button
                   className="primary-button"
                   onClick={start}
+                  disabled={starting}
                   type="button"
-                >{t("game","TRY AGAIN")}{" "}<span>→</span>
+                >
+                  {t("game", "TRY AGAIN")} <span>→</span>
                 </button>
                 <button
                   className="quiet-button"
                   onClick={onExitToMenu}
                   type="button"
-                >{t("game","RETURN TO MAIN MENU")}{" "}</button>
+                >
+                  {t("game", "RETURN TO MAIN MENU")}{" "}
+                </button>
                 <small className="muted">
-                  {definition
-                    ? t("game","Campaign gold can enhance relics at the sanctuary.")
-                    : t("game","Survival gold is a run score. Play campaign stages to bank rewards.")}
+                  {stage
+                    ? "Earned gold, materials and equipment are banked for your RPG inventory. Gear changes apply when a new campaign run starts."
+                    : "Practice gold is a run score. Enter the World Map campaign to earn permanent inventory rewards."}
                 </small>
               </DialogSurface>
             )}
@@ -479,8 +653,9 @@ export default function NowRiftGame({
               <span>
                 <strong>{text(WEAPONS[weapon].name)}</strong>
                 <small>
-                  {hud.damage.toFixed(1)} {t("game","DMG")} · {hud.interval.toFixed(2)}s ·{" "}
-                  {Math.round(hud.crit * 100)}% {t("game","CRIT")}
+                  {hud.damage.toFixed(1)} {t("game", "DMG")} ·{" "}
+                  {hud.interval.toFixed(2)}s · {Math.round(hud.crit * 100)}%{" "}
+                  {t("game", "CRIT")}
                 </small>
               </span>
             </div>
@@ -489,11 +664,13 @@ export default function NowRiftGame({
               <kbd>A</kbd>
               <kbd>S</kbd>
               <kbd>D</kbd>
-              <span>{t("game","MOVE")}</span>
+              <span>{t("game", "MOVE")}</span>
               <kbd>ESC</kbd>
-              <span>{t("game","PAUSE")}</span>
+              <span>{t("game", "PAUSE")}</span>
             </div>
-            <span className="auto-attack">{t("game","AUTO ATTACK ACTIVE")}</span>
+            <span className="auto-attack">
+              {t("game", "AUTO ATTACK ACTIVE")}
+            </span>
           </div>
         </section>
         {error && ready && (
@@ -502,27 +679,41 @@ export default function NowRiftGame({
           </p>
         )}
         <p className="field-note">
-          {t("game","FIELD NOTES")}{" "}
-          <span>{t("game","Collect emerald crystals to grow stronger. Red roots warn of an incoming strike. Keep moving.")}{" "}</span>
+          {t("game", "FIELD NOTES")}{" "}
+          <span>
+            {t(
+              "game",
+              "Collect emerald crystals to grow stronger. Red roots warn of an incoming strike. Keep moving.",
+            )}{" "}
+          </span>
         </p>
       </section>
       {settings && <Settings onClose={closeSettings} />}
       {confirmLeave && (
         <Modal title="Return to hub" onClose={cancelLeave}>
-          <span className="eyebrow">{t("game","LEAVE THE FOREST?")}</span>
-          <h2>{t("game","Return to hub?")}</h2>
-          <p>{t("game","Your active run will end. Completed run records and your best score remain on this device.")}{" "}</p>
+          <span className="eyebrow">{t("game", "LEAVE THE FOREST?")}</span>
+          <h2>{t("game", "Return to hub?")}</h2>
+          <p>
+            {t(
+              "game",
+              "Your active run will end. Completed run records and your best score remain on this device.",
+            )}{" "}
+          </p>
           <div className="dialog-actions">
             <button
               className="quiet-button"
               onClick={cancelLeave}
               type="button"
-            >{t("game","CONTINUE RUN")}{" "}</button>
+            >
+              {t("game", "CONTINUE RUN")}{" "}
+            </button>
             <button
               className="primary-button"
               onClick={onExitToMenu}
               type="button"
-            >{t("game","EXIT TO HUB →")}{" "}</button>
+            >
+              {t("game", "EXIT TO HUB →")}{" "}
+            </button>
           </div>
         </Modal>
       )}

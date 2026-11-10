@@ -1,9 +1,7 @@
-import {
-  RELICS,
-  emptyEquipment,
-  enhancementCost,
-  type RelicId,
-} from "../loadout";
+import { initializeRpg } from "../rpg/profile";
+import { settleRpg } from "../rpg/settlement";
+import { applyCommand, type RpgCommand } from "../rpg/actions";
+import { RELICS, type RelicId } from "../loadout";
 import {
   emptyProgress,
   validProgress,
@@ -15,6 +13,7 @@ import { resolveRewards, type CampaignResult, type Rewards } from "./rewards";
 import { DIFFICULTIES, stageById } from "./content";
 export interface CampaignRepository {
   load(): Promise<Progress>;
+  act(command: RpgCommand): Promise<ReturnType<typeof applyCommand>>;
   equip(id: RelicId | null): Promise<Progress>;
   enhance(id: RelicId): Promise<Progress>;
   settle(
@@ -32,15 +31,24 @@ function open(): Promise<IDBDatabase> {
   });
 }
 function read(value: unknown): Progress {
-  if (value === undefined) return emptyProgress();
+  if (value === undefined) return initializeRpg(emptyProgress());
   if (!validProgress(value))
     throw new Error(
       "Campaign save is damaged. Original data was preserved; stage entry is disabled.",
     );
-  return value;
+  return initializeRpg(value);
 }
 export function applyResult(progress: Progress, run: CampaignResult) {
   if (
+    typeof run.id !== "string" ||
+    !run.id.length ||
+    typeof run.victory !== "boolean" ||
+    !Number.isInteger(run.seed) ||
+    run.seed < 0 ||
+    run.seed > 4294967295 ||
+    ![run.enemies, run.elites, run.bosses].every(
+      (n) => Number.isSafeInteger(n) && n >= 0 && n <= 50000,
+    ) ||
     !DIFFICULTIES[run.difficulty] ||
     ![run.enemies, run.elites, run.bosses, run.seconds].every(
       (n) => Number.isFinite(n) && n >= 0,
@@ -60,51 +68,49 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   if (progress.receipts.includes(run.id)) return { progress, reward: null };
   const key = clearKey(run.stageId, run.difficulty),
     reward = resolveRewards(run, !progress.clears.includes(key));
-  const next: Progress = {
-    ...progress,
-    clears: [...progress.clears],
-    receipts: [...progress.receipts, run.id],
-    gold: progress.gold + reward.gold,
-    xp: progress.xp + reward.xp,
-    materials: { ...progress.materials },
-    candidates: [...progress.candidates, ...reward.candidates],
-  };
+  const settled = settleRpg(progress, run, reward),
+    next = settled.progress;
+  next.receipts.push(run.id);
   if (run.victory && !next.clears.includes(key)) next.clears.push(key);
-  for (const [id, n] of Object.entries(reward.materials))
-    next.materials[id] = (next.materials[id] ?? 0) + n;
+  reward.equipmentCount = settled.equipmentCount;
+  reward.overflow = settled.overflow;
   return { progress: next, reward };
 }
+/** Compatibility adapter for the former one-relic API; all mutations use the RPG transaction rules. */
 export function changeEquipment(
   progress: Progress,
   action: "equip" | "enhance",
   id: RelicId | null,
 ): Progress {
-  if (
-    id !== null &&
-    (!Object.hasOwn(RELICS, id) || !progress.candidates.includes(id))
-  )
+  const p = initializeRpg(progress),
+    r = p.rpg!;
+  const def =
+    id && Object.hasOwn(RELICS, id) ? "boss-" + RELICS[id].world : null;
+  const item = def
+    ? (r.equipment.find(
+        (e) => e.definitionId === def && e.id === r.equipped.necklace,
+      ) ?? r.equipment.find((e) => e.definitionId === def))
+    : null;
+  if (id !== null && !item)
     throw new Error("Earn this relic by defeating its world guardian first.");
-  const equipment = progress.equipment ?? emptyEquipment();
-  const next: Progress = {
-    ...progress,
-    materials: { ...progress.materials },
-    equipment: { ...equipment, ranks: { ...equipment.ranks } },
-  };
-  if (action === "equip") {
-    next.equipment!.equipped = id;
-    return next;
-  }
-  if (!id) throw new Error("Choose a relic to enhance.");
-  const rank = equipment.ranks[id] ?? 0;
-  if (rank >= 3) throw new Error("This relic is fully enhanced.");
-  const cost = enhancementCost(rank),
-    material = RELICS[id].material;
-  if (next.gold < cost.gold || (next.materials[material] ?? 0) < cost.material)
-    throw new Error("Not enough campaign gold or materials.");
-  next.gold -= cost.gold;
-  next.materials[material] -= cost.material;
-  next.equipment!.ranks[id] = rank + 1;
-  return next;
+  if (action === "enhance" && !item)
+    throw new Error("Choose a relic to enhance.");
+  if (action === "equip" && !item && !r.equipped.necklace) return p;
+  return applyCommand(p, {
+    id: `legacy-action-${r.revision}-${action}-${id}`,
+    at: Date.now(),
+    expectedRevision: r.revision,
+    action:
+      action === "enhance"
+        ? {
+            type: "enhance",
+            itemId: item!.id,
+            expectedEnhancement: item!.enhancement,
+          }
+        : item
+          ? { type: "equip", itemId: item.id }
+          : { type: "unequip", slot: "necklace" },
+  }).progress;
 }
 async function updateEquipment(
   action: "equip" | "enhance",
@@ -153,6 +159,34 @@ export const campaignRepository: CampaignRepository = {
         };
         r.onerror = () => reject(r.error);
       });
+    } finally {
+      db.close();
+    }
+  },
+  async act(command) {
+    const db = await open();
+    try {
+      return await new Promise<ReturnType<typeof applyCommand>>(
+        (resolve, reject) => {
+          const t = db.transaction("progress", "readwrite"),
+            store = t.objectStore("progress"),
+            r = store.get("profile");
+          let result: ReturnType<typeof applyCommand>;
+          r.onsuccess = () => {
+            try {
+              result = applyCommand(read(r.result), command);
+              store.put(result.progress, "profile");
+            } catch (e) {
+              t.abort();
+              reject(e);
+            }
+          };
+          t.oncomplete = () => resolve(result);
+          t.onabort = () =>
+            reject(t.error ?? new Error("Economy transaction interrupted"));
+          t.onerror = () => reject(t.error);
+        },
+      );
     } finally {
       db.close();
     }

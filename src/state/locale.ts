@@ -1,6 +1,11 @@
 "use client";
 import { create } from "zustand";
-import { defaultLocale, isLocale, preferredLocale, type Locale } from "@/i18n/config";
+import {
+  defaultLocale,
+  isLocale,
+  preferredLocale,
+  type Locale,
+} from "@/i18n/config";
 export const LOCALE_STORAGE_KEY = "nowrift-locale-v1";
 export type LocaleState = {
   locale: Locale;
@@ -14,13 +19,24 @@ export const useLocale = create<LocaleState>((set) => ({
   initialize() {
     if (typeof window === "undefined") return;
     let saved: string | null = null;
-    try { saved = localStorage.getItem(LOCALE_STORAGE_KEY); } catch { /* private browsing */ }
-    const locale = preferredLocale(saved, navigator.languages?.length ? navigator.languages : [navigator.language]);
+    try {
+      saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+    } catch {
+      /* private browsing */
+    }
+    const locale = preferredLocale(
+      saved,
+      navigator.languages?.length ? navigator.languages : [navigator.language],
+    );
     set({ locale, hydrated: true });
   },
   setLocale(locale) {
     if (!isLocale(locale)) return;
     set({ locale, hydrated: true });
-    try { localStorage.setItem(LOCALE_STORAGE_KEY, locale); } catch { /* session-only */ }
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    } catch {
+      /* session-only */
+    }
   },
 }));

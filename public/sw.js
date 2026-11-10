@@ -1,8 +1,9 @@
 /* NowRift Phase 2 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v9-transparent-brand";
+const VERSION = "nowrift-pwa-v10-rpg";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
+  "/assets/items/atlas.png",
   "/assets/worlds/forest/projectiles.png",
   "/assets/worlds/desert/projectiles.png",
   "/assets/worlds/frozen/projectiles.png",

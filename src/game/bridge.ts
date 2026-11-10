@@ -12,7 +12,14 @@ export type Command =
     }
   | { type: "pause" }
   | { type: "upgrade"; id: UpgradeId }
-  | { type: "exit" };
+  | { type: "exit" }
+  | {
+      type: "tonic";
+      runId: string;
+      receiptId: string;
+      definitionId: "health-tonic" | "focus-tonic";
+    }
+  | { type: "tonic-lock" | "tonic-unlock"; runId: string };
 export type RunResult = {
   campaign?: CampaignResult;
   id: string;

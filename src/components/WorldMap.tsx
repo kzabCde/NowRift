@@ -1,4 +1,7 @@
 "use client";
+import type { CharacterId } from "@/game/loadout";
+import { calculateStats, campaignLoadout } from "@/game/rpg/stats";
+import type { WeaponId } from "@/game/content/forest";
 import { useI18n } from "@/i18n/useI18n";
 import Atmosphere from "./Atmosphere";
 import { audio } from "@/game/audio/engine";
@@ -22,9 +25,13 @@ import type { StageSelection } from "@/game/campaign/loader";
 export default function WorldMap({
   onStart,
   onBack,
+  weapon = "arcane",
+  character = "wanderer",
 }: {
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
+  weapon?: WeaponId;
+  character?: CharacterId;
 }) {
   const { t, text } = useI18n();
   const [world, setWorld] = useState<WorldId>("forest"),
@@ -60,11 +67,16 @@ export default function WorldMap({
     <section className="world-map">
       <div className="hub-heading">
         <div>
-          <span className="eyebrow">{t("world","THE SHATTERED ATLAS / CAMPAIGN")}</span>
-          <h1>{t("world","Worlds beyond")}{" "}<em>{t("world","the veil.")}</em>
+          <span className="eyebrow">
+            {t("world", "THE SHATTERED ATLAS / CAMPAIGN")}
+          </span>
+          <h1>
+            {t("world", "Worlds beyond")} <em>{t("world", "the veil.")}</em>
           </h1>
         </div>
-        <button className="quiet-button" onClick={onBack}>{t("world","← HUB")}{" "}</button>
+        <button className="quiet-button" onClick={onBack}>
+          {t("world", "← HUB")}{" "}
+        </button>
       </div>
       <div className="world-cards">
         {WORLDS.map((w, i) => {
@@ -88,14 +100,15 @@ export default function WorldMap({
             >
               <Atmosphere world={w.id} />
               <span>
-                {t("world","WORLD")} 0{i + 1} ·{" "}
+                {t("world", "WORLD")} 0{i + 1} ·{" "}
                 {lockedReason(`${w.id}-1`, difficulty, progress.clears)
-                  ? t("world","LOCKED")
-                  : t("world","OPEN")}
+                  ? t("world", "LOCKED")
+                  : t("world", "OPEN")}
               </span>
               <strong>{text(w.name)}</strong>
               <small>
-                {done * 20}% {t("world","COMPLETE")} · {t("world","POWER")} {10 + i * 30}+
+                {done * 20}% {t("world", "COMPLETE")} · {t("world", "POWER")}{" "}
+                {10 + i * 30}+
               </small>
             </button>
           );
@@ -106,7 +119,10 @@ export default function WorldMap({
           <span className="eyebrow">{text(w.architecture.toUpperCase())}</span>
           <h2>{text(w.name)}</h2>
           <p>{text(w.description)}</p>
-          <div className="difficulty-tabs" aria-label={t("world","Difficulty")}>
+          <div
+            className="difficulty-tabs"
+            aria-label={t("world", "Difficulty")}
+          >
             {Object.keys(DIFFICULTIES).map((d) => (
               <button
                 key={d}
@@ -120,12 +136,18 @@ export default function WorldMap({
           </div>
           <p className="muted">
             {difficulty === "normal"
-              ? t("world","Standard enemies and farming rewards.")
+              ? t("world", "Standard enemies and farming rewards.")
               : difficulty === "hard"
-                ? t("world","Faster pressure, three-shot volleys, more elites. 1.6× rewards.")
-                : t("world","Five-shot volleys, rapid boss cycles, triple hazards. 2.4× rewards.")}
+                ? t(
+                    "world",
+                    "Faster pressure, three-shot volleys, more elites. 1.6× rewards.",
+                  )
+                : t(
+                    "world",
+                    "Five-shot volleys, rapid boss cycles, triple hazards. 2.4× rewards.",
+                  )}
           </p>
-          <h3>{t("world","Stage selection")}</h3>
+          <h3>{t("world", "Stage selection")}</h3>
           <div className="stage-list">
             {STAGES.filter((s) => s.worldId === world).map((s) => {
               const lock = lockedReason(s.id, difficulty, progress.clears);
@@ -142,10 +164,10 @@ export default function WorldMap({
                     <small>
                       {(lock ? text(lock) : null) ??
                         (progress.clears.includes(clearKey(s.id, difficulty))
-                          ? t("world","CLEARED · REPLAY AVAILABLE")
+                          ? t("world", "CLEARED · REPLAY AVAILABLE")
                           : s.clear.kind === "boss"
-                            ? t("world","BOSS ENCOUNTER")
-                            : t("world","SURVIVAL"))}
+                            ? t("world", "BOSS ENCOUNTER")
+                            : t("world", "SURVIVAL"))}
                     </small>
                   </span>
                 </button>
@@ -164,33 +186,46 @@ export default function WorldMap({
               backgroundPosition: "left top",
             }}
           />
-          <span className="eyebrow">{t("world","WORLD GUARDIAN")}</span>
+          <span className="eyebrow">{t("world", "WORLD GUARDIAN")}</span>
           <h3>{text(w.boss.name)}</h3>
           <p>{w.boss.patterns.map(text).join(" · ")}</p>
-          <span className="eyebrow">{t("world","LOCAL ENEMIES")}</span>
+          <span className="eyebrow">{t("world", "LOCAL ENEMIES")}</span>
           <p>{w.enemies.map((e) => text(e.name)).join(" · ")}</p>
           <hr />
           <h3>{text(stage.name)}</h3>
           <p>
-            {t("world","Recommended power")} {stage.recommendedPower} ·{" "}
+            {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
             {Math.round(
               (stage.clear.seconds * DIFFICULTIES[difficulty].duration) / 60,
             )}{" "}
-            {t("world","minutes")}
+            {t("world", "minutes")}
             <br />
             {stage.clear.kind === "boss"
-              ? t("world","Survive, then defeat the world guardian.")
-              : t("world","Survive until the stage timer completes.")}
+              ? t("world", "Survive, then defeat the world guardian.")
+              : t("world", "Survive until the stage timer completes.")}
           </p>
-          <span className="eyebrow">{t("world","POSSIBLE FARMING REWARDS")}</span>
+          <span className="eyebrow">
+            {t("world", "POSSIBLE FARMING REWARDS")}
+          </span>
           <p>
             {w.materials.map(text).join(" · ")}
             <br />
-            {t("world","Guardian relic:")} {text(w.boss.reward)}
+            {t("world", "Guardian relic:")} {text(w.boss.reward)}
           </p>
-          <p className="muted">{t("world","First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.")}{" "}</p>
+          <p className="muted">
+            {t(
+              "world",
+              "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
+            )}{" "}
+          </p>
           <div className="campaign-wallet">
-            {progress.gold} {t("world","GOLD")} · {progress.xp} {t("world","PROFILE XP")}
+            {text("YOUR POWER")}{" "}
+            {calculateStats(progress, weapon, character).power}
+            <br />
+            <span data-testid="campaign-gold">
+              {progress.gold} {t("world", "GOLD")}
+            </span>{" "}
+            · {progress.xp} {t("world", "PROFILE XP")}
             <br />
             {Object.entries(progress.materials).map(([id, n]) => (
               <small key={id}>
@@ -218,9 +253,12 @@ export default function WorldMap({
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
+                  ...campaignLoadout(progress, weapon, character),
                 });
             }}
-          >{t("world","START STAGE →")}{" "}</button>
+          >
+            {t("world", "START STAGE →")}{" "}
+          </button>
         </aside>
       </div>
     </section>

@@ -33,9 +33,16 @@ test("new sanctuary screens fit portrait, tablet and landscape; motion preferenc
     await page.getByRole("button", { name: "CONFIRM WANDERER" }).click();
     await page.getByRole("button", { name: /Inventory & equipment/ }).click();
     await expect(
-      page.getByRole("dialog", { name: "Inventory & equipment" }),
-    ).toContainText("Your relic pouch is empty");
-    await page.getByRole("button", { name: "DONE", exact: true }).click();
+      page.getByRole("heading", { name: "Every relic tells a story." }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 2,
+      ),
+    ).toBe(true);
+    await page
+      .getByRole("button", { name: "← RETURN TO HUB", exact: true })
+      .click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     expect(
       await page.getByLabel("Reduced effects", { exact: true }).isChecked(),
@@ -62,9 +69,9 @@ test.describe("real audio and game integration", () => {
   }) => {
     await page.goto("/");
     // Audio instrumentation registers during client hydration, which can follow the load event.
-    await expect.poll(
-      () => page.evaluate(() => typeof window.__NOWRIFT_AUDIO__),
-    ).toBe("object");
+    await expect
+      .poll(() => page.evaluate(() => typeof window.__NOWRIFT_AUDIO__))
+      .toBe("object");
     expect(
       await page.evaluate(
         () => window.__NOWRIFT_AUDIO__!.diagnostics().contexts,
@@ -222,7 +229,7 @@ test.describe("real audio and game integration", () => {
               receipts: [],
               gold: 240,
               xp: 0,
-              materials: { wood: 12 },
+              materials: { wood: 12, "slime-core": 5 },
               candidates: ["verdant-relic"],
             },
             "profile",
@@ -242,22 +249,32 @@ test.describe("real audio and game integration", () => {
       .click();
     await page.getByRole("button", { name: "CONFIRM WANDERER" }).click();
     await page.getByRole("button", { name: /Inventory & equipment/ }).click();
-    await page.getByRole("button", { name: "EQUIP", exact: true }).click();
+    await page
+      .locator('.rpg-grid button[aria-label*="Heartwood Sigil"]')
+      .click();
+    await page.getByRole("button", { name: "EQUIP ITEM", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "UNEQUIP", exact: true }),
     ).toBeEnabled();
+    await page.getByRole("button", { name: "BLACKSMITH", exact: true }).click();
     await page
-      .getByRole("button", { name: "ENHANCE · 120G", exact: true })
+      .getByRole("button", { name: "ENHANCE EQUIPMENT", exact: true })
       .click();
-    await expect(page.getByRole("status")).toContainText("Relic enhanced");
-    await expect(page.locator(".inventory-wallet")).toContainText(
-      "120 CAMPAIGN GOLD",
-    );
+    await page
+      .getByRole("dialog", { name: "Confirm enhancement" })
+      .getByRole("button", { name: "CONFIRM", exact: true })
+      .click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Enhancement succeeded" }),
+    ).toBeVisible();
+    await expect(page.getByTestId("rpg-gold")).toContainText("207");
     await page.screenshot({
       path: info.outputPath("equipment.png"),
       animations: "disabled",
     });
-    await page.getByRole("button", { name: "DONE", exact: true }).click();
+    await page
+      .getByRole("button", { name: "← RETURN TO HUB", exact: true })
+      .click();
     await run(page);
     const stats = await page.evaluate(() => {
       const g = window.__NOWRIFT_TEST__!.state();

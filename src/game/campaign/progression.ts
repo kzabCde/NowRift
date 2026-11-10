@@ -1,3 +1,4 @@
+import type { RpgState } from "../rpg/model";
 import { validEquipment, type Equipment } from "../loadout";
 import {
   ITEM_IDS,
@@ -7,6 +8,7 @@ import {
   type DifficultyId,
 } from "./content";
 export type Progress = {
+  rpg?: RpgState;
   equipment?: Equipment;
   version: 1;
   clears: string[];

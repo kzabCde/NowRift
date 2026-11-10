@@ -101,7 +101,7 @@ export function Modal({
     <div className="modal-shade">
       <div
         ref={ref}
-        className={`modal-panel ${(title === "Settings" || title === t("settings","Settings")) ? "settings-panel" : ""}`}
+        className={`modal-panel ${title === "Settings" || title === t("settings", "Settings") ? "settings-panel" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -122,7 +122,7 @@ export function Modal({
   );
 }
 export function Settings({ onClose }: { onClose: () => void }) {
-  const {t,text,locale} = useI18n();
+  const { t, text, locale } = useI18n();
   const prefs = useSettings();
   const [status, setStatus] = useState(() => audio.diagnostics());
   useEffect(() => {
@@ -130,17 +130,20 @@ export function Settings({ onClose }: { onClose: () => void }) {
     return () => clearInterval(timer);
   }, []);
   return (
-    <Modal title={t("settings","Settings")} onClose={onClose}>
-      <span className="eyebrow">{t("settings","TUNE YOUR JOURNEY")}</span>
-      <h2>{t("settings","Settings")}</h2>
-      <div className="setting-row language-setting"><span>{t("settings","Language")}</span><LanguageSwitcher /></div>
+    <Modal title={t("settings", "Settings")} onClose={onClose}>
+      <span className="eyebrow">{t("settings", "TUNE YOUR JOURNEY")}</span>
+      <h2>{t("settings", "Settings")}</h2>
+      <div className="setting-row language-setting">
+        <span>{t("settings", "Language")}</span>
+        <LanguageSwitcher />
+      </div>
       <div className="settings-columns">
-        <section aria-label={t("settings","Audio settings")}>
-          <h3>{t("settings","Sound & atmosphere")}</h3>
+        <section aria-label={t("settings", "Audio settings")}>
+          <h3>{t("settings", "Sound & atmosphere")}</h3>
           <label className="setting-row">
-            <span>{t("settings","Mute all audio")}</span>
+            <span>{t("settings", "Mute all audio")}</span>
             <input
-              aria-label={t("settings","Mute all audio")}
+              aria-label={t("settings", "Mute all audio")}
               type="checkbox"
               checked={prefs.muted}
               onChange={(e) => prefs.set({ muted: e.target.checked })}
@@ -171,9 +174,9 @@ export function Settings({ onClose }: { onClose: () => void }) {
             </label>
           ))}
           <label className="setting-row">
-            <span>{t("settings","Audio intensity")}</span>
+            <span>{t("settings", "Audio intensity")}</span>
             <select
-              aria-label={t("settings","Audio intensity")}
+              aria-label={t("settings", "Audio intensity")}
               value={prefs.audioIntensity}
               onChange={(e) =>
                 prefs.set({
@@ -181,9 +184,9 @@ export function Settings({ onClose }: { onClose: () => void }) {
                 })
               }
             >
-              <option value="gentle">{t("settings","Gentle")}</option>
-              <option value="balanced">{t("settings","Balanced")}</option>
-              <option value="full">{t("settings","Full")}</option>
+              <option value="gentle">{t("settings", "Gentle")}</option>
+              <option value="balanced">{t("settings", "Balanced")}</option>
+              <option value="full">{t("settings", "Full")}</option>
             </select>
           </label>
           <button
@@ -193,36 +196,46 @@ export function Settings({ onClose }: { onClose: () => void }) {
             onClick={() => {
               void audio.unlock().then(() => audio.play("confirm"));
             }}
-          >{t("settings","TEST SOUND")}{" "}</button>
+          >
+            {t("settings", "TEST SOUND")}{" "}
+          </button>
           <p className="audio-status" role="status">
             {text(status.error) ||
               (status.context === "locked"
-                ? t("settings","Tap a button to enable audio.")
-                : (locale === "th" ? `เสียง: ${text(status.context)} · ${t("settings","Original procedural soundscape")}` : `Audio ${status.context} · Original procedural soundscape`))}
+                ? t("settings", "Tap a button to enable audio.")
+                : locale === "th"
+                  ? `เสียง: ${text(status.context)} · ${t("settings", "Original procedural soundscape")}`
+                  : `Audio ${status.context} · Original procedural soundscape`)}
           </p>
         </section>
-        <section aria-label={t("settings","Visual settings")}>
-          <h3>{t("settings","Light & motion")}</h3>
+        <section aria-label={t("settings", "Visual settings")}>
+          <h3>{t("settings", "Light & motion")}</h3>
           <label className="setting-row">
-            <span>{t("settings","Graphics quality")}</span>
+            <span>{t("settings", "Graphics quality")}</span>
             <select
-              aria-label={t("settings","Graphics quality")}
+              aria-label={t("settings", "Graphics quality")}
               value={prefs.quality}
               onChange={(e) => {
                 const quality = e.target.value as typeof prefs.quality;
                 prefs.set({ quality, ...QUALITY[quality] });
               }}
             >
-              <option value="low">{t("settings","Low · battery saver")}</option>
-              <option value="medium">{t("settings","Medium")}</option>
-              <option value="high">{t("settings","High")}</option>
+              <option value="low">
+                {t("settings", "Low · battery saver")}
+              </option>
+              <option value="medium">{t("settings", "Medium")}</option>
+              <option value="high">{t("settings", "High")}</option>
             </select>
           </label>
           <label className="setting-row">
-            <span>{t("settings","Reduced effects")}{" "}<small>{t("settings","Still motion, fewer particles, no shake")}</small>
+            <span>
+              {t("settings", "Reduced effects")}{" "}
+              <small>
+                {t("settings", "Still motion, fewer particles, no shake")}
+              </small>
             </span>
             <input
-              aria-label={t("settings","Reduced effects")}
+              aria-label={t("settings", "Reduced effects")}
               type="checkbox"
               checked={prefs.reducedEffects}
               onChange={(e) => prefs.set({ reducedEffects: e.target.checked })}
@@ -252,9 +265,9 @@ export function Settings({ onClose }: { onClose: () => void }) {
             </label>
           ))}
           <label className="setting-row">
-            <span>{t("settings","Damage numbers")}</span>
+            <span>{t("settings", "Damage numbers")}</span>
             <select
-              aria-label={t("settings","Damage numbers")}
+              aria-label={t("settings", "Damage numbers")}
               value={prefs.damageNumbers}
               onChange={(e) =>
                 prefs.set({
@@ -262,32 +275,39 @@ export function Settings({ onClose }: { onClose: () => void }) {
                 })
               }
             >
-              <option value="all">{t("settings","All")}</option>
-              <option value="sparse">{t("settings","Sparse")}</option>
-              <option value="off">{t("settings","Off")}</option>
+              <option value="all">{t("settings", "All")}</option>
+              <option value="sparse">{t("settings", "Sparse")}</option>
+              <option value="off">{t("settings", "Off")}</option>
             </select>
           </label>
           <label className="setting-row">
-            <span>{t("settings","Camera scale")}</span>
+            <span>{t("settings", "Camera scale")}</span>
             <select
-              aria-label={t("settings","Camera scale")}
+              aria-label={t("settings", "Camera scale")}
               value={prefs.zoom}
               onChange={(e) => prefs.set({ zoom: Number(e.target.value) })}
             >
-              <option value="0.85">{t("settings","Wide")}</option>
-              <option value="1">{t("settings","Balanced")}</option>
-              <option value="1.15">{t("settings","Close")}</option>
+              <option value="0.85">{t("settings", "Wide")}</option>
+              <option value="1">{t("settings", "Balanced")}</option>
+              <option value="1.15">{t("settings", "Close")}</option>
             </select>
           </label>
         </section>
       </div>
-      <p className="muted">{t("settings","Saved on this browser. Attack warnings remain visible at every quality setting. Music and effects are original procedural synthesis.")}{" "}</p>
+      <p className="muted">
+        {t(
+          "settings",
+          "Saved on this browser. Attack warnings remain visible at every quality setting. Music and effects are original procedural synthesis.",
+        )}{" "}
+      </p>
       {prefs.warning && (
         <p role="status" className="notice">
           {text(prefs.warning)}
         </p>
       )}
-      <button className="primary-button" onClick={onClose} type="button">{t("settings","DONE")}{" "}</button>
+      <button className="primary-button" onClick={onClose} type="button">
+        {t("settings", "DONE")}{" "}
+      </button>
     </Modal>
   );
 }

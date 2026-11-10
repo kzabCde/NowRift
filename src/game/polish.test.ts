@@ -102,13 +102,16 @@ describe("local character and equipment gameplay", () => {
     expect(() => changeEquipment(p, "enhance", "verdant-relic")).toThrow(
       "Not enough",
     );
-    p.gold = 120;
-    p.materials.wood = 3;
+    p.gold = 33;
+    p.materials["slime-core"] = 1;
     const next = changeEquipment(p, "enhance", "verdant-relic");
     expect(next.gold).toBe(0);
-    expect(next.materials.wood).toBe(0);
-    expect(next.equipment!.ranks["verdant-relic"]).toBe(1);
-    expect(p.gold).toBe(120);
+    expect(next.materials["slime-core"]).toBe(0);
+    expect(
+      next.rpg!.equipment.find((e) => e.definitionId === "boss-forest")!
+        .enhancement,
+    ).toBe(1);
+    expect(p.gold).toBe(33);
     expect(p.equipment).toBeUndefined();
     expect(validProgress(next)).toBe(true);
     expect(
@@ -128,8 +131,8 @@ describe("local character and equipment gameplay", () => {
         t.objectStore("progress").put(
           {
             ...emptyProgress(),
-            gold: 120,
-            materials: { wood: 3 },
+            gold: 33,
+            materials: { "slime-core": 1 },
             candidates: ["verdant-relic"],
           },
           "profile",
@@ -149,7 +152,10 @@ describe("local character and equipment gameplay", () => {
     await campaignRepository.equip("verdant-relic");
     const p = await campaignRepository.load();
     expect(p.gold).toBe(0);
-    expect(p.equipment!.equipped).toBe("verdant-relic");
+    expect(
+      p.rpg!.equipment.find((e) => e.id === p.rpg!.equipped.necklace)!
+        .definitionId,
+    ).toBe("boss-forest");
   });
 });
 describe("sound event policies and preferences", () => {
