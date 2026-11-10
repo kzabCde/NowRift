@@ -10,7 +10,7 @@ test("Thai language selection persists and localizes the campaign without changi
   await expect(page.locator("html")).toHaveAttribute("lang", "th");
   await page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ }).click();
   await expect(page.locator(".weapon-card").first()).toContainText("กระสุนมนตรา");
-  await page.getByRole("button", { name: /แผนที่โลก/ }).click();
+  await page.getByRole("button", { name: "แผนที่โลก →", exact: true }).click();
   await expect(page.locator(".world-card")).toHaveCount(4);
   await expect(page.locator(".world-card").first()).toContainText("ป่ากระซิบ");
   await page.locator(".language-switcher.compact button").first().click();
