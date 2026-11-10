@@ -1,6 +1,10 @@
 "use client";
+import type { CharacterId } from "@/game/loadout";
 import { calculateStats, campaignLoadout } from "@/game/rpg/stats";
 import type { WeaponId } from "@/game/content/forest";
+import { useI18n } from "@/i18n/useI18n";
+import Atmosphere from "./Atmosphere";
+import { audio } from "@/game/audio/engine";
 import { useEffect, useState } from "react";
 import {
   WORLDS,
@@ -22,11 +26,14 @@ export default function WorldMap({
   onStart,
   onBack,
   weapon = "arcane",
+  character = "wanderer",
 }: {
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
   weapon?: WeaponId;
+  character?: CharacterId;
 }) {
+  const { t, text } = useI18n();
   const [world, setWorld] = useState<WorldId>("forest"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
     [selected, setSelected] = useState("forest-1");
@@ -50,6 +57,9 @@ export default function WorldMap({
       cancelled = true;
     };
   }, []);
+  useEffect(() => {
+    audio.setScene("character", world);
+  }, [world]);
   const w = worldById(world),
     stage = STAGES.find((s) => s.id === selected)!,
     reason = lockedReason(selected, difficulty, progress.clears);
@@ -57,13 +67,15 @@ export default function WorldMap({
     <section className="world-map">
       <div className="hub-heading">
         <div>
-          <span className="eyebrow">THE SHATTERED ATLAS / CAMPAIGN</span>
+          <span className="eyebrow">
+            {t("world", "THE SHATTERED ATLAS / CAMPAIGN")}
+          </span>
           <h1>
-            Worlds beyond <em>the veil.</em>
+            {t("world", "Worlds beyond")} <em>{t("world", "the veil.")}</em>
           </h1>
         </div>
         <button className="quiet-button" onClick={onBack}>
-          ← HUB
+          {t("world", "← HUB")}{" "}
         </button>
       </div>
       <div className="world-cards">
@@ -86,15 +98,17 @@ export default function WorldMap({
                 backgroundImage: `linear-gradient(0deg,#0e1918,transparent),url(/assets/worlds/${w.id}/preview.png)`,
               }}
             >
+              <Atmosphere world={w.id} />
               <span>
-                WORLD 0{i + 1} ·{" "}
+                {t("world", "WORLD")} 0{i + 1} ·{" "}
                 {lockedReason(`${w.id}-1`, difficulty, progress.clears)
-                  ? "LOCKED"
-                  : "OPEN"}
+                  ? t("world", "LOCKED")
+                  : t("world", "OPEN")}
               </span>
-              <strong>{w.name}</strong>
+              <strong>{text(w.name)}</strong>
               <small>
-                {done * 20}% COMPLETE · POWER {10 + i * 30}+
+                {done * 20}% {t("world", "COMPLETE")} · {t("world", "POWER")}{" "}
+                {10 + i * 30}+
               </small>
             </button>
           );
@@ -102,10 +116,13 @@ export default function WorldMap({
       </div>
       <div className="campaign-panel">
         <div className="campaign-copy">
-          <span className="eyebrow">{w.architecture.toUpperCase()}</span>
-          <h2>{w.name}</h2>
-          <p>{w.description}</p>
-          <div className="difficulty-tabs" aria-label="Difficulty">
+          <span className="eyebrow">{text(w.architecture.toUpperCase())}</span>
+          <h2>{text(w.name)}</h2>
+          <p>{text(w.description)}</p>
+          <div
+            className="difficulty-tabs"
+            aria-label={t("world", "Difficulty")}
+          >
             {Object.keys(DIFFICULTIES).map((d) => (
               <button
                 key={d}
@@ -113,18 +130,24 @@ export default function WorldMap({
                 className={difficulty === d ? "selected" : ""}
                 onClick={() => setDifficulty(d as DifficultyId)}
               >
-                {d.toUpperCase()}
+                {text(d.toUpperCase())}
               </button>
             ))}
           </div>
           <p className="muted">
             {difficulty === "normal"
-              ? "Standard enemies and farming rewards."
+              ? t("world", "Standard enemies and farming rewards.")
               : difficulty === "hard"
-                ? "Faster pressure, three-shot volleys, more elites. 1.6× rewards."
-                : "Five-shot volleys, rapid boss cycles, triple hazards. 2.4× rewards."}
+                ? t(
+                    "world",
+                    "Faster pressure, three-shot volleys, more elites. 1.6× rewards.",
+                  )
+                : t(
+                    "world",
+                    "Five-shot volleys, rapid boss cycles, triple hazards. 2.4× rewards.",
+                  )}
           </p>
-          <h3>Stage selection</h3>
+          <h3>{t("world", "Stage selection")}</h3>
           <div className="stage-list">
             {STAGES.filter((s) => s.worldId === world).map((s) => {
               const lock = lockedReason(s.id, difficulty, progress.clears);
@@ -137,14 +160,14 @@ export default function WorldMap({
                 >
                   <b>{s.number.toString().padStart(2, "0")}</b>
                   <span>
-                    <strong>{s.name}</strong>
+                    <strong>{text(s.name)}</strong>
                     <small>
-                      {lock ??
+                      {(lock ? text(lock) : null) ??
                         (progress.clears.includes(clearKey(s.id, difficulty))
-                          ? "CLEARED · REPLAY AVAILABLE"
+                          ? t("world", "CLEARED · REPLAY AVAILABLE")
                           : s.clear.kind === "boss"
-                            ? "BOSS ENCOUNTER"
-                            : "SURVIVAL")}
+                            ? t("world", "BOSS ENCOUNTER")
+                            : t("world", "SURVIVAL"))}
                     </small>
                   </span>
                 </button>
@@ -155,7 +178,7 @@ export default function WorldMap({
         <aside className="campaign-details">
           <div
             role="img"
-            aria-label={w.boss.name}
+            aria-label={text(w.boss.name)}
             className="boss-preview"
             style={{
               backgroundImage: `url(/assets/worlds/${world}/boss.png)`,
@@ -163,55 +186,61 @@ export default function WorldMap({
               backgroundPosition: "left top",
             }}
           />
-          <span className="eyebrow">WORLD GUARDIAN</span>
-          <h3>{w.boss.name}</h3>
-          <p>{w.boss.patterns.join(" · ")}</p>
-          <span className="eyebrow">LOCAL ENEMIES</span>
-          <p>{w.enemies.map((e) => e.name).join(" · ")}</p>
+          <span className="eyebrow">{t("world", "WORLD GUARDIAN")}</span>
+          <h3>{text(w.boss.name)}</h3>
+          <p>{w.boss.patterns.map(text).join(" · ")}</p>
+          <span className="eyebrow">{t("world", "LOCAL ENEMIES")}</span>
+          <p>{w.enemies.map((e) => text(e.name)).join(" · ")}</p>
           <hr />
-          <h3>{stage.name}</h3>
+          <h3>{text(stage.name)}</h3>
           <p>
-            Recommended power {stage.recommendedPower} ·{" "}
+            {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
             {Math.round(
               (stage.clear.seconds * DIFFICULTIES[difficulty].duration) / 60,
             )}{" "}
-            minutes
+            {t("world", "minutes")}
             <br />
             {stage.clear.kind === "boss"
-              ? "Survive, then defeat the world guardian."
-              : "Survive until the stage timer completes."}
+              ? t("world", "Survive, then defeat the world guardian.")
+              : t("world", "Survive until the stage timer completes.")}
           </p>
-          <span className="eyebrow">POSSIBLE FARMING REWARDS</span>
+          <span className="eyebrow">
+            {t("world", "POSSIBLE FARMING REWARDS")}
+          </span>
           <p>
-            {w.materials.map((x) => x.replaceAll("-", " ")).join(" · ")}
+            {w.materials.map(text).join(" · ")}
             <br />
-            Boss relic: {w.boss.reward.replaceAll("-", " ")}
+            {t("world", "Guardian relic:")} {text(w.boss.reward)}
           </p>
           <p className="muted">
-            First clears grant additional gold, XP, materials and equipment.
-            Boss relics become real owned gear. Excess loot remains in protected
-            inventory parcels.
+            {t(
+              "world",
+              "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
+            )}{" "}
           </p>
           <div className="campaign-wallet">
-            YOUR POWER {calculateStats(progress, weapon).power}
+            {text("YOUR POWER")}{" "}
+            {calculateStats(progress, weapon, character).power}
             <br />
-            <span data-testid="campaign-gold">{progress.gold} GOLD</span> ·{" "}
-            {progress.xp} PROFILE XP
+            <span data-testid="campaign-gold">
+              {progress.gold} {t("world", "GOLD")}
+            </span>{" "}
+            · {progress.xp} {t("world", "PROFILE XP")}
             <br />
             {Object.entries(progress.materials).map(([id, n]) => (
               <small key={id}>
-                {id.replaceAll("-", " ")} ×{n} ·{" "}
+                {text(id)} ×{n} ·{" "}
               </small>
             ))}
           </div>
           {reason && (
             <p className="notice" role="status">
-              {reason}
+              {text(reason)}
             </p>
           )}
           {error && (
             <p role="alert" className="notice">
-              {error}
+              {text(error)}
             </p>
           )}
           <button
@@ -224,11 +253,11 @@ export default function WorldMap({
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
-                  ...campaignLoadout(progress, weapon),
+                  ...campaignLoadout(progress, weapon, character),
                 });
             }}
           >
-            START STAGE →
+            {t("world", "START STAGE →")}{" "}
           </button>
         </aside>
       </div>

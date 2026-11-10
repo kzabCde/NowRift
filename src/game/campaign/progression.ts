@@ -1,4 +1,5 @@
 import type { RpgState } from "../rpg/model";
+import { validEquipment, type Equipment } from "../loadout";
 import {
   ITEM_IDS,
   STAGES,
@@ -8,6 +9,7 @@ import {
 } from "./content";
 export type Progress = {
   rpg?: RpgState;
+  equipment?: Equipment;
   version: 1;
   clears: string[];
   receipts: string[];
@@ -60,6 +62,11 @@ export function validProgress(p: unknown): p is Progress {
   const v = p as Progress;
   return (
     v.version === 1 &&
+    (v.equipment === undefined ||
+      (validEquipment(v.equipment) &&
+        (v.equipment.equipped === null ||
+          (Array.isArray(v.candidates) &&
+            v.candidates.includes(v.equipment.equipped))))) &&
     Array.isArray(v.clears) &&
     v.clears.every((k) =>
       STAGES.some((s) =>

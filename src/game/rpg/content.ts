@@ -1,3 +1,4 @@
+import { RELICS } from "../loadout";
 import { ITEM_IDS, WORLDS } from "../campaign/content";
 import { SLOTS, type ItemDefinition, type Rarity, type StatKey } from "./model";
 export const RARITIES: Record<
@@ -121,14 +122,11 @@ export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
     ),
     ...WORLDS.map((w, i) => ({
       id: "boss-" + w.id,
-      name: w.boss.reward
-        .split("-")
-        .map((s) => s[0].toUpperCase() + s.slice(1))
-        .join(" "),
+      name: RELICS[w.boss.reward as keyof typeof RELICS].name,
       kind: "equipment" as const,
       slot: "necklace" as const,
       icon: i * 6 + 5,
-      primary: "regen" as const,
+      primary: (["regen", "damage", "maxHp", "critChance"] as const)[i],
       description: `A unique relic recovered from ${w.boss.name}.`,
     })),
     ...ITEM_IDS.map((id, i) => ({

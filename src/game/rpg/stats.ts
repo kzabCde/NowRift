@@ -1,3 +1,10 @@
+import {
+  CHARACTERS,
+  RELICS,
+  type CharacterId,
+  type Loadout,
+  type RelicId,
+} from "../loadout";
 import type { Progress } from "../campaign/progression";
 import { WEAPONS, type WeaponId, type UpgradeId } from "../content/forest";
 import { ITEMS, RARITIES, PRIMARY_VALUES, UPGRADES } from "./content";
@@ -84,17 +91,19 @@ function cap(
 export function calculateStats(
   profile: Progress,
   weapon: WeaponId = "arcane",
+  character: CharacterId = "wanderer",
 ): CharacterStats {
   const { level } = characterLevel(profile.xp),
     w = WEAPONS[weapon],
+    c = CHARACTERS[character],
     out: Attributes = {
-      maxHp: 100 + (level - 1) * 8,
+      maxHp: c.hp + (level - 1) * 8,
       damage: w.damage + (level - 1) * 1.25,
       attackSpeed: 0,
-      critChance: 0.05,
+      critChance: c.crit,
       critDamage: 1.5,
       armor: 0,
-      speed: 180,
+      speed: c.speed,
       regen: 0,
       projectiles: weapon === "daggers" ? 2 : 1,
       area: 1,
@@ -147,12 +156,16 @@ export function incomingDamage(amount: number, armor: number) {
   return Math.max(1, Math.round((amount * 100) / (100 + Math.max(0, armor))));
 }
 
-export function campaignLoadout(profile: Progress, weapon: WeaponId) {
+export function campaignLoadout(
+  profile: Progress,
+  weapon: WeaponId,
+  character: CharacterId = "wanderer",
+) {
   const equipped = profile.rpg?.equipment.find(
     (e) => e.id === profile.rpg!.equipped.weapon,
   );
   return {
-    build: calculateStats(profile, weapon),
+    build: calculateStats(profile, weapon, character),
     appearance: equipped
       ? { rarity: equipped.rarity, icon: ITEMS[equipped.definitionId].icon }
       : undefined,
@@ -189,4 +202,20 @@ export function equipmentPower(item: EquipmentInstance) {
     next = { ...base };
   for (const key of Object.keys(bonus) as StatKey[]) next[key] += bonus[key];
   return cap(next, "arcane", 1).power - before.power;
+}
+
+/** Retain the original practice character/relic loadout, derived from the single RPG inventory. */
+export function practiceLoadout(
+  profile: Progress,
+  character: CharacterId,
+): Loadout {
+  const e = profile.rpg?.equipment.find(
+    (e) => e.id === profile.rpg!.equipped.necklace,
+  );
+  const relic = e
+    ? ((Object.keys(RELICS) as RelicId[]).find(
+        (id) => e.definitionId === "boss-" + RELICS[id].world,
+      ) ?? null)
+    : null;
+  return { character, relic, rank: Math.min(3, e?.enhancement ?? 0) };
 }

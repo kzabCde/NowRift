@@ -38,3 +38,6 @@ next-env.d.ts
 # Browser artifacts
 /test-results/
 /playwright-report/
+
+# Local analysis and captures
+/work/

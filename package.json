@@ -9,12 +9,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",
-    "prebuild": "npm run typecheck && npm test",
+    "prebuild": "node scripts/generate-branding.mjs && npm run typecheck && npm test",
     "test:watch": "vitest",
     "lint": "eslint .",
     "test:stress": "tsx scripts/stress.ts",
     "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css e2e",
-    "test:playthrough": "tsx scripts/playthrough.ts"
+    "test:playthrough": "tsx scripts/playthrough.ts",
+    "predev": "node scripts/generate-branding.mjs",
+    "pretest": "node scripts/generate-branding.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.3.5",

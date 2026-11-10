@@ -1,6 +1,7 @@
 import { initializeRpg } from "../rpg/profile";
 import { settleRpg } from "../rpg/settlement";
 import { applyCommand, type RpgCommand } from "../rpg/actions";
+import { RELICS, type RelicId } from "../loadout";
 import {
   emptyProgress,
   validProgress,
@@ -13,6 +14,8 @@ import { DIFFICULTIES, stageById } from "./content";
 export interface CampaignRepository {
   load(): Promise<Progress>;
   act(command: RpgCommand): Promise<ReturnType<typeof applyCommand>>;
+  equip(id: RelicId | null): Promise<Progress>;
+  enhance(id: RelicId): Promise<Progress>;
   settle(
     run: CampaignResult,
   ): Promise<{ progress: Progress; reward: Rewards | null }>;
@@ -73,7 +76,74 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   reward.overflow = settled.overflow;
   return { progress: next, reward };
 }
+/** Compatibility adapter for the former one-relic API; all mutations use the RPG transaction rules. */
+export function changeEquipment(
+  progress: Progress,
+  action: "equip" | "enhance",
+  id: RelicId | null,
+): Progress {
+  const p = initializeRpg(progress),
+    r = p.rpg!;
+  const def =
+    id && Object.hasOwn(RELICS, id) ? "boss-" + RELICS[id].world : null;
+  const item = def
+    ? (r.equipment.find(
+        (e) => e.definitionId === def && e.id === r.equipped.necklace,
+      ) ?? r.equipment.find((e) => e.definitionId === def))
+    : null;
+  if (id !== null && !item)
+    throw new Error("Earn this relic by defeating its world guardian first.");
+  if (action === "enhance" && !item)
+    throw new Error("Choose a relic to enhance.");
+  if (action === "equip" && !item && !r.equipped.necklace) return p;
+  return applyCommand(p, {
+    id: `legacy-action-${r.revision}-${action}-${id}`,
+    at: Date.now(),
+    expectedRevision: r.revision,
+    action:
+      action === "enhance"
+        ? {
+            type: "enhance",
+            itemId: item!.id,
+            expectedEnhancement: item!.enhancement,
+          }
+        : item
+          ? { type: "equip", itemId: item.id }
+          : { type: "unequip", slot: "necklace" },
+  }).progress;
+}
+async function updateEquipment(
+  action: "equip" | "enhance",
+  id: RelicId | null,
+): Promise<Progress> {
+  const db = await open();
+  try {
+    return await new Promise((resolve, reject) => {
+      const t = db.transaction("progress", "readwrite"),
+        store = t.objectStore("progress"),
+        r = store.get("profile");
+      let next: Progress;
+      r.onsuccess = () => {
+        try {
+          next = changeEquipment(read(r.result), action, id);
+          store.put(next, "profile");
+        } catch (e) {
+          t.abort();
+          reject(e);
+        }
+      };
+      t.oncomplete = () => resolve(next);
+      t.onerror = () => reject(t.error);
+      t.onabort = () =>
+        reject(t.error ?? new Error("Equipment save interrupted"));
+    });
+  } finally {
+    db.close();
+  }
+}
 export const campaignRepository: CampaignRepository = {
+  equip: (id) => updateEquipment("equip", id),
+  enhance: (id) => updateEquipment("enhance", id),
   async load() {
     const db = await open();
     try {

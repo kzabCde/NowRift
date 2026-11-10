@@ -130,6 +130,36 @@ describe("item registry, rarity, migration and inventory", () => {
     expect(initializeRpg(p)).toEqual(p);
     expect(old.candidates).toHaveLength(2);
   });
+  test("legacy enhanced and selected relic migrates before overflow without resetting its rank", () => {
+    const legacy = emptyProgress();
+    legacy.gold = 1234;
+    legacy.candidates = Array.from(
+      { length: 80 },
+      () => "verdant-relic",
+    ).concat("solar-relic");
+    legacy.equipment = { equipped: "solar-relic", ranks: { "solar-relic": 3 } };
+    const p = initializeRpg(legacy),
+      r = p.rpg!;
+    const selected = r.equipment.find((e) => e.id === r.equipped.necklace)!;
+    expect(selected.definitionId).toBe("boss-desert");
+    expect(selected.enhancement).toBe(3);
+    expect(p.gold).toBe(1234);
+    expect(usedSlots(p)).toBeLessThanOrEqual(60);
+    expect(r.overflow.length).toBeGreaterThan(0);
+    expect(initializeRpg(p)).toEqual(p);
+    expect(p.equipment).toBeUndefined();
+    expect(validRpg(r)).toBe(true);
+  });
+  test("character archetypes feed the shared campaign stat engine", () => {
+    const p = fixture();
+    const wanderer = calculateStats(p, "arcane", "wanderer"),
+      sentinel = calculateStats(p, "arcane", "sentinel"),
+      strider = calculateStats(p, "arcane", "strider");
+    expect(sentinel.maxHp - wanderer.maxHp).toBe(30);
+    expect(sentinel.speed - wanderer.speed).toBe(-18);
+    expect(strider.speed - wanderer.speed).toBe(27);
+    expect(strider.critChance - wanderer.critChance).toBeCloseTo(0.05);
+  });
   test("equip, swap and unequip only move references; stable IDs are never duplicated", () => {
     let p = fixture();
     const e = bagItem(p);
@@ -478,6 +508,28 @@ describe("economy, progression and connected combat", () => {
     advanceGame(g, 0.02, 0, 0);
     expect(g.weapon.delay).toBeCloseTo(base.interval);
   });
+  test("equipment at final stat caps cannot produce ineffective blessing offers", () => {
+    const base = {
+      ...calculateStats(fixture(), "daggers"),
+      damage: 10000,
+      maxHp: 5000,
+      critChance: 0.75,
+      critDamage: 4,
+      speed: 360,
+      regen: 20,
+      projectiles: 8,
+      area: 4,
+      interval: 0.12,
+    };
+    const g = makeGame(1800, 1400, "daggers");
+    applyBuild(g, base, true);
+    beginGame(g);
+    g.spawnCooldown = 999;
+    g.xp = g.xpToNext;
+    advanceGame(g, 0.01, 0, 0);
+    expect(g.phase).toBe("upgrade");
+    expect([...g.offers].sort()).toEqual(["magnet", "velocity"]);
+  });
   test("equipment loot reaches the same inventory and ledger as campaign materials", () => {
     const p = fixture();
     const q = applyResult(p, {
@@ -654,7 +706,7 @@ describe("equipment effects through live collision and firing systems", () => {
       (e) => e.definitionId === "boss-forest",
     );
     expect(relic).toBeDefined();
-    expect(ITEMS[relic!.definitionId].name).toBe("Verdant Relic");
+    expect(ITEMS[relic!.definitionId].name).toBe("Heartwood Sigil");
     expect(RARITY_IDS.indexOf(relic!.rarity)).toBeGreaterThanOrEqual(
       RARITY_IDS.indexOf("rare"),
     );

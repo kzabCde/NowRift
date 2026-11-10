@@ -42,9 +42,7 @@ async function seed(page: Page, p = fixture(), ready = true) {
     });
   }, p);
   await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
-  await page
-    .getByRole("button", { name: "INVENTORY & GEAR →", exact: true })
-    .click();
+  await page.getByRole("button", { name: /Inventory & equipment/ }).click();
   if (ready)
     await expect(
       page.getByRole("heading", { name: "Every relic tells a story." }),
@@ -366,9 +364,7 @@ test("permanent disciplines consume resources and survive reload", async ({
   expect(s.rpg!.upgrades.training).toBe(1);
   await page.reload();
   await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
-  await page
-    .getByRole("button", { name: "INVENTORY & GEAR →", exact: true })
-    .click();
+  await page.getByRole("button", { name: /Inventory & equipment/ }).click();
   await page.getByRole("button", { name: "CHARACTER", exact: true }).click();
   await expect(
     page.locator(".rpg-discipline").filter({ hasText: "Arcane Training" }),
@@ -388,6 +384,26 @@ test("corrupt RPG inventory is reported and never silently reset", async ({
   const s = await saved(page);
   expect(s.rpg!.equipment).toHaveLength(p.rpg!.equipment.length);
 });
+test("RPG language switching translates inventory without changing owned items", async ({
+  page,
+}) => {
+  await seed(page);
+  const before = await saved(page);
+  await page.locator(".language-switcher.compact button").nth(1).click();
+  await expect(
+    page.getByRole("heading", { name: /วัตถุโบราณทุกชิ้น/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "ช่างตีเหล็ก", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "เสริมพลังอุปกรณ์", exact: true }),
+  ).toBeVisible();
+  await page.locator(".language-switcher.compact button").first().click();
+  await expect(
+    page.getByRole("button", { name: "ENHANCE EQUIPMENT", exact: true }),
+  ).toBeVisible();
+  expect(await saved(page)).toEqual(before);
+});
+
 test.describe("live campaign build and consumables", () => {
   test.skip(!process.env.NOWRIFT_E2E, "Requires instrumented gameplay build");
   test("equipped stats and tonics reach combat; retry uses newly earned character levels", async ({
@@ -448,7 +464,7 @@ test.describe("live campaign build and consumables", () => {
       g.player.invincible = 999;
       g.time = g.campaign!.definition.clear.seconds - 0.01;
     });
-    await page.getByRole("button", { name: "RESUME RUN", exact: true }).click();
+    await page.getByRole("button", { name: /^RESUME RUN/ }).click();
     await expect(page.locator(".campaign-reward")).toContainText("FIRST CLEAR");
     const earned = calculateStats(await saved(page));
     expect(earned.level).toBeGreaterThan(expected.level);

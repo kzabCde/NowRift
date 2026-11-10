@@ -1,9 +1,19 @@
 "use client";
+import { practiceLoadout } from "@/game/rpg/stats";
 import RpgScreen from "./RpgScreen";
+import LanguageSwitcher from "./LanguageSwitcher";
+import Image from "next/image";
+import { useI18n } from "@/i18n/useI18n";
+import Atmosphere from "./Atmosphere";
+import { CharacterSelection } from "./Sanctuary";
+import { CHARACTERS, type CharacterId, type Loadout } from "@/game/loadout";
+import { campaignRepository } from "@/game/campaign/persistence";
+import { emptyProgress, type Progress } from "@/game/campaign/progression";
 import WorldMap from "./WorldMap";
+import { audio } from "@/game/audio/engine";
 import type { StageSelection } from "@/game/campaign/loader";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import NowRiftGame from "./NowRiftGame";
 import PwaControls from "./PwaControls";
 import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
@@ -13,9 +23,28 @@ import { BEST_SCORE_KEY, parseBestKills } from "@/game/services/metadata";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
+  const { t, text, date, plural } = useI18n();
   const [screen, setScreen] = useState<
     "gateway" | "lobby" | "game" | "worlds" | "rpg"
   >("gateway");
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    audio.setScene(
+      screen === "gateway"
+        ? "menu"
+        : screen === "game"
+          ? "exploration"
+          : "character",
+    );
+  }, [screen]);
+  const [character, setCharacter] = useState<CharacterId>("wanderer");
+  const [characterOpen, setCharacterOpen] = useState(false);
+  const [progress, setProgress] = useState<Progress>(emptyProgress);
+  const closeCharacter = useCallback(() => setCharacterOpen(false), []);
+  const loadout: Loadout = useMemo(
+    () => practiceLoadout(progress, character),
+    [character, progress],
+  );
   const [selection, setSelection] = useState<StageSelection | undefined>();
   const [weapon, setWeapon] = useState<WeaponId>("arcane"),
     [controls, setControls] = useState(false),
@@ -29,6 +58,13 @@ export default function NowRiftMainMenu() {
     closeHistory = useCallback(() => setHistory(false), []);
   useEffect(() => {
     useSettings.getState().load();
+    try {
+      const saved = localStorage.getItem("nowrift-character-v1");
+      if (saved && Object.hasOwn(CHARACTERS, saved))
+        setCharacter(saved as CharacterId);
+    } catch {
+      /* session choice still works */
+    }
     // Warm browser-only async gameplay chunks as well as the initial app shell.
     import("@/game/phaser/create-game")
       .then(async () => {
@@ -55,6 +91,20 @@ export default function NowRiftMainMenu() {
   useEffect(() => {
     if (screen !== "lobby") return;
     let cancelled = false;
+    campaignRepository
+      .load()
+      .then((p) => {
+        if (!cancelled) {
+          setProgress(p);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWarning(
+            "Campaign storage is unavailable. Survival remains playable; existing data was preserved.",
+          );
+        }
+      });
     runRepository
       .list()
       .then((r) => {
@@ -65,7 +115,10 @@ export default function NowRiftMainMenu() {
           setWarning(
             e instanceof Error
               ? e.message
-              : "Local records are unavailable; gameplay still works.",
+              : t(
+                  "main",
+                  "Local records are unavailable; gameplay still works.",
+                ),
           );
       });
     try {
@@ -80,15 +133,23 @@ export default function NowRiftMainMenu() {
     };
   }, [screen]);
   if (screen === "rpg")
-    return <RpgScreen weapon={weapon} onBack={() => setScreen("lobby")} />;
+    return (
+      <RpgScreen
+        weapon={weapon}
+        character={character}
+        onBack={() => setScreen("lobby")}
+      />
+    );
   if (screen === "worlds")
     return (
       <main className="nr-main">
         <header className="topbar">
           <Brand />
+          <LanguageSwitcher compact />
         </header>
         <WorldMap
           weapon={weapon}
+          character={character}
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
             setSelection(s);
@@ -99,12 +160,15 @@ export default function NowRiftMainMenu() {
     );
   if (screen === "game")
     return (
-      <NowRiftGame
-        autoStart
-        stage={selection}
-        weapon={weapon}
-        onExitToMenu={() => setScreen("lobby")}
-      />
+      <>
+        <NowRiftGame
+          autoStart
+          loadout={loadout}
+          stage={selection}
+          weapon={weapon}
+          onExitToMenu={() => setScreen("lobby")}
+        />
+      </>
     );
   return (
     <main className="nr-main">
@@ -112,70 +176,80 @@ export default function NowRiftMainMenu() {
         <Brand />
         <div className="header-right">
           <span className="build-tag">
-            PHASE III <span>·</span> LOCAL ADVENTURE
+            {t("main", "GUEST EDITION")} <span>·</span>{" "}
+            {t("main", "LOCAL ADVENTURE")}{" "}
           </span>
+          <LanguageSwitcher compact />
           <PwaControls />
           <button
             className="quiet-button"
-            aria-label="Settings"
+            aria-label={t("main", "Settings")}
             onClick={() => setSettings(true)}
             type="button"
           >
-            SETTINGS
+            {t("main", "SETTINGS")}{" "}
           </button>
         </div>
       </header>
       {screen === "gateway" ? (
         <div className="gateway">
           <div className="gateway-art" aria-hidden="true" />
+          <Atmosphere />
           <div className="gateway-content">
+            <Image
+              src="/branding/nowrift-logo-transparent.png"
+              width={384}
+              height={384}
+              className="gateway-official-logo"
+              alt="NowRift official fantasy pixel-art logo"
+              priority
+              unoptimized
+            />
             <span className="eyebrow">
-              <span className="eyebrow-rule" /> A LIGHT IN THE FORGOTTEN WOODS
+              <span className="eyebrow-rule" />{" "}
+              {t("main", "A LIGHT IN THE FORGOTTEN WOODS")}{" "}
             </span>
             <h1>
-              Beyond the breach.
-              <br />
-              <em>Into the unknown.</em>
+              {t("main", "Beyond the breach.")} <br />
+              <em>{t("main", "Into the unknown.")}</em>
             </h1>
             <p>
-              An ancient forest. A thousand restless souls.
+              {t("main", "An ancient forest. A thousand restless souls.")}{" "}
               <br />
-              One wanderer standing between worlds.
+              {t("main", "One wanderer standing between worlds.")}{" "}
             </p>
             <button
               className="primary-button gateway-enter"
               onClick={() => setScreen("lobby")}
               type="button"
             >
-              CONTINUE AS GUEST <span>→</span>
+              {t("main", "CONTINUE AS GUEST")} <span>→</span>
             </button>
             <small className="gateway-note">
-              No account. No connection required after caching.
+              {t("main", "No account. No connection required after caching.")}{" "}
               <br />
-              Your run records stay on this device.
+              {t("main", "Your run records stay on this device.")}{" "}
             </small>
           </div>
           <div className="gateway-bottom">
-            <span>01 — WHISPERING FOREST</span>
-            <span>AN ORIGINAL PIXEL-ART ADVENTURE</span>
+            <span>{t("main", "01 — WHISPERING FOREST")}</span>
+            <span>{t("main", "AN ORIGINAL PIXEL-ART ADVENTURE")}</span>
           </div>
         </div>
       ) : (
         <div className="hub-layout">
           <aside className="hub-sidebar">
-            <span className="eyebrow">YOUR SANCTUARY</span>
+            <span className="eyebrow">{t("main", "YOUR SANCTUARY")}</span>
             <h2>
-              The Hub<span className="gold">.</span>
+              {t("main", "The Hub")}
+              <span className="gold">.</span>
             </h2>
-            <nav aria-label="Main navigation">
-              <button className="nav-button" onClick={() => setScreen("rpg")}>
-                INVENTORY & GEAR →
-              </button>
+            <nav aria-label={t("main", "Main navigation")}>
               <button
                 className="nav-button"
                 onClick={() => setScreen("worlds")}
               >
-                WORLD MAP →
+                {t("main", "WORLD MAP →")}{" "}
               </button>
               <button
                 className="nav-button selected"
@@ -186,7 +260,26 @@ export default function NowRiftMainMenu() {
                 }}
               >
                 <PixelIcon index={0} />
-                Embark<span>01</span>
+                {t("main", "Embark")}
+                <span>01</span>
+              </button>
+              <button
+                className="nav-button"
+                type="button"
+                onClick={() => setCharacterOpen(true)}
+              >
+                <PixelIcon index={4} />
+                {t("main", "Wanderer")}
+                <span>↗</span>
+              </button>
+              <button
+                className="nav-button"
+                type="button"
+                onClick={() => setScreen("rpg")}
+              >
+                <PixelIcon index={7} />
+                {t("main", "Inventory & equipment")}
+                <span>↗</span>
               </button>
               <button
                 className="nav-button"
@@ -194,7 +287,8 @@ export default function NowRiftMainMenu() {
                 type="button"
               >
                 <PixelIcon index={5} />
-                Run records<span>{runs.length}</span>
+                {t("main", "Run records")}
+                <span>{runs.length}</span>
               </button>
               <button
                 className="nav-button"
@@ -202,18 +296,23 @@ export default function NowRiftMainMenu() {
                 type="button"
               >
                 <PixelIcon index={4} />
-                Field manual<span>↗</span>
+                {t("main", "Field manual")}
+                <span>↗</span>
               </button>
             </nav>
             <div className="wanderer-card">
-              <span className="portrait" aria-hidden="true" />
-              <span className="eyebrow">LOCAL ADVENTURER</span>
-              <strong>Rift Wanderer</strong>
-              <small>Some journeys begin alone.</small>
+              <span
+                className={`portrait character-${character}`}
+                aria-hidden="true"
+              />
+              <span className="eyebrow">{t("main", "LOCAL ADVENTURER")}</span>
+              <strong>{text(CHARACTERS[character].name)}</strong>
+              <small>{t("main", "Some journeys begin alone.")}</small>
               <div className="nr-record">
-                <span>PERSONAL BEST</span>
+                <span>{t("main", "PERSONAL BEST")}</span>
                 <strong>
-                  {String(best).padStart(3, "0")} <small>KILLS</small>
+                  {String(best).padStart(3, "0")}{" "}
+                  <small>{t("main", "KILLS")}</small>
                 </strong>
               </div>
               <button
@@ -221,68 +320,81 @@ export default function NowRiftMainMenu() {
                 onClick={() => setScreen("gateway")}
                 type="button"
               >
-                ← CHANGE MODE
+                {t("main", "← CHANGE MODE")}{" "}
               </button>
             </div>
           </aside>
           <section className="hub-main">
             <div className="hub-heading">
               <div>
-                <span className="eyebrow">YOUR NEXT CHAPTER</span>
+                <span className="eyebrow">
+                  {t("main", "YOUR NEXT CHAPTER")}
+                </span>
                 <h1>
-                  The forest <em>is calling.</em>
+                  {t("main", "The forest")} <em>{t("main", "is calling.")}</em>
                 </h1>
               </div>
               <span className="local-badge">
-                <span className="live-dot" /> SINGLE PLAYER
+                <span className="live-dot" /> {t("main", "SINGLE PLAYER")}{" "}
               </span>
             </div>
             <section className="expedition-card" aria-labelledby="forest-title">
               <div className="expedition-art" aria-hidden="true" />
+              <Atmosphere />
               <div className="expedition-top">
-                <span className="chapter-badge">CHAPTER I</span>
-                <span className="region-tag">THE VERDANT FRONTIER</span>
+                <span className="chapter-badge">{t("main", "CHAPTER I")}</span>
+                <span className="region-tag">
+                  {t("main", "THE VERDANT FRONTIER")}
+                </span>
               </div>
               <div className="expedition-copy">
-                <span className="eyebrow">SURVIVAL / BOSS ENCOUNTER</span>
+                <span className="eyebrow">
+                  {t("main", "SURVIVAL / BOSS ENCOUNTER")}
+                </span>
                 <h2 id="forest-title">
-                  Whispering
-                  <br />
-                  <em>Forest</em>
+                  {t("main", "Whispering")} <br />
+                  <em>{t("main", "Forest")}</em>
                 </h2>
                 <p>
-                  Something ancient stirs beneath the canopy.
+                  {t("main", "Something ancient stirs beneath the canopy.")}{" "}
                   <br />
-                  Gather your strength. Break the Guardian’s hold.
+                  {t(
+                    "main",
+                    "Gather your strength. Break the Guardian’s hold.",
+                  )}{" "}
                 </p>
                 <div className="expedition-meta">
                   <span>
-                    <b>08</b> MINUTES TO BOSS
+                    <b>08</b> {t("main", "MINUTES TO BOSS")}{" "}
                   </span>
                   <span>
-                    <b>05</b> ENEMY ARCHETYPES
+                    <b>05</b> {t("main", "ENEMY ARCHETYPES")}{" "}
                   </span>
                   <span>
-                    <b>01</b> ANCIENT GUARDIAN
+                    <b>01</b> {t("main", "ANCIENT GUARDIAN")}{" "}
                   </span>
                 </div>
               </div>
               <span className="art-coordinate" aria-hidden="true">
-                N 48° 12′ · THE FIRST BREACH
+                {t("main", "N 48° 12′ · THE FIRST BREACH")}{" "}
               </span>
             </section>
             <button
               className="primary-button campaign-entry"
               onClick={() => setScreen("worlds")}
             >
-              OPEN WORLD MAP · 20 STAGES →
+              {t("main", "OPEN WORLD MAP · 20 STAGES →")}{" "}
             </button>
             <div className="loadout-heading">
               <div>
-                <span className="eyebrow">YOUR STARTING COMPANION</span>
-                <h3>Choose your weapon</h3>
+                <span className="eyebrow">
+                  {t("main", "YOUR STARTING COMPANION")}
+                </span>
+                <h3>{t("main", "Choose your weapon")}</h3>
               </div>
-              <span className="muted">Each path plays differently.</span>
+              <span className="muted">
+                {t("main", "Each path plays differently.")}
+              </span>
             </div>
             <div className="weapon-grid">
               {(Object.keys(WEAPONS) as WeaponId[]).map((id) => {
@@ -297,10 +409,12 @@ export default function NowRiftMainMenu() {
                   >
                     <span className="weapon-number">0{w.icon + 1}</span>
                     <PixelIcon index={w.icon} large />
-                    <strong>{w.name}</strong>
-                    <small>{w.description}</small>
+                    <strong>{text(w.name)}</strong>
+                    <small>{text(w.description)}</small>
                     <span className="weapon-footer">
-                      {weapon === id ? "EQUIPPED" : "SELECT WEAPON"}
+                      {weapon === id
+                        ? t("main", "EQUIPPED")
+                        : t("main", "SELECT WEAPON")}
                       <span>{weapon === id ? "✓" : "+"}</span>
                     </span>
                   </button>
@@ -309,9 +423,14 @@ export default function NowRiftMainMenu() {
             </div>
             <div className="embark-row">
               <p>
-                <span className="live-dot" /> Ready when you are.
+                <span className="live-dot" />{" "}
+                {t("main", "Survival practice · 8 minutes.")}{" "}
                 <small>
-                  100 HP · 180 movement speed · Temporary run upgrades
+                  {CHARACTERS[character].hp} HP · {CHARACTERS[character].speed}{" "}
+                  {t("sanctuary", "MOVEMENT")} ·{" "}
+                  {loadout.relic
+                    ? t("main", "Relic equipped")
+                    : t("main", "No relic equipped")}
                 </small>
               </p>
               <button
@@ -322,12 +441,18 @@ export default function NowRiftMainMenu() {
                 }}
                 type="button"
               >
-                START NEW RUN <span>→</span>
+                {t("main", "START NEW RUN")} <span>→</span>
               </button>
             </div>
+            <p className="practice-note">
+              {t(
+                "main",
+                "Campaign rewards and stage unlocks are earned through the World Map.",
+              )}{" "}
+            </p>
             {warning && (
               <p className="notice" role="status">
-                {warning}
+                {text(warning)}
               </p>
             )}
           </section>
@@ -335,48 +460,75 @@ export default function NowRiftMainMenu() {
       )}
       <footer className="site-footer">
         <span>
-          NOWRIFT <span className="gold">/</span> A WORLD BETWEEN WORLDS
+          NOWRIFT <span className="gold">/</span>{" "}
+          {t("main", "A WORLD BETWEEN WORLDS")}{" "}
         </span>
-        <span>PHASE III · LOCAL RPG ADVENTURE · NO CLOUD SAVE</span>
+        <span>{t("main", "FOUR WORLDS · GUEST ONLY · NO CLOUD SAVE")}</span>
       </footer>
+      {characterOpen && (
+        <CharacterSelection
+          selected={character}
+          onSelect={(id) => {
+            setCharacter(id);
+            try {
+              localStorage.setItem("nowrift-character-v1", id);
+            } catch {
+              /* session choice */
+            }
+          }}
+          onClose={closeCharacter}
+        />
+      )}
       {settings && <Settings onClose={closeSettings} />}
       {controls && (
-        <Modal title="How to survive" onClose={closeControls}>
-          <span className="eyebrow">THE WANDERER’S FIELD MANUAL</span>
-          <h2>How to survive</h2>
+        <Modal title={t("main", "How to survive")} onClose={closeControls}>
+          <span className="eyebrow">
+            {t("main", "THE WANDERER’S FIELD MANUAL")}
+          </span>
+          <h2>{t("main", "How to survive")}</h2>
           <div className="manual-row">
-            <strong>MOVE</strong>
+            <strong>{t("main", "MOVE")}</strong>
             <span>
-              WASD, arrow keys, or touch and drag anywhere on the arena.
-              Movement is normalized diagonally.
+              {t(
+                "main",
+                "WASD, arrow keys, or touch and drag anywhere on the arena. Movement is normalized diagonally.",
+              )}{" "}
             </span>
           </div>
           <div className="manual-row">
-            <strong>ATTACK</strong>
+            <strong>{t("main", "ATTACK")}</strong>
             <span>
-              Your selected weapon attacks nearby enemies automatically. Daggers
-              favor close range; Frost Pulse slows enemies around you.
+              {t(
+                "main",
+                "Your selected weapon attacks nearby enemies automatically. Daggers favor close range; Frost Pulse slows enemies around you.",
+              )}{" "}
             </span>
           </div>
           <div className="manual-row">
-            <strong>GROW</strong>
+            <strong>{t("main", "GROW")}</strong>
             <span>
-              Collect emerald XP crystals. Choose one blessing each level. Red
-              crystals heal you.
+              {t(
+                "main",
+                "Collect emerald XP crystals. Choose one blessing each level. Red crystals heal you.",
+              )}{" "}
             </span>
           </div>
           <div className="manual-row">
-            <strong>SURVIVE</strong>
+            <strong>{t("main", "SURVIVE")}</strong>
             <span>
-              Use Pause or Escape. Focus mode fills your screen. Red root
-              circles warn before the Guardian strikes.
+              {t(
+                "main",
+                "Use Pause or Escape. Focus mode fills your screen. Red root circles warn before the Guardian strikes.",
+              )}{" "}
             </span>
           </div>
           <div className="manual-row">
-            <strong>WIN</strong>
+            <strong>{t("main", "WIN")}</strong>
             <span>
-              At eight minutes, defeat the Forest Guardian. At half health it
-              enrages. Run records are saved locally; active runs reset on exit.
+              {t(
+                "main",
+                "At eight minutes, defeat the Forest Guardian. At half health it enrages. Run records are saved locally; active runs reset on exit.",
+              )}{" "}
             </span>
           </div>
           <button
@@ -384,16 +536,19 @@ export default function NowRiftMainMenu() {
             onClick={closeControls}
             type="button"
           >
-            UNDERSTOOD →
+            {t("main", "UNDERSTOOD →")}{" "}
           </button>
         </Modal>
       )}
       {history && (
-        <Modal title="Run records" onClose={closeHistory}>
-          <span className="eyebrow">REMEMBER EVERY JOURNEY</span>
-          <h2>Run records</h2>
+        <Modal title={t("main", "Run records")} onClose={closeHistory}>
+          <span className="eyebrow">{t("main", "REMEMBER EVERY JOURNEY")}</span>
+          <h2>{t("main", "Run records")}</h2>
           <p className="muted">
-            Your latest 20 completed runs, stored in IndexedDB on this device.
+            {t(
+              "main",
+              "Your latest 20 completed runs, saved only on this device.",
+            )}{" "}
           </p>
           {runs.length ? (
             <div className="run-records">
@@ -403,19 +558,22 @@ export default function NowRiftMainMenu() {
                   <span>
                     <strong>
                       {r.outcome === "victory"
-                        ? "Guardian defeated"
-                        : "Wanderer fallen"}
+                        ? t("main", "Guardian defeated")
+                        : t("main", "Wanderer fallen")}
                     </strong>
                     <small>
-                      {WEAPONS[r.weapon].name} ·{" "}
-                      {new Date(r.at).toLocaleDateString()}
+                      {text(WEAPONS[r.weapon].name)} · {date(r.at)}
                     </small>
                   </span>
                   <b>
-                    {r.kills} kills
+                    {r.kills}{" "}
+                    {plural(r.kills, {
+                      one: t("main", "kill"),
+                      other: t("main", "kills"),
+                    })}
                     <small>
                       {clock(r.seconds)} · {r.gold}{" "}
-                      {r.campaign ? "gold" : "score"}
+                      {text(r.campaign ? "gold" : "score")}
                     </small>
                   </b>
                 </div>
@@ -423,12 +581,11 @@ export default function NowRiftMainMenu() {
             </div>
           ) : (
             <p className="empty-record">
-              Your story is unwritten.
-              <br />
-              Complete a run to leave your first mark.
+              {t("main", "Your story is unwritten.")} <br />
+              {t("main", "Complete a run to leave your first mark.")}{" "}
             </p>
           )}
-          {warning && <p className="notice">{warning}</p>}
+          {warning && <p className="notice">{text(warning)}</p>}
         </Modal>
       )}
     </main>

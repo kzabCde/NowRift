@@ -153,25 +153,50 @@ export function initializeRpg(profile: Progress): Progress {
     p.rpg.equipment.push(item);
     p.rpg.equipped[slot] = item.id;
   }
-  p.candidates.forEach((id, i) => {
-    const world =
-      id === "solar-relic"
-        ? "desert"
-        : id === "glacial-relic"
-          ? "frozen"
-          : id === "sovereign-relic"
-            ? "infernal"
-            : "forest";
-    const item = seededEquipment(
-      `legacy-${i}-${id}`,
-      "boss-" + world,
-      "rare",
-      5,
-    );
-    addEquipment(p, item, "legacy-parcel-" + i);
-  });
+  p.candidates
+    .map((id, i) => ({ id, i }))
+    .sort(
+      (a, b) =>
+        Number(b.id === profile.equipment?.equipped) -
+        Number(a.id === profile.equipment?.equipped),
+    )
+    .forEach(({ id, i }) => {
+      const world =
+        id === "solar-relic"
+          ? "desert"
+          : id === "glacial-relic"
+            ? "frozen"
+            : id === "sovereign-relic"
+              ? "infernal"
+              : "forest";
+      const item = seededEquipment(
+        `legacy-${i}-${id}`,
+        "boss-" + world,
+        "rare",
+        5,
+      );
+      item.enhancement =
+        profile.equipment?.ranks[
+          id as keyof NonNullable<Progress["equipment"]>["ranks"]
+        ] ?? 0;
+      addEquipment(p, item, "legacy-parcel-" + i);
+      if (
+        profile.equipment?.equipped === id &&
+        !p.rpg!.equipped.necklace?.startsWith("legacy-")
+      ) {
+        // Equipping preserves the purchased legacy ranks and selected relic without occupying a bag slot.
+        const parcel = p.rpg!.overflow.findIndex(
+          (o) => o.equipment?.id === item.id,
+        );
+        if (parcel >= 0) {
+          p.rpg!.overflow.splice(parcel, 1);
+          p.rpg!.equipment.push(item);
+        }
+        p.rpg!.equipped.necklace = item.id;
+      }
+    });
   if (p.candidates.length)
-    p.rpg.history.push({
+    p.rpg!.history.push({
       id: "migration",
       at: 0,
       kind: "migration",
@@ -180,5 +205,6 @@ export function initializeRpg(profile: Progress): Progress {
       items: [...p.candidates],
     });
   p.candidates = [];
+  delete p.equipment;
   return p;
 }
