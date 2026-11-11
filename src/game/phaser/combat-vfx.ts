@@ -52,18 +52,26 @@ export class CombatVfx {
       g.lineStyle(e.important ? 3 : 2, e.color, alpha);
       switch (e.kind) {
         case "slash": {
+          const arc = e.arc ?? 1.8,
+            turn = (t - 0.5) * 0.3;
           g.beginPath();
           g.arc(
             e.x,
             e.y,
             r * (0.7 + t * 0.4),
-            e.angle - 1.1 + t,
-            e.angle + 0.7 + t,
+            e.angle - arc / 2 + turn,
+            e.angle + arc / 2 + turn,
           );
           g.strokePath();
           g.lineStyle(1, 0xf0ebca, alpha);
           g.beginPath();
-          g.arc(e.x, e.y, r * 0.7, e.angle - 0.9 + t, e.angle + 0.5 + t);
+          g.arc(
+            e.x,
+            e.y,
+            r * 0.7,
+            e.angle - arc * 0.4 + turn,
+            e.angle + arc * 0.4 + turn,
+          );
           g.strokePath();
           break;
         }

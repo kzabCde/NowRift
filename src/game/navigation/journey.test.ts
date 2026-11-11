@@ -159,23 +159,14 @@ test("typed transitions reject a second operation and stale completion", () => {
   flow = flowReducer(flow, { type: "prepare", target: "haven", id: 3 });
   expect(flowReducer(flow, { type: "commit", id: 3 }).screen).toBe("haven");
 });
-test("city weapon selection is bound to the current writer and cannot alter an active run", async () => {
+test("legacy city style commands cannot bypass owned inventory equipment", async () => {
   let p = await repo.createCharacter(identity());
   p = await repo.world(p.local.id, { type: "enter", writer: "town-owner" });
-  const next = await repo.world(p.local.id, {
-    type: "weapon",
-    writer: "town-owner",
-    weapon: "fire",
-  });
-  expect(next.local.weapon).toBe("fire");
-  expect(next.rpg).toEqual(p.rpg);
-  await expect(
-    repo.world(p.local.id, {
-      type: "weapon",
-      writer: "stale-owner",
-      weapon: "frost",
-    }),
-  ).rejects.toThrow("another tab");
+  for (const writer of ["town-owner", "stale-owner"]) {
+    await expect(
+      repo.world(p.local.id, { type: "weapon", writer, weapon: "fire" }),
+    ).rejects.toThrow(writer === "town-owner" ? "owned weapon" : "another tab");
+  }
   await repo.beginRun(p.local.id);
   await expect(
     repo.world(p.local.id, {
@@ -183,8 +174,10 @@ test("city weapon selection is bound to the current writer and cannot alter an a
       writer: "town-owner",
       weapon: "frost",
     }),
-  ).rejects.toThrow("saved run");
-  expect((await repo.load(p.local.id)).local.weapon).toBe("fire");
+  ).rejects.toThrow("owned weapon");
+  const saved = await repo.load(p.local.id);
+  expect(saved.local.weapon).toBe(p.local.weapon);
+  expect(saved.rpg).toEqual(p.rpg);
 });
 test("directory entries resolve to existing real world interactions and complete Thai copy", () => {
   for (const activity of ACTIVITIES) {

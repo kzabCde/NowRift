@@ -1,7 +1,13 @@
 "use client";
 import { useI18n } from "@/i18n/useI18n";
 import type { SaveData } from "@/game/persistence/model";
-import { calculateStats, characterLevel } from "@/game/rpg/stats";
+import {
+  calculateStats,
+  characterLevel,
+  resolveEquippedWeapon,
+} from "@/game/rpg/stats";
+import CharacterPreview from "./CharacterPreview";
+import EquippedWeapon from "./EquippedWeapon";
 import { CHARACTERS } from "@/game/loadout";
 import { ITEMS } from "@/game/rpg/content";
 import { SLOTS } from "@/game/rpg/model";
@@ -10,7 +16,6 @@ import { clearKey } from "@/game/campaign/progression";
 import { ItemIcon } from "./RpgScreen";
 import SaveIndicator from "./SaveIndicator";
 import { Modal } from "./GameUi";
-import { WEAPONS, type WeaponId } from "@/game/content/forest";
 export type SanctuaryAction =
   | "storage"
   | "journal"
@@ -23,15 +28,11 @@ export default function SanctuaryPanel({
   onAction,
   onClose,
   onMenu,
-  onWeapon,
-  busy,
 }: {
   save: SaveData;
   onAction: (name: SanctuaryAction) => void;
   onClose: () => void;
   onMenu: () => void;
-  onWeapon: (weapon: WeaponId) => void;
-  busy: boolean;
 }) {
   const { t, text } = useI18n(),
     j = (key: Parameters<typeof t<"journey">>[1]) => t("journey", key),
@@ -46,11 +47,12 @@ export default function SanctuaryPanel({
         className="sanctuary-summary"
         aria-label={j("Character overview")}
       >
-        <span
-          className="journey-mini"
-          style={{
-            backgroundImage: `url(/assets/haven/player-${save.local.world?.outfit ?? "moss"}.png)`,
-          }}
+        <CharacterPreview
+          character={save.local.character}
+          outfit={save.local.world?.outfit ?? "moss"}
+          weapon={resolveEquippedWeapon(save)}
+          size={64}
+          decorative
         />
         <div>
           <h3>{save.local.name}</h3>
@@ -79,19 +81,10 @@ export default function SanctuaryPanel({
           </div>
         ))}
       </dl>
-      <h3>{j("Choose your weapon")}</h3>
-      <div className="sanctuary-actions">
-        {Object.entries(WEAPONS).map(([id, weapon]) => (
-          <button
-            key={id}
-            aria-pressed={save.local.weapon === id}
-            disabled={busy}
-            onClick={() => onWeapon(id as WeaponId)}
-          >
-            {text(weapon.name)}
-          </button>
-        ))}
-      </div>
+      <EquippedWeapon
+        weapon={resolveEquippedWeapon(save)}
+        onInventory={() => onAction("storage")}
+      />
       <h3>{j("Equipment overview")}</h3>
       <div className="sanctuary-equipment">
         {SLOTS.map((slot) => {

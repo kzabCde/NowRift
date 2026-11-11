@@ -57,8 +57,8 @@ export const rpgTh = {
   "OPEN INVENTORY": "เปิดกระเป๋า",
   "CAMPAIGN POWER": "พลังแคมเปญ",
   "CHARACTER LEVEL": "เลเวลตัวละคร",
-  "Permanent progression is separate from temporary run levels. Gear applies to your chosen Hub attack style.":
-    "ความก้าวหน้าถาวรแยกจากเลเวลระหว่างรอบ อุปกรณ์เสริมรูปแบบโจมตีที่เลือกในศูนย์พักพิง",
+  "Permanent progression is separate from temporary run levels. Your equipped inventory weapon determines campaign attacks.":
+    "ความก้าวหน้าถาวรแยกจากเลเวลระหว่างรอบ อาวุธที่สวมใส่ในคลังเป็นตัวกำหนดการโจมตีในแคมเปญ",
   "A LASTING STRENGTH": "พลังที่คงอยู่",
   "Permanent disciplines": "การฝึกฝนถาวร",
   "Small lasting bonuses complement each run’s blessings. Ranks are capped at ten.":

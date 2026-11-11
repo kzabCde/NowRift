@@ -29,6 +29,11 @@ export type Attributes = {
 };
 export type StatKey = keyof Attributes;
 export type ItemDefinition = {
+  weapon?: {
+    family: "staff" | "sword" | "scepter" | "glaive";
+    attack: import("../content/forest").WeaponId;
+    frame: number;
+  };
   id: string;
   name: string;
   kind: "equipment" | "material" | "consumable";
@@ -102,4 +107,20 @@ export type CharacterStats = Attributes & {
   interval: number;
   power: number;
   level: number;
+};
+/** Immutable run-start equipment and attack configuration; independent of the live inventory. */
+export type WeaponSnapshot = {
+  schema: 1;
+  instanceId: string;
+  definitionId: string;
+  name: string;
+  family: NonNullable<ItemDefinition["weapon"]>["family"];
+  attackId: import("../content/forest").WeaponId;
+  attack: import("../content/forest").AttackDefinition;
+  assetKey: "equipment-weapons";
+  frame: number;
+  rarity: Rarity;
+  enhancement: number;
+  instance: EquipmentInstance;
+  stats: CharacterStats;
 };

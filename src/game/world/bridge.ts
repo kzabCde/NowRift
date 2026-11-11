@@ -1,12 +1,13 @@
 import type { CharacterId } from "../loadout";
 import type { Outfit } from "./save";
 import type { Point } from "./content";
+import type { WeaponSnapshot } from "../rpg/model";
 export type HavenStart = {
   session: string;
   position: Point;
   outfit: Outfit;
   character: CharacterId;
-  damage: number;
+  weapon: WeaponSnapshot | null;
 };
 export type HavenSnapshot = {
   position: Point;
@@ -18,8 +19,11 @@ export type HavenSnapshot = {
 export type HavenCommand =
   | {
       type: "haven-test";
-      weapon: import("../content/forest").WeaponId;
-      build: import("../rpg/model").CharacterStats;
+    }
+  | {
+      type: "haven-equipment";
+      character: CharacterId;
+      weapon: WeaponSnapshot | null;
     }
   | { type: "haven-lock"; locked: boolean }
   | { type: "haven-interact" }

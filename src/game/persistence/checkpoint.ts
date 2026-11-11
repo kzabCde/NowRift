@@ -14,6 +14,7 @@ import { validProgress, emptyProgress } from "../campaign/progression";
 import type { RunOwner } from "./model";
 import { validHarvest } from "../world/farming";
 import { OUTFITS } from "../world/save";
+import { validWeaponSnapshot } from "../rpg/weapon-validation";
 type State = Pick<
   Game,
   | "phase"
@@ -41,6 +42,7 @@ type State = Pick<
   | "build"
   | "appearance"
   | "character"
+  | "equippedWeapon"
 >;
 type EnvironmentState = Pick<
   NonNullable<Game["campaign"]>,
@@ -93,6 +95,7 @@ const fields = [
   "build",
   "appearance",
   "character",
+  "equippedWeapon",
 ] as const;
 export function captureCheckpoint(
   g: Game,
@@ -143,6 +146,21 @@ export function captureCheckpoint(
       : undefined,
     tonics,
   });
+}
+// Property order is not significant in JSON exports or IndexedDB records.
+function sameRecord(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  const entries = Object.entries(a),
+    other = Object.entries(b);
+  return (
+    entries.length === other.length &&
+    entries.every(
+      ([key, value]) =>
+        Object.hasOwn(b, key) &&
+        sameRecord(value, (b as Record<string, unknown>)[key]),
+    )
+  );
 }
 const obj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
@@ -395,6 +413,33 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
     Object.hasOwn(RARITIES, appearance.rarity) &&
     integer(appearance.icon, 0, 47);
   if (s.build && !validBuild(s.build)) return false;
+  if (
+    s.equippedWeapon !== undefined &&
+    (!validWeaponSnapshot(s.equippedWeapon) ||
+      s.equippedWeapon.attackId !== c.weapon ||
+      !sameRecord(s.equippedWeapon.stats, s.build))
+  )
+    return false;
+  if (
+    c.stage?.weaponSnapshot !== undefined &&
+    (!validWeaponSnapshot(c.stage.weaponSnapshot) ||
+      !sameRecord(c.stage.weaponSnapshot, s.equippedWeapon))
+  )
+    return false;
+  if (
+    c.stage?.character !== undefined &&
+    !Object.hasOwn(CHARACTERS, c.stage.character)
+  )
+    return false;
+  if (
+    s.player.facing !== undefined &&
+    !["down", "right", "up", "left"].includes(s.player.facing)
+  )
+    return false;
+  if (s.player.attackUntil !== undefined && !finite(s.player.attackUntil))
+    return false;
+  if (s.player.attackAngle !== undefined && !finite(s.player.attackAngle, -10))
+    return false;
   if (s.appearance && !validAppearance(s.appearance)) return false;
   if (c.stage?.build && !validBuild(c.stage.build)) return false;
   if (c.stage?.appearance && !validAppearance(c.stage.appearance)) return false;

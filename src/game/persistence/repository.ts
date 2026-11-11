@@ -35,7 +35,7 @@ import type { WorldCommand } from "../world/save";
 import { HAVEN } from "../world/content";
 import { characterName } from "./identity";
 import { OUTFITS, type Outfit } from "../world/save";
-import { calculateStats } from "../rpg/stats";
+import { calculateStats, resolveEquippedWeapon } from "../rpg/stats";
 let selected: string | null = null,
   writerId: string | null = null;
 const listeners = new Set<() => void>();
@@ -648,6 +648,7 @@ export const profileRepository = {
     slotId: string,
     resume = false,
     replaceId?: string,
+    requireWeapon = false,
   ): Promise<{
     run: RunOwner;
     checkpoint: RunCheckpoint | null;
@@ -656,6 +657,8 @@ export const profileRepository = {
     return update((p, root, store, _, at) => {
       const old = p.local.activeRun,
         c = p.local.checkpoint;
+      if (!resume && requireWeapon && !resolveEquippedWeapon(p))
+        throw new Error("Equip a weapon in Inventory before entering a stage.");
       if (resume && !c)
         throw new Error("No valid run checkpoint is available.");
       if (resume && (!validCheckpoint(c) || p.receipts.includes(c.run.id)))

@@ -4,6 +4,7 @@ import "./rpg.css";
 import "./profile.css";
 import "./haven.css";
 import "./journey.css";
+import "./equipment.css";
 
 export const metadata: Metadata = {
   applicationName: "NowRift",

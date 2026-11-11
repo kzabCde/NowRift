@@ -29,6 +29,7 @@ export type Feedback = {
   color: number;
   radius: number;
   angle: number;
+  arc?: number;
   tx: number;
   ty: number;
   important: boolean;
@@ -45,6 +46,7 @@ export function feedback(
   important = false,
   tx = x,
   ty = y,
+  arc = 1.8,
 ) {
   if (g.feedback.length >= 128) {
     if (!important) return;
@@ -53,7 +55,18 @@ export function feedback(
     g.feedbackPool.push(g.feedback.splice(index, 1)[0]);
   }
   const event = g.feedbackPool.pop() ?? ({} as Feedback);
-  Object.assign(event, { kind, x, y, color, radius, angle, important, tx, ty });
+  Object.assign(event, {
+    kind,
+    x,
+    y,
+    color,
+    radius,
+    angle,
+    important,
+    tx,
+    ty,
+    arc,
+  });
   g.feedback.push(event);
 }
 export function drainFeedback(

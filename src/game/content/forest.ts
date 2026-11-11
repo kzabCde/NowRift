@@ -68,21 +68,43 @@ export const ENEMIES = {
     from: 480,
   },
 } as const;
-export type WeaponId = "arcane" | "daggers" | "fire" | "frost";
-export const WEAPONS: Record<
-  WeaponId,
-  {
-    name: string;
-    description: string;
-    damage: number;
-    interval: number;
-    range: number;
-    speed: number;
-    color: string;
-    icon: number;
-  }
-> = {
+export type WeaponId =
+  | "arcane"
+  | "daggers"
+  | "fire"
+  | "frost"
+  | "slash"
+  | "sweep";
+export const PRACTICE_WEAPONS = ["arcane", "daggers", "fire", "frost"] as const;
+export function attackRange(
+  attack: AttackDefinition,
+  range = attack.range,
+  area = 1,
+) {
+  return (
+    range *
+    (["pulse", "slash", "sweep"].includes(attack.kind ?? "projectile")
+      ? area
+      : 1)
+  );
+}
+export type AttackDefinition = {
+  name: string;
+  description: string;
+  damage: number;
+  interval: number;
+  range: number;
+  speed: number;
+  color: string;
+  icon: number;
+  kind?: "projectile" | "pulse" | "slash" | "sweep";
+  projectiles?: number;
+  arc?: number;
+  blast?: number;
+};
+export const WEAPONS: Record<WeaponId, AttackDefinition> = {
   arcane: {
+    kind: "projectile",
     name: "Arcane Bolt",
     description: "Precise magic bolts. A balanced companion for the long hunt.",
     damage: 10,
@@ -93,6 +115,8 @@ export const WEAPONS: Record<
     icon: 0,
   },
   daggers: {
+    kind: "projectile",
+    projectiles: 2,
     name: "Twin Daggers",
     description: "Paired, rapid blades. High pressure, close range.",
     damage: 6,
@@ -103,6 +127,8 @@ export const WEAPONS: Record<
     icon: 1,
   },
   fire: {
+    kind: "projectile",
+    blast: 64,
     name: "Fire Orb",
     description: "Slow embers explode on impact, burning clustered enemies.",
     damage: 16,
@@ -113,6 +139,7 @@ export const WEAPONS: Record<
     icon: 2,
   },
   frost: {
+    kind: "pulse",
     name: "Frost Pulse",
     description: "A chilling pulse around you. Slows every enemy it touches.",
     damage: 12,
@@ -121,6 +148,31 @@ export const WEAPONS: Record<
     speed: 0,
     color: "#b5f1ec",
     icon: 3,
+  },
+  slash: {
+    name: "Blade Slash",
+    description: "A close sword technique. Cuts enemies in a forward arc.",
+    kind: "slash",
+    damage: 18,
+    interval: 0.75,
+    range: 120,
+    speed: 0,
+    arc: 1.8,
+    color: "#e4d5a0",
+    icon: 1,
+  },
+  sweep: {
+    name: "Ember Sweep",
+    description:
+      "A broad, fire-lit glaive sweep that strikes clustered enemies.",
+    kind: "sweep",
+    damage: 27,
+    interval: 1.15,
+    range: 160,
+    speed: 0,
+    arc: 2.9,
+    color: "#ffb369",
+    icon: 2,
   },
 };
 export type UpgradeId =

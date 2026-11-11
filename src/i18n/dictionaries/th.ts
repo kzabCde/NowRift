@@ -1,9 +1,11 @@
 import { profileTh } from "./profile-th";
 import { havenTh } from "./haven-th";
 import { journeyTh } from "./journey-th";
+import { equipmentTh } from "./equipment-th";
 import { rpgTh } from "./rpg-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  equipment: equipmentTh,
   journey: journeyTh,
   haven: havenTh,
   profile: profileTh,
@@ -438,6 +440,13 @@ export const th = {
       "ข้อมูลเซฟแคมเปญเสียหาย ระบบเก็บข้อมูลเดิมไว้ แต่ปิดการเข้าเล่นด่านชั่วคราว",
   },
   content: {
+    "Blade Slash": "ฟันดาบ",
+    "A close sword technique. Cuts enemies in a forward arc.":
+      "วิชาดาบระยะประชิด ฟันศัตรูในส่วนโค้งด้านหน้า",
+    "Ember Sweep": "กวาดเปลวเพลิง",
+    "A broad, fire-lit glaive sweep that strikes clustered enemies.":
+      "กวาดง้าวที่ลุกด้วยเปลวไฟเป็นวงกว้างใส่กลุ่มศัตรู",
+
     "Whispering Forest": "ป่ากระซิบ",
     "Lost Desert": "ทะเลทรายที่สาบสูญ",
     "Frozen Abyss": "หุบเหวเยือกแข็ง",

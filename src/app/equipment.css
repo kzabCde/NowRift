@@ -1,0 +1,105 @@
+.character-preview {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+.actor-body,
+.actor-weapon {
+  position: absolute;
+  width: var(--actor-size);
+  height: var(--actor-size);
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.actor-body {
+  inset: 0;
+  animation: actor-idle 1.2s steps(2) infinite;
+}
+.actor-weapon {
+  transform: translate(-50%, -75%);
+  animation: actor-hand 1.2s steps(2) infinite;
+}
+.actor-shadow {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 2%;
+  height: 15%;
+  border-radius: 50%;
+  background: #07151d66;
+  border-bottom: 1px solid var(--weapon-color);
+}
+.actor-enchantment {
+  position: absolute;
+  left: 61%;
+  top: 21%;
+  width: 3px;
+  height: 3px;
+  background: var(--weapon-color);
+  animation: equipment-shimmer 1.8s ease-in-out infinite;
+}
+@keyframes actor-idle {
+  to {
+    background-position-x: calc(var(--actor-size) * -2);
+  }
+}
+@keyframes actor-hand {
+  to {
+    transform: translate(-50%, calc(-75% - var(--actor-pixel) * 2));
+  }
+}
+@keyframes equipment-shimmer {
+  50% {
+    opacity: 0.3;
+    transform: translateY(-4px);
+  }
+}
+.equipped-weapon {
+  border: 1px solid #a4ac7455;
+  padding: 16px;
+  margin: 16px 0;
+  background: #0d2529;
+}
+.equipped-weapon-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+.equipped-weapon-title strong,
+.equipped-weapon-title small {
+  display: block;
+}
+.equipped-weapon-title strong {
+  font: 20px var(--serif);
+}
+.equipped-weapon-title small,
+.equipped-weapon p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #b8c5b0;
+}
+.character-stage > .character-preview {
+  margin: 16px auto;
+}
+.journey-preview > .character-preview {
+  display: block;
+  margin: 20px auto 36px;
+}
+.haven-status .character-preview {
+  margin: 0;
+}
+.rpg-avatar.character-preview {
+  position: absolute;
+  background: none;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .actor-body,
+  .actor-weapon,
+  .actor-enchantment {
+    animation: none !important;
+  }
+}

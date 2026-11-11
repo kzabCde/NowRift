@@ -33,7 +33,12 @@ import {
   downloadJson,
   MAX_IMPORT_BYTES,
 } from "@/game/persistence/backup";
-import { calculateStats, characterLevel } from "@/game/rpg/stats";
+import CharacterPreview from "./CharacterPreview";
+import {
+  calculateStats,
+  characterLevel,
+  resolveEquippedWeapon,
+} from "@/game/rpg/stats";
 import { CHARACTERS, type CharacterId } from "@/game/loadout";
 import { WORLDS } from "@/game/campaign/content";
 import { ITEMS } from "@/game/rpg/content";
@@ -394,10 +399,11 @@ export default function ProfileScreen({
             {active && (
               <section className="rpg-panel">
                 <div className="profile-character-hero">
-                  <span
-                    className={`character-sprite character-${active.local.character}`}
-                    role="img"
-                    aria-label={text(CHARACTERS[active.local.character].name)}
+                  <CharacterPreview
+                    character={active.local.character}
+                    outfit={active.local.world?.outfit ?? "moss"}
+                    weapon={resolveEquippedWeapon(active)}
+                    size={96}
                   />
                   <div>
                     <span className="eyebrow">{text("ACTIVE CHARACTER")}</span>
@@ -492,8 +498,11 @@ export default function ProfileScreen({
                     <h2>{p?.local.name ?? text("Unreadable character")}</h2>
                     {p ? (
                       <>
-                        <span
-                          className={`character-sprite character-${p.local.character}`}
+                        <CharacterPreview
+                          character={p.local.character}
+                          outfit={p.local.world?.outfit ?? "moss"}
+                          weapon={resolveEquippedWeapon(p)}
+                          size={96}
                         />
                         <p>
                           {text("Level")} {characterLevel(p.xp).level} ·{" "}

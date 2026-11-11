@@ -6,7 +6,13 @@ import {
   type RelicId,
 } from "../loadout";
 import type { Progress } from "../campaign/progression";
-import { WEAPONS, type WeaponId, type UpgradeId } from "../content/forest";
+import { validEquipmentInstance } from "./profile";
+import {
+  WEAPONS,
+  type WeaponId,
+  type UpgradeId,
+  type AttackDefinition,
+} from "../content/forest";
 import { ITEMS, RARITIES, PRIMARY_VALUES, UPGRADES } from "./content";
 import {
   SLOTS,
@@ -14,6 +20,7 @@ import {
   type StatKey,
   type CharacterStats,
   type EquipmentInstance,
+  type WeaponSnapshot,
 } from "./model";
 export const zero = (): Attributes => ({
   maxHp: 0,
@@ -61,13 +68,13 @@ export function itemStats(
 }
 function cap(
   stats: Attributes,
-  weapon: WeaponId,
+  weapon: WeaponId | AttackDefinition,
   level: number,
 ): CharacterStats {
   const s = {
     ...stats,
     maxHp: Math.min(5000, Math.max(1, Math.round(stats.maxHp))),
-    damage: Math.min(10000, Math.max(1, stats.damage)),
+    damage: Math.min(10000, Math.max(0, stats.damage)),
     attackSpeed: Math.min(2, Math.max(0, stats.attackSpeed)),
     critChance: Math.min(0.75, Math.max(0, stats.critChance)),
     critDamage: Math.min(4, Math.max(1, stats.critDamage)),
@@ -79,7 +86,8 @@ function cap(
   };
   const interval = Math.max(
     0.12,
-    WEAPONS[weapon].interval / (1 + s.attackSpeed),
+    (typeof weapon === "string" ? WEAPONS[weapon] : weapon).interval /
+      (1 + s.attackSpeed),
   );
   return {
     ...s,
@@ -91,10 +99,15 @@ function cap(
 export function calculateStats(
   profile: Progress,
   weapon: WeaponId = "arcane",
-  character: CharacterId = "wanderer",
+  character: CharacterId = profile.local?.character ?? "wanderer",
 ): CharacterStats {
+  const equipped = equippedWeapon(profile);
+  // Only explicit practice without an RPG inventory may use a free attack style.
+  const attackId = profile.rpg ? equipped?.definition.weapon?.attack : weapon;
   const { level } = characterLevel(profile.xp),
-    w = WEAPONS[weapon],
+    w = attackId
+      ? WEAPONS[attackId]
+      : { ...WEAPONS.arcane, damage: 0, interval: 1 },
     c = CHARACTERS[character],
     out: Attributes = {
       maxHp: c.hp + (level - 1) * 8,
@@ -105,7 +118,7 @@ export function calculateStats(
       armor: 0,
       speed: c.speed,
       regen: 0,
-      projectiles: weapon === "daggers" ? 2 : 1,
+      projectiles: w.projectiles ?? 1,
       area: 1,
     };
   const rpg = profile.rpg;
@@ -121,20 +134,22 @@ export function calculateStats(
     for (const [id, def] of Object.entries(UPGRADES))
       out[def.stat] += (rpg.upgrades[id] ?? 0) * def.amount;
   }
-  return cap(out, weapon, level);
+  if (profile.rpg && !equipped) out.damage = 0;
+  return cap(out, w, level);
 }
 export function temporaryStats(
   base: CharacterStats,
   weapon: WeaponId,
   stacks: Partial<Record<UpgradeId, number>>,
   focus = false,
+  attack: AttackDefinition = WEAPONS[weapon],
 ): CharacterStats {
   const n = (key: UpgradeId) => stacks[key] ?? 0;
   const out = cap(
     {
       ...base,
       maxHp: base.maxHp + n("vitality") * 25,
-      damage: base.damage + WEAPONS[weapon].damage * 0.25 * n("power"),
+      damage: base.damage + attack.damage * 0.25 * n("power"),
       speed: base.speed + 18 * n("stride"),
       critChance: base.critChance + 0.05 * n("critical"),
       critDamage: base.critDamage + 0.25 * n("fury"),
@@ -158,17 +173,64 @@ export function incomingDamage(amount: number, armor: number) {
 
 export function campaignLoadout(
   profile: Progress,
-  weapon: WeaponId,
-  character: CharacterId = "wanderer",
+  _legacyWeapon?: WeaponId,
+  character: CharacterId = profile.local?.character ?? "wanderer",
 ) {
-  const equipped = profile.rpg?.equipment.find(
-    (e) => e.id === profile.rpg!.equipped.weapon,
-  );
+  const equipped = resolveEquippedWeapon(profile, character);
+  if (!equipped)
+    throw new Error("Equip a weapon in Inventory before entering a stage.");
   return {
-    build: calculateStats(profile, weapon, character),
-    appearance: equipped
-      ? { rarity: equipped.rarity, icon: ITEMS[equipped.definitionId].icon }
-      : undefined,
+    character,
+    weaponSnapshot: equipped,
+    build: equipped.stats,
+    appearance: {
+      rarity: equipped.rarity,
+      icon: ITEMS[equipped.definitionId].icon,
+    },
+  };
+}
+
+function equippedWeapon(profile: Progress) {
+  const id = profile.rpg?.equipped.weapon;
+  if (!id) return null;
+  const owned = profile.rpg!.equipment.filter((item) => item.id === id);
+  if (owned.length !== 1) return null;
+  const instance = owned[0],
+    definition = ITEMS[instance.definitionId];
+  if (
+    !validEquipmentInstance(instance) ||
+    !definition ||
+    definition.kind !== "equipment" ||
+    definition.slot !== "weapon" ||
+    !definition.weapon ||
+    !RARITIES[instance.rarity] ||
+    !Object.hasOwn(WEAPONS, definition.weapon.attack)
+  )
+    return null;
+  return { instance, definition };
+}
+export function resolveEquippedWeapon(
+  profile: Progress,
+  character: CharacterId = profile.local?.character ?? "wanderer",
+): WeaponSnapshot | null {
+  const selected = equippedWeapon(profile);
+  if (!selected) return null;
+  const { instance, definition } = selected,
+    spec = definition.weapon!;
+  return {
+    schema: 1,
+    instanceId: instance.id,
+    definitionId: definition.id,
+    name: definition.name,
+    family: spec.family,
+    attackId: spec.attack,
+    attack: { ...WEAPONS[spec.attack] },
+    assetKey: "equipment-weapons",
+    frame: spec.frame,
+    rarity: instance.rarity,
+    enhancement: instance.enhancement,
+    instance: structuredClone(instance),
+    stats: calculateStats(profile, spec.attack, character),
   };
 }
 

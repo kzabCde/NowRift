@@ -9,6 +9,8 @@ import type { ExpeditionPrompt } from "@/game/world/farming";
 import { FARM, travelReason } from "@/game/world/content";
 import { ITEMS } from "@/game/rpg/content";
 import { practiceLoadout } from "@/game/rpg/stats";
+import { RARITIES } from "@/game/rpg/content";
+import ItemIcon from "./ItemIcon";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -254,10 +256,12 @@ export default function NowRiftGame({
         p.local.id,
         recovering,
         runContext.current?.id,
+        !!stage,
       );
       runContext.current = prepared.run;
       didRecover.current = true;
       const c = prepared.checkpoint;
+      const canonical = prepared.save;
       const selection =
         c?.stage ??
         (stage
@@ -265,12 +269,13 @@ export default function NowRiftGame({
               ...stage,
               ...(stage.activity === "farming"
                 ? {
-                    startingHp: p.local.world!.hp,
-                    outfit: p.local.world!.outfit,
+                    startingHp: canonical.local.world!.hp,
+                    outfit: canonical.local.world!.outfit,
                   }
                 : {}),
-              clears: p.clears,
-              ...campaignLoadout(p, weapon, p.local.character),
+              outfit: canonical.local.world!.outfit,
+              clears: canonical.clears,
+              ...campaignLoadout(canonical),
             }
           : undefined);
       resultRun.current = null;
@@ -281,9 +286,10 @@ export default function NowRiftGame({
       );
       bridge.emit("command", {
         type: "start",
-        weapon: c?.weapon ?? weapon,
+        weapon: c?.weapon ?? selection?.weaponSnapshot?.attackId ?? weapon,
         stage: selection,
-        loadout: c?.loadout ?? practiceLoadout(p, p.local.character),
+        loadout:
+          c?.loadout ?? practiceLoadout(canonical, canonical.local.character),
         run: prepared.run,
         checkpoint: c,
         hold: returnToHaven && !cinematicComplete.current,
@@ -773,6 +779,18 @@ export default function NowRiftGame({
                           <PixelIcon index={u.icon} large />
                           <strong>{text(u.name)}</strong>
                           <small>{text(u.description)}</small>
+                          {hud.equippedWeapon &&
+                            ["slash", "sweep"].includes(
+                              hud.equippedWeapon.attack.kind ?? "",
+                            ) &&
+                            ["velocity", "multishot"].includes(id) && (
+                              <small>
+                                {t(
+                                  "equipment",
+                                  "Melee weapons gain reach from velocity and stronger strikes from extra projectiles.",
+                                )}
+                              </small>
+                            )}
                           <span className="upgrade-select">
                             {t("game", "EMBRACE →")}
                           </span>
@@ -914,13 +932,32 @@ export default function NowRiftGame({
           )}
           <div className="arena-footer">
             <div className="active-weapon">
-              <PixelIcon index={WEAPONS[weapon].icon} />
+              {hud.equippedWeapon ? (
+                <ItemIcon id={hud.equippedWeapon.definitionId} />
+              ) : (
+                <PixelIcon index={WEAPONS[hud.weaponId].icon} />
+              )}
               <span>
-                <strong>{text(WEAPONS[weapon].name)}</strong>
+                <strong
+                  style={
+                    hud.equippedWeapon
+                      ? { color: RARITIES[hud.equippedWeapon.rarity].color }
+                      : undefined
+                  }
+                >
+                  {hud.equippedWeapon
+                    ? `${text(hud.equippedWeapon.name)} +${hud.equippedWeapon.enhancement}`
+                    : text(WEAPONS[hud.weaponId].name)}
+                </strong>
                 <small>
                   {hud.damage.toFixed(1)} {t("game", "DMG")} ·{" "}
                   {hud.interval.toFixed(2)}s · {Math.round(hud.crit * 100)}%{" "}
                   {t("game", "CRIT")}
+                  {hud.equippedWeapon &&
+                    ` · ${text(RARITIES[hud.equippedWeapon.rarity].name)} · ${t("equipment", "Range")} ${Math.round(hud.range)}`}
+                  {stage &&
+                    !hud.equippedWeapon &&
+                    ` · ${t("equipment", "Legacy attack snapshot")}`}
                 </small>
               </span>
             </div>

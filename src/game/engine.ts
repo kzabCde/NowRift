@@ -1,5 +1,6 @@
 import { temporaryStats, incomingDamage } from "./rpg/stats";
-import type { CharacterStats, Rarity } from "./rpg/model";
+import type { CharacterStats, Rarity, WeaponSnapshot } from "./rpg/model";
+import { facingFromAngle, type Facing } from "./presentation/character";
 import type { CharacterId } from "./loadout";
 import { feedback, type FeedbackQueue } from "./feedback";
 import {
@@ -13,6 +14,7 @@ import {
   OBSTACLES,
   UPGRADES,
   WEAPONS,
+  attackRange,
   type EnemyKind,
   type UpgradeId,
   type WeaponId,
@@ -98,6 +100,7 @@ export type Hazard = {
   damage: number;
 };
 export type Game = FeedbackQueue & {
+  equippedWeapon?: WeaponSnapshot;
   character: CharacterId;
   id?: string;
   build?: CharacterStats;
@@ -117,6 +120,9 @@ export type Game = FeedbackQueue & {
   weaponId: WeaponId;
   rng: () => number;
   player: {
+    facing?: Facing;
+    attackUntil?: number;
+    attackAngle?: number;
     x: number;
     y: number;
     r: number;
@@ -163,6 +169,7 @@ export type Game = FeedbackQueue & {
   };
 };
 export type Snapshot = {
+  equippedWeapon?: WeaponSnapshot;
   runId?: string;
   statuses: string[];
   phase: GamePhase;
@@ -180,6 +187,7 @@ export type Snapshot = {
   weaponId: WeaponId;
   damage: number;
   interval: number;
+  range: number;
   crit: number;
   boss: { hp: number; maxHp: number; phase: number } | null;
   stacks: Partial<Record<UpgradeId, number>>;
@@ -220,6 +228,8 @@ export function makeGame(
       maxHp: 100,
       speed: 180,
       angle: 0,
+      facing: "down",
+      attackUntil: 0,
       invincible: 0,
       moving: false,
       hit: 0,
@@ -227,7 +237,7 @@ export function makeGame(
     weapon: {
       damage: w.damage,
       delay: w.interval,
-      projectiles: weaponId === "daggers" ? 2 : 1,
+      projectiles: w.projectiles ?? 1,
       cooldown: 0.3,
       range: w.range,
       speed: w.speed,
@@ -267,6 +277,7 @@ export function togglePause(g: Game) {
 export function snapshot(g: Game): Snapshot {
   const boss = g.enemies.find((e) => e.kind === "boss");
   return {
+    equippedWeapon: g.equippedWeapon,
     runId: g.id,
     statuses: g.campaign
       ? [
@@ -299,6 +310,7 @@ export function snapshot(g: Game): Snapshot {
     weaponId: g.weaponId,
     damage: g.weapon.damage,
     interval: g.weapon.delay,
+    range: attackRange(attackDefinition(g), g.weapon.range, g.weapon.area),
     crit: g.weapon.crit,
     stacks: { ...g.stacks },
     boss: boss
@@ -362,7 +374,7 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
   const w = g.weapon;
   switch (id) {
     case "power":
-      w.damage += WEAPONS[g.weaponId].damage * 0.25;
+      w.damage += attackDefinition(g).damage * 0.25;
       break;
     case "rapid":
       w.delay *= 0.88;
@@ -384,11 +396,13 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
       w.projectiles++;
       break;
     case "velocity":
-      w.speed += WEAPONS[g.weaponId].speed * 0.2;
+      if (["slash", "sweep"].includes(attackDefinition(g).kind ?? ""))
+        w.range += attackDefinition(g).range * 0.08;
+      else w.speed += attackDefinition(g).speed * 0.2;
       break;
     case "area":
       w.area += 0.2;
-      w.range += WEAPONS[g.weaponId].range * 0.08;
+      w.range += attackDefinition(g).range * 0.08;
       break;
     case "regen":
       g.regen += 0.5;
@@ -595,9 +609,17 @@ function addBullet(g: Game, b: Bullet) {
 }
 function shoot(g: Game) {
   const w = g.weapon,
-    p = g.player;
+    p = g.player,
+    attack = attackDefinition(g);
   let target: Enemy | undefined,
-    min = (w.range * (g.weaponId === "frost" ? w.area : 1)) ** 2;
+    min =
+      (w.range *
+        (attack.kind === "pulse" ||
+        attack.kind === "slash" ||
+        attack.kind === "sweep"
+          ? w.area
+          : 1)) **
+      2;
   for (const e of g.enemies) {
     const d = dist2(e, p);
     if (e.hp > 0 && d < min) {
@@ -607,7 +629,55 @@ function shoot(g: Game) {
   }
   if (!target) return;
   p.angle = Math.atan2(target.y - p.y, target.x - p.x);
-  const color = Number.parseInt(WEAPONS[g.weaponId].color.slice(1), 16);
+  p.facing = facingFromAngle(p.angle);
+  p.attackUntil = g.time + 0.22;
+  p.attackAngle = p.angle;
+  const color = Number.parseInt(attack.color.slice(1), 16);
+  if (attack.kind === "slash" || attack.kind === "sweep") {
+    const radius = w.range * w.area,
+      arc = Math.min(Math.PI * 2, (attack.arc ?? 1.8) * Math.sqrt(w.area));
+    feedback(
+      g,
+      "slash",
+      p.x,
+      p.y,
+      color,
+      radius,
+      p.angle,
+      false,
+      p.x,
+      p.y,
+      arc,
+    );
+    for (const enemy of g.enemies) {
+      if (enemy.hp <= 0 || dist2(enemy, p) > (radius + enemy.r) ** 2) continue;
+      const angle = Math.atan2(enemy.y - p.y, enemy.x - p.x),
+        difference = Math.atan2(
+          Math.sin(angle - p.angle),
+          Math.cos(angle - p.angle),
+        );
+      if (Math.abs(difference) > arc / 2) continue;
+      const critical = g.rng() < w.crit;
+      damage(
+        g,
+        enemy,
+        w.damage *
+          (1 + (w.projectiles - 1) * 0.15) *
+          (critical ? w.critDamage : 1),
+        critical,
+      );
+      if (attack.kind === "sweep")
+        feedback(g, "burn", enemy.x, enemy.y, color, 14);
+    }
+    emit(
+      g,
+      p.x + Math.cos(p.angle) * radius * 0.6,
+      p.y + Math.sin(p.angle) * radius * 0.6,
+      attack.color,
+      7,
+    );
+    return;
+  }
   feedback(
     g,
     g.weaponId === "daggers"
@@ -623,7 +693,7 @@ function shoot(g: Game) {
     g.weaponId === "frost" ? w.range * w.area : 36,
     p.angle,
   );
-  if (g.weaponId === "frost") {
+  if (attack.kind === "pulse" || g.weaponId === "frost") {
     const radius = w.range * w.area;
     text(g, p.x, p.y, String(radius), false, "pulse", "#b5f1ec");
     for (const e of g.enemies)
@@ -653,17 +723,17 @@ function shoot(g: Game) {
       r: g.weaponId === "fire" ? 7 : 4,
       life: w.range / w.speed,
       damage: w.damage * (crit ? w.critDamage : 1),
-      color: WEAPONS[g.weaponId].color,
-      blast: g.weaponId === "fire" ? 64 * w.area : 0,
+      color: attack.color,
+      blast: (attack.blast ?? 0) * w.area,
       critical: crit,
-      sprite: WEAPONS[g.weaponId].icon,
+      sprite: attack.icon,
     });
   }
   emit(
     g,
     p.x + Math.cos(p.angle) * 16,
     p.y + Math.sin(p.angle) * 16,
-    WEAPONS[g.weaponId].color,
+    attack.color,
     3,
   );
 }
@@ -854,7 +924,10 @@ export function updateGame(
   p.moving = Math.abs(mx) + Math.abs(my) > 0.01;
   p.x += mx * p.speed * step;
   p.y += my * p.speed * step;
-  if (p.moving) p.angle = Math.atan2(my, mx);
+  if (p.moving) {
+    p.angle = Math.atan2(my, mx);
+    if ((p.attackUntil ?? 0) <= g.time) p.facing = facingFromAngle(p.angle);
+  }
   resolveObstacles(g, p);
   environmentStep(g, step, {
     hurt: (amount, from) => hurt(g, amount, from),
@@ -1171,7 +1244,17 @@ export function advanceEffects(g: Game, step: number) {
 /** The same derived build used by the character screen feeds the simulation once per change. */
 export function applyBuild(g: Game, base: CharacterStats, fullHealth = false) {
   g.build = base;
-  const s = temporaryStats(base, g.weaponId, g.stacks, g.focus > 0);
+  if (fullHealth && g.equippedWeapon) {
+    g.weapon.range = g.equippedWeapon.attack.range;
+    g.weapon.speed = g.equippedWeapon.attack.speed;
+  }
+  const s = temporaryStats(
+    base,
+    g.weaponId,
+    g.stacks,
+    g.focus > 0,
+    attackDefinition(g),
+  );
   Object.assign(g.player, { maxHp: s.maxHp, speed: s.speed, armor: s.armor });
   g.player.hp = fullHealth ? s.maxHp : Math.min(g.player.hp, s.maxHp);
   Object.assign(g.weapon, {
@@ -1183,4 +1266,7 @@ export function applyBuild(g: Game, base: CharacterStats, fullHealth = false) {
     area: s.area,
   });
   g.regen = s.regen;
+}
+export function attackDefinition(g: Game) {
+  return g.equippedWeapon?.attack ?? WEAPONS[g.weaponId];
 }

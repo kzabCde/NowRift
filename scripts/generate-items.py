@@ -1,7 +1,8 @@
 """Original NowRift item atlas, CC0. Reference sheets are inspiration, never copied."""
 from PIL import Image,ImageDraw
 from pathlib import Path
-import math,random
+import math,random,importlib.util
+_spec=importlib.util.spec_from_file_location('character_art',Path(__file__).with_name('character-art.py'));_art=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(_art)
 out=Path('public/assets/items');out.mkdir(parents=True,exist_ok=True)
 atlas=Image.new('RGBA',(256,192))
 palettes=[('#b6c4a5','#7fae83','#4a695e'),('#d6b875','#ecce88','#866043'),('#a8c7d8','#84e5ec','#4f748f'),('#b19aaf','#f3a459','#644c65')]
@@ -10,10 +11,7 @@ for index in range(48):
  if index<24:
   world=index//6;slot=index%6;metal,gem,dark=palettes[world]
   if slot==0:
-   if world in (0,2):
-    d.line((7,27,23,7),fill='#352a2b',width=5);d.line((8,26,23,8),fill='#a48860',width=3);d.polygon([(17,8),(19,2),(25,2),(29,8),(25,14),(20,12)],fill=dark);d.polygon([(20,7),(23,3),(26,7),(24,12)],fill=gem);d.point((23,5),fill='#eff8d9');d.line((14,18,18,20),fill=metal,width=2)
-   else:
-    d.polygon([(7,25),(10,19),(22,3),(27,2),(27,7),(13,22)],fill=dark);d.polygon([(12,18),(24,4),(25,6),(15,20)],fill=metal);d.line((10,18,17,24),fill=gem,width=3);d.line((6,28,11,23),fill='#aa8054',width=3)
+   im=_art.weapon(world)
   elif slot==1:
    d.polygon([(9,5),(13,7),(19,7),(23,5),(29,11),(24,15),(23,27),(9,27),(8,15),(3,11)],fill=dark);d.polygon([(10,8),(13,10),(19,10),(22,8),(23,24),(9,24)],fill=metal);d.polygon([(16,11),(20,16),(16,22),(12,16)],fill=dark);d.line((11,26,22,26),fill=gem,width=2);d.line((5,9,9,7),fill=gem,width=2);d.line((23,7,27,10),fill=gem,width=2)
   elif slot==2:

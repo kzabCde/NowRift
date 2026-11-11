@@ -3,7 +3,8 @@ Requires Pillow only when regenerating. Generated PNGs are committed.
 """
 from PIL import Image, ImageDraw
 from pathlib import Path
-import random, math
+import random, math, importlib.util
+_spec=importlib.util.spec_from_file_location('character_art', Path(__file__).with_name('character-art.py')); _art=importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_art)
 out=Path('public/assets/forest');out.mkdir(parents=True,exist_ok=True)
 def rect(d,box,c):d.rectangle(tuple(round(v) for v in box),fill=c)
 def sprite(kind,frame):
@@ -11,6 +12,7 @@ def sprite(kind,frame):
     im=Image.new('RGBA',(size,size));d=ImageDraw.Draw(im)
     bob=[0,-1,0,1,0,0,2,4,-1,0][frame]; cx=size//2; cy=size//2+bob
     dead=6<=frame<=7
+    if kind=='player' and dead: return _art.body('wanderer','moss','down',10 if frame==6 else 11)
     if dead:
         if kind=='player':
             rect(d,(8,22,25,25),'#273c40');rect(d,(11,20,24,23),'#7e4748');rect(d,(8,19,13,22),'#c7b8a2')
@@ -18,16 +20,7 @@ def sprite(kind,frame):
             d.ellipse((cx-10,cy+3,cx+11,cy+9),fill='#364b38');rect(d,(cx-7,cy+3,cx+5,cy+5),'#8b9b64')
         return im
     if kind=='player':
-        rect(d,(11,cy+5,14,cy+12),'#253441');rect(d,(18,cy+5,21,cy+12),'#253441')
-        if frame in (1,3):rect(d,(10,cy+10,15,cy+12),'#9c8970');rect(d,(18,cy+9,22,cy+11),'#9c8970')
-        else:rect(d,(10,cy+11,15,cy+13),'#a39074');rect(d,(18,cy+11,22,cy+13),'#a39074')
-        d.polygon([(9,cy-5),(20,cy-6),(24,cy+8),(16,cy+10),(8,cy+7)],fill='#723f45')
-        rect(d,(10,cy-4,22,cy+5),'#273e49');rect(d,(12,cy-4,20,cy+4),'#7f8d86');rect(d,(14,cy-3,21,cy-1),'#bdc4ac')
-        rect(d,(12,cy+4,21,cy+6),'#b49c65');rect(d,(16,cy+4,18,cy+6),'#ebca84')
-        rect(d,(11,cy-12,21,cy-5),'#273744');rect(d,(13,cy-11,21,cy-5),'#bcb7a2');rect(d,(12,cy-12,20,cy-9),'#657d80')
-        rect(d,(14,cy-7,20,cy-5),'#263c44');rect(d,(19,cy-7,21,cy-7),'#b7eddf')
-        rect(d,(7,cy-3,10,cy+3),'#b9b99e');rect(d,(22,cy-3,25,cy+2),'#b9b99e')
-        x=27 if frame==4 else 25;rect(d,(x,cy-7,x+1,cy+8),'#755b40');rect(d,(x-2,cy-9,x+3,cy-6),'#b5e3dc');rect(d,(x,cy-11,x+1,cy-5),'#e2fff0')
+        return _art.body('wanderer','moss','down',[0,2,3,4,6,8,10,11,1,5][frame])
     elif kind=='slime':
         d.ellipse((6,cy-6,26,cy+10),fill='#243d34');d.ellipse((7,cy-7,25,cy+7),fill='#67895b');rect(d,(10,cy-6,19,cy-3),'#a0b97a');rect(d,(7,cy+7,26,cy+9),'#344f3d')
         rect(d,(12,cy,13,cy+2),'#152b2b');rect(d,(20,cy,21,cy+2),'#152b2b');rect(d,(13,cy,13,cy),'#d4e7b2')

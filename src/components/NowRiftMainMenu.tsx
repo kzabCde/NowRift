@@ -8,7 +8,13 @@ import { profileRepository } from "@/game/persistence/repository";
 import type { SaveData } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import { enterPreferredFullscreen } from "@/game/persistence/display";
-import { practiceLoadout, characterLevel } from "@/game/rpg/stats";
+import {
+  practiceLoadout,
+  characterLevel,
+  resolveEquippedWeapon,
+} from "@/game/rpg/stats";
+import CharacterPreview from "./CharacterPreview";
+import EquippedWeapon from "./EquippedWeapon";
 import RpgScreen from "./RpgScreen";
 import LanguageSwitcher from "./LanguageSwitcher";
 import Image from "next/image";
@@ -33,7 +39,11 @@ import {
 import NowRiftGame from "./NowRiftGame";
 import PwaControls from "./PwaControls";
 import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
-import { WEAPONS, type WeaponId } from "@/game/content/forest";
+import {
+  WEAPONS,
+  PRACTICE_WEAPONS,
+  type WeaponId,
+} from "@/game/content/forest";
 import { runRepository } from "@/game/services/saves";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
@@ -221,8 +231,8 @@ export default function NowRiftMainMenu() {
           <LanguageSwitcher compact />
         </header>
         <WorldMap
-          weapon={weapon}
           character={character}
+          onInventory={() => setScreen("rpg")}
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
             setReturnHaven(false);
@@ -404,9 +414,12 @@ export default function NowRiftMainMenu() {
               </button>
             </nav>
             <div className="wanderer-card">
-              <span
-                className={`portrait character-${character}`}
-                aria-hidden="true"
+              <CharacterPreview
+                character={character}
+                outfit={progress.local?.world?.outfit ?? "moss"}
+                weapon={resolveEquippedWeapon(progress, character)}
+                size={64}
+                decorative
               />
               <span className="eyebrow">{t("main", "LOCAL ADVENTURER")}</span>
               <strong>{text(CHARACTERS[character].name)}</strong>
@@ -493,14 +506,24 @@ export default function NowRiftMainMenu() {
                 <span className="eyebrow">
                   {t("main", "YOUR STARTING COMPANION")}
                 </span>
-                <h3>{t("main", "Choose your weapon")}</h3>
+                <h3>{t("equipment", "Practice skills")}</h3>
               </div>
               <span className="muted">
                 {t("main", "Each path plays differently.")}
               </span>
             </div>
+            <EquippedWeapon
+              weapon={resolveEquippedWeapon(progress, character)}
+              onInventory={() => setScreen("rpg")}
+            />
+            <p className="muted">
+              {t(
+                "equipment",
+                "Temporary practice skills do not equip items. Your inventory weapon controls campaign combat.",
+              )}
+            </p>
             <div className="weapon-grid">
-              {(Object.keys(WEAPONS) as WeaponId[]).map((id) => {
+              {PRACTICE_WEAPONS.map((id) => {
                 const w = WEAPONS[id];
                 return (
                   <button
@@ -522,8 +545,8 @@ export default function NowRiftMainMenu() {
                     <small>{text(w.description)}</small>
                     <span className="weapon-footer">
                       {weapon === id
-                        ? t("main", "EQUIPPED")
-                        : t("main", "SELECT WEAPON")}
+                        ? t("equipment", "ACTIVE PRACTICE SKILL")
+                        : t("equipment", "CHOOSE PRACTICE SKILL")}
                       <span>{weapon === id ? "✓" : "+"}</span>
                     </span>
                   </button>
@@ -628,6 +651,8 @@ export default function NowRiftMainMenu() {
       {characterOpen && (
         <CharacterSelection
           selected={character}
+          weapon={resolveEquippedWeapon(progress, character)}
+          outfit={progress.local?.world?.outfit ?? "moss"}
           onSelect={(id) => {
             setCharacter(id);
             try {
