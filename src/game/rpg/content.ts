@@ -107,6 +107,12 @@ const names = [
     "Sovereign’s Heart",
   ],
 ];
+const WEAPON_ITEMS: NonNullable<ItemDefinition["weapon"]>[] = [
+  { family: "staff", attack: "arcane", frame: 0 },
+  { family: "sword", attack: "slash", frame: 1 },
+  { family: "scepter", attack: "frost", frame: 2 },
+  { family: "glaive", attack: "sweep", frame: 3 },
+];
 export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
   [
     ...WORLDS.flatMap((w, wi) =>
@@ -117,6 +123,7 @@ export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
         slot,
         icon: wi * 6 + i,
         primary: primary[slot],
+        ...(slot === "weapon" ? { weapon: WEAPON_ITEMS[wi] } : {}),
         description: `${w.name} ${slot}. A permanent companion for campaign runs.`,
       })),
     ),

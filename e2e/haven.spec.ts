@@ -150,12 +150,14 @@ test.describe("instrumented open-world integration", () => {
     await haven(page);
     const before = await save(page);
     await place(page, "training");
-    await page.getByRole("button", { name: "Fire Orb", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Test equipped weapon", exact: true })
+      .click();
     await expect
       .poll(async () => {
         const value = await page
           .getByRole("dialog", { name: "Training Grounds" })
-          .locator("strong")
+          .locator(".haven-training > strong")
           .textContent();
         return Number(value?.split(":").at(-1));
       })

@@ -20,8 +20,10 @@ import {
   calculateStats,
   campaignLoadout,
   characterLevel,
+  resolveEquippedWeapon,
 } from "@/game/rpg/stats";
-import { WEAPONS } from "@/game/content/forest";
+import CharacterPreview from "./CharacterPreview";
+import EquippedWeapon from "./EquippedWeapon";
 import { audio } from "@/game/audio/engine";
 import { storageError } from "@/game/persistence/status";
 import { useI18n } from "@/i18n/useI18n";
@@ -123,7 +125,7 @@ export default function HavenGame({
           position: w.position,
           outfit: w.outfit,
           character: next.local.character,
-          damage: calculateStats(next).damage,
+          weapon: resolveEquippedWeapon(next),
         });
         if (w.tutorial) setPanel("tutorial");
       })
@@ -211,6 +213,14 @@ export default function HavenGame({
       locked: panel !== null || busy || !!error || !!rendererError || !revealed,
     });
   }, [panel, busy, error, rendererError, revealed, bridge, ready]);
+  useEffect(() => {
+    if (p && ready)
+      bridge.emit("command", {
+        type: "haven-equipment",
+        character: p.local.character,
+        weapon: resolveEquippedWeapon(p),
+      });
+  }, [p, ready, bridge]);
   const close = useCallback(() => {
     setPanels((previous) => previous.slice(0, -1));
     void reload().catch((e) => setError(storageError(e)));
@@ -265,6 +275,12 @@ export default function HavenGame({
   }
   async function travel(selection: StageSelection) {
     if (busyRef.current || !p) return;
+    if (!resolveEquippedWeapon(p)) {
+      setError(
+        t("equipment", "Equip a weapon in Inventory before entering a stage."),
+      );
+      return;
+    }
     const reason = travelReason(selection, p.clears);
     if (reason) {
       setError(reason);
@@ -278,11 +294,12 @@ export default function HavenGame({
         returnTo: "haven",
         startingHp: next.local.world!.hp,
         outfit: next.local.world!.outfit,
-        ...campaignLoadout(next, next.local.weapon, next.local.character),
+        ...campaignLoadout(next),
       });
     }
   }
   const w = p?.local.world,
+    equipped = p ? resolveEquippedWeapon(p) : null,
     stats = p ? calculateStats(p, p.local.weapon, p.local.character) : null,
     near = LANDMARKS.find((l) => l.id === hud.near),
     stationTab =
@@ -373,12 +390,15 @@ export default function HavenGame({
         </div>
       </header>
       <aside className="haven-status" aria-label={j("Rift Heaven")}>
-        <span
-          className="haven-portrait"
-          style={{
-            backgroundImage: `url(/assets/haven/player-${w?.outfit ?? "moss"}.png)`,
-          }}
-        />
+        {p && (
+          <CharacterPreview
+            character={p.local.character}
+            outfit={w?.outfit ?? "moss"}
+            weapon={equipped}
+            size={56}
+            decorative
+          />
+        )}
         <div>
           <strong>{p?.local.name ?? "…"}</strong>
           <small>
@@ -501,16 +521,6 @@ export default function HavenGame({
           save={p}
           onClose={close}
           onMenu={() => void leave()}
-          busy={busy}
-          onWeapon={(weapon) => {
-            void action({
-              type: "weapon",
-              writer: writer.current,
-              weapon,
-            }).then((next) => {
-              if (next) onChanged(next);
-            });
-          }}
           onAction={(name) => setPanels(["sanctuary", name])}
         />
       )}
@@ -600,8 +610,8 @@ export default function HavenGame({
           onClose={close}
         >
           <WorldMap
-            weapon={p!.local.weapon}
             character={p!.local.character}
+            onInventory={() => setPanels(["portal", "campaign", "storage"])}
             onBack={() => setPanel("portal")}
             onStart={(s) => void travel(s)}
           />
@@ -751,6 +761,12 @@ export default function HavenGame({
             {panel === "portal" && (
               <>
                 <h2>{h("Travel through the rift")}</h2>
+                {!equipped && (
+                  <EquippedWeapon
+                    weapon={null}
+                    onInventory={() => setPanels(["portal", "storage"])}
+                  />
+                )}
                 <p>
                   {h(
                     "The first forest expedition is ready. Other biomes retain their campaign challenges.",
@@ -835,6 +851,7 @@ export default function HavenGame({
                   className="primary-button"
                   disabled={
                     busy ||
+                    !equipped ||
                     !!(p && lockedReason(FARM.stageId, difficulty, p.clears))
                   }
                   onClick={() =>
@@ -866,12 +883,14 @@ export default function HavenGame({
             {panel === "wardrobe" && (
               <>
                 <h2>{h("Change appearance")}</h2>
-                <div
-                  className="haven-wardrobe-preview"
-                  style={{
-                    backgroundImage: `url(/assets/haven/player-${outfit}.png)`,
-                  }}
-                />
+                {p && (
+                  <CharacterPreview
+                    character={p.local.character}
+                    outfit={outfit}
+                    weapon={equipped}
+                    size={144}
+                  />
+                )}
                 <p>{h("Cloak palette")}</p>
                 <div className="haven-outfits">
                   {OUTFITS.map((o) => (
@@ -977,27 +996,17 @@ export default function HavenGame({
                 <strong>
                   {h("Damage dealt")}: {Math.round(hud.training)}
                 </strong>
-                <div className="haven-outfits">
-                  {Object.entries(WEAPONS).map(([id, weapon]) => (
-                    <button
-                      key={id}
-                      onClick={() =>
-                        p &&
-                        bridge.emit("command", {
-                          type: "haven-test",
-                          weapon: id as keyof typeof WEAPONS,
-                          build: calculateStats(
-                            p,
-                            id as keyof typeof WEAPONS,
-                            p.local.character,
-                          ),
-                        })
-                      }
-                    >
-                      {text(weapon.name)}
-                    </button>
-                  ))}
-                </div>
+                <EquippedWeapon
+                  weapon={equipped}
+                  onInventory={() => setPanels(["training", "storage"])}
+                />
+                <button
+                  className="primary-button"
+                  disabled={!equipped}
+                  onClick={() => bridge.emit("command", { type: "haven-test" })}
+                >
+                  {t("equipment", "Test equipped weapon")}
+                </button>
               </div>
             )}
             {panel === "pause" && (

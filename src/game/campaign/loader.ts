@@ -1,10 +1,13 @@
-import type { CharacterStats, Rarity } from "../rpg/model";
+import type { CharacterStats, Rarity, WeaponSnapshot } from "../rpg/model";
+import type { CharacterId } from "../loadout";
 import { makeGame, beginGame, applyBuild } from "../engine";
 import type { WeaponId } from "../content/forest";
 import { stageById, seeded, type DifficultyId } from "./content";
 import { lockedReason } from "./progression";
 import { stageRuntime } from "./runtime";
 export type StageSelection = {
+  character?: CharacterId;
+  weaponSnapshot?: WeaponSnapshot;
   activity?: "farming";
   returnTo?: "haven";
   startingHp?: number;
@@ -27,7 +30,15 @@ export function loadStage(
   );
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
-    g = makeGame(1800, 1400, weapon, seeded(selection.seed));
+    g = makeGame(
+      1800,
+      1400,
+      selection.weaponSnapshot?.attackId ?? weapon,
+      seeded(selection.seed),
+    );
+  g.character = selection.character ?? "wanderer";
+  if (selection.weaponSnapshot)
+    g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
   if (selection.activity === "farming") {
     if (selection.stageId !== "forest-1")
@@ -36,7 +47,9 @@ export function loadStage(
     g.campaign.harvested = [];
   }
   g.obstacles = g.campaign.map.props;
-  if (selection.build) applyBuild(g, selection.build, true);
+  if (selection.weaponSnapshot)
+    applyBuild(g, selection.weaponSnapshot.stats, true);
+  else if (selection.build) applyBuild(g, selection.build, true);
   g.appearance = selection.appearance;
   beginGame(g);
   if (selection.startingHp !== undefined)

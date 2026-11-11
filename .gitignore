@@ -41,3 +41,6 @@ next-env.d.ts
 
 # Local analysis and captures
 /work/
+
+# Procedural art generator cache
+__pycache__/

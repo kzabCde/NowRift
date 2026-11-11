@@ -9,6 +9,7 @@ on:
         fix/gameplay-stability-mobile,
         "codex/**",
         feature/character-first-rift-heaven,
+        feature/character-weapon-decoupling,
       ]
 
 jobs:

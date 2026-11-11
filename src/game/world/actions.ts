@@ -1,9 +1,8 @@
-import { calculateStats } from "../rpg/stats";
+import { calculateStats, resolveEquippedWeapon } from "../rpg/stats";
 import { grantGift } from "../persistence/daily";
 import type { SaveData } from "../persistence/model";
 import { HAVEN, LANDMARKS, near, validPosition } from "./content";
 import { OUTFITS, type WorldCommand } from "./save";
-import { WEAPONS } from "../content/forest";
 export function applyWorldCommand(
   p: SaveData,
   command: WorldCommand,
@@ -59,12 +58,7 @@ export function applyWorldCommand(
     return;
   }
   if (command.type === "weapon") {
-    if (p.local.activeRun || p.local.checkpoint)
-      throw new Error("Recover or discard the saved run before travelling.");
-    if (!Object.hasOwn(WEAPONS, command.weapon))
-      throw new Error("Invalid character loadout.");
-    p.local.weapon = command.weapon;
-    return;
+    throw new Error("Choose an owned weapon in Inventory.");
   }
   if (command.type === "accept") {
     if (w.quest === "available")
@@ -107,6 +101,8 @@ export function applyWorldCommand(
     return;
   }
   if (command.type === "travel") {
+    if (!resolveEquippedWeapon(p))
+      throw new Error("Equip a weapon in Inventory before entering a stage.");
     if (!near(w.position, LANDMARKS.find((l) => l.id === "portal")!.entrance))
       throw new Error("Move closer to interact.");
     if (p.local.checkpoint || p.local.activeRun)

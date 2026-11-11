@@ -6,7 +6,6 @@ import {
 import type { RunOwner } from "../persistence/model";
 import { seeded } from "../campaign/content";
 import { applyBuild } from "../engine";
-import { RARITIES } from "../rpg/content";
 import { translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
 import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
@@ -15,6 +14,8 @@ import { audio } from "../audio/engine";
 import type { SoundId } from "../audio/palette";
 import { FARM } from "../world/content";
 import { onSceneEnd } from "./lifecycle";
+import { CharacterRig } from "./character-rig";
+import { bodyKey, facingFromAngle } from "../presentation/character";
 import { farmPrompt } from "../world/farming";
 import { ITEMS } from "../rpg/content";
 import { drainFeedback, type Feedback } from "../feedback";
@@ -63,6 +64,20 @@ export class PreloadScene extends Phaser.Scene {
   }
   preload() {
     const bridge = this.registry.get("bridge") as GameBridge;
+    for (const character of Object.keys(
+      CHARACTERS,
+    ) as (keyof typeof CHARACTERS)[])
+      for (const outfit of ["moss", "ember", "tide"] as const)
+        this.load.spritesheet(
+          bodyKey(character, outfit),
+          `/assets/characters/${character}-${outfit}.png`,
+          { frameWidth: 32, frameHeight: 32 },
+        );
+    this.load.spritesheet(
+      "equipment-weapons",
+      "/assets/characters/weapons.png",
+      { frameWidth: 32, frameHeight: 32 },
+    );
     for (const outfit of ["moss", "ember", "tide"])
       this.load.spritesheet(
         "haven-player-" + outfit,
@@ -177,7 +192,8 @@ export class PreloadScene extends Phaser.Scene {
 }
 /** Recycled Phaser images/texts: no GameObject allocation in the update loop after warmup. */
 class ForestRenderer {
-  player: Phaser.GameObjects.Image;
+  player: Phaser.GameObjects.Container;
+  rig: CharacterRig;
   enemies: Phaser.GameObjects.Image[] = [];
   bullets: Phaser.GameObjects.Image[] = [];
   drops: Phaser.GameObjects.Image[] = [];
@@ -196,8 +212,6 @@ class ForestRenderer {
   lastShake = -1000;
   world = "forest";
   lastHp = 100;
-  aura: Phaser.GameObjects.Graphics;
-  gear: Phaser.GameObjects.Image;
   skin = "";
   constructor(
     private scene: Phaser.Scene,
@@ -257,14 +271,8 @@ class ForestRenderer {
     const border = scene.add.graphics().setDepth(-90);
     border.lineStyle(14, 0x142c26, 0.8);
     border.strokeRect(9, 9, FOREST.width - 18, FOREST.height - 18);
-    this.aura = scene.add.graphics();
-    this.gear = scene.add.image(0, 0, "items", 0).setVisible(false);
-    const outfit = scene.registry.get("outfit"),
-      skin =
-        outfit && scene.textures.exists("haven-player-" + outfit)
-          ? "haven-player-" + outfit
-          : "player";
-    this.player = scene.add.image(900, 700, skin).setScale(2);
+    this.rig = new CharacterRig(scene, 2);
+    this.player = this.rig.root;
     this.health = scene.add.graphics();
     this.telegraphs = scene.add.graphics().setDepth(8500);
     this.joystick = scene.add.graphics().setScrollFactor(0).setDepth(9000);
@@ -372,39 +380,28 @@ class ForestRenderer {
         (camera.height / 2) * (1 - 1 / camera.zoom),
       )
       .setDisplaySize(camera.width / camera.zoom, camera.height / camera.zoom);
-    this.player
-      .setPosition(g.player.x, g.player.y)
-      .setDepth(g.player.y + 2)
-      .setFlipX(Math.cos(g.player.angle) < 0)
-      .setAlpha(
-        g.player.invincible > 0 && Math.floor(this.tick / 70) % 2 === 0
-          ? 0.5
-          : 1,
-      );
-    let playerFrame =
-      g.player.hp <= 0
-        ? 6 + Math.min(1, Math.floor(this.tick / 200) % 2)
-        : g.player.hit > 0
-          ? 5
-          : g.weapon.cooldown > g.weapon.delay - 0.14
-            ? 4
-            : g.player.moving
-              ? 1 + (Math.floor(this.tick / 130) % 3)
-              : Math.floor(this.tick / 650) % 2 === 0
-                ? 0
-                : 8;
-    if (!this.scene.textures.get("player").has(String(playerFrame)))
-      playerFrame = 0;
-    this.player.setFrame(
-      this.impactHold > 0 && !reduced && g.player.hp > 0 ? 4 : playerFrame,
-    );
-    this.player.setTint(
-      g.player.hit > 0
-        ? 0xffbab0
-        : g.campaign?.slow
-          ? 0x9cd7ec
-          : CHARACTERS[g.character].tint,
-    );
+    const attack = Math.max(0, (g.player.attackUntil ?? 0) - g.time);
+    this.rig.update({
+      x: g.player.x,
+      y: g.player.y,
+      character: g.character,
+      outfit: this.scene.registry.get("outfit") ?? "moss",
+      weapon: g.equippedWeapon ?? null,
+      practice: g.equippedWeapon ? undefined : g.weaponId,
+      facing:
+        attack > 0
+          ? facingFromAngle(g.player.attackAngle ?? g.player.angle)
+          : (g.player.facing ?? facingFromAngle(g.player.angle)),
+      time: this.tick,
+      moving: g.player.moving,
+      attack,
+      angle: g.player.attackAngle ?? g.player.angle,
+      hit: g.player.hit > 0,
+      invincible: g.player.invincible > 0,
+      dead: g.player.hp <= 0,
+      deathComplete: g.phase === "gameover" && delta === 0,
+      reduced,
+    });
     this.light.setAlpha(0.7 + prefs.glow * 0.3);
     const accent = this.accents.clear();
     const charge = 1 - Math.max(0, g.weapon.cooldown) / g.weapon.delay;
@@ -458,26 +455,6 @@ class ForestRenderer {
       ambient.fillRect(x, y, this.world === "frozen" ? 2 : 3, 2);
     }
     this.lastHp = g.player.hp;
-    this.aura.clear();
-    this.gear.setVisible(!!g.appearance);
-    if (g.appearance) {
-      const color = Phaser.Display.Color.HexStringToColor(
-        RARITIES[g.appearance.rarity].color,
-      ).color;
-      this.aura
-        .setDepth(g.player.y - 2)
-        .lineStyle(1.5, color, 0.65)
-        .strokeEllipse(g.player.x, g.player.y + 19, 34, 13);
-      this.gear
-        .setFrame(g.appearance.icon)
-        .setPosition(
-          g.player.x + (Math.cos(g.player.angle) < 0 ? -18 : 18),
-          g.player.y + 2,
-        )
-        .setScale(0.65)
-        .setDepth(g.player.y + 4)
-        .setFlipX(Math.cos(g.player.angle) < 0);
-    }
 
     const hp = this.health;
     hp.clear().setDepth(7000);
@@ -756,7 +733,8 @@ export class GameScene extends Phaser.Scene {
         : makeGame(FOREST.width, FOREST.height, data.weapon, seeded(this.seed));
     if (!data.checkpoint) {
       if (this.simulation.build)
-        this.simulation.character = data.loadout?.character ?? "wanderer";
+        this.simulation.character =
+          data.stage?.character ?? data.loadout?.character ?? "wanderer";
       else applyLoadout(this.simulation, data.loadout);
     }
     this.lastFrameAt = performance.now();
@@ -926,6 +904,7 @@ export class GameScene extends Phaser.Scene {
         state: () => this.simulation,
         audio: () => audio.diagnostics(),
         effects: () => this.visuals.vfx.count,
+        appearance: () => this.visuals.rig.describe(),
         metrics: () => ({
           frames: this.renderFrames,
           fpsLimit: this.game.loop.fpsLimit,
@@ -1309,6 +1288,7 @@ declare global {
     __NOWRIFT_TEST__?: {
       state: () => Simulation;
       audio?: () => ReturnType<typeof audio.diagnostics>;
+      appearance?: () => ReturnType<CharacterRig["describe"]>;
       effects?: () => number;
       metrics?: () => {
         frames: number;

@@ -1,4 +1,8 @@
 import Phaser from "phaser";
+import { CharacterRig } from "./character-rig";
+import { CombatVfx } from "./combat-vfx";
+import { drainFeedback } from "../feedback";
+import { facingFromAngle, type Facing } from "../presentation/character";
 import { GameBridge, type Command } from "../bridge";
 import {
   HAVEN,
@@ -26,7 +30,11 @@ import {
 export class HavenScene extends Phaser.Scene {
   bridge!: GameBridge;
   startData!: HavenStart;
-  actor!: Phaser.GameObjects.Sprite;
+  actor!: Phaser.GameObjects.Container;
+  rig!: CharacterRig;
+  facing: Facing = "down";
+  trainingEffects!: Phaser.GameObjects.Graphics;
+  trainingVfx!: CombatVfx;
   trainingGame: Game | null = null;
   trainingShots: Phaser.GameObjects.Image[] = [];
   position: Point = { ...HAVEN.spawn };
@@ -67,6 +75,10 @@ export class HavenScene extends Phaser.Scene {
     this.staticSprites = [];
     this.animated = [];
     this.lastSave = 0;
+    this.trainingGame = null;
+    this.trainingShots = [];
+    this.training = 0;
+    this.facing = "down";
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
     this.add
@@ -115,15 +127,10 @@ export class HavenScene extends Phaser.Scene {
     this.ring = this.add.graphics().setDepth(1e5);
     this.ambience = this.add.graphics().setDepth(691);
     this.stick = this.add.graphics().setScrollFactor(0).setDepth(1e6);
-    this.actor = this.add
-      .sprite(
-        this.position.x,
-        this.position.y,
-        "haven-player-" + this.startData.outfit,
-        0,
-      )
-      .setScale(1.6)
-      .setOrigin(0.5, 0.82);
+    this.rig = new CharacterRig(this, 1.6);
+    this.actor = this.rig.root.setPosition(this.position.x, this.position.y);
+    this.trainingEffects = this.add.graphics().setDepth(1e5);
+    this.trainingVfx = new CombatVfx(this);
     this.marker = this.add
       .image(-100, -100, "icons", 0)
       .setScale(1.6)
@@ -287,6 +294,7 @@ export class HavenScene extends Phaser.Scene {
           locked: this.locked,
           session: this.startData.session,
         }),
+        appearance: () => this.rig.describe(),
         place: (p) => {
           if (!validPosition(p)) throw new Error("Blocked test position");
           this.position = { ...p };
@@ -298,9 +306,16 @@ export class HavenScene extends Phaser.Scene {
     this.bridge.emit("ready", true);
   }
   command(c: Command, interact: () => void) {
-    if (c.type === "haven-test" && nearest(this.position)?.id === "training") {
-      const g = makeGame(HAVEN.width, HAVEN.height, c.weapon);
-      applyBuild(g, c.build, true);
+    if (
+      c.type === "haven-test" &&
+      this.startData.weapon &&
+      nearest(this.position)?.id === "training"
+    ) {
+      const equipped = this.startData.weapon;
+      const g = makeGame(HAVEN.width, HAVEN.height, equipped.attackId);
+      g.equippedWeapon = structuredClone(equipped);
+      g.character = this.startData.character;
+      applyBuild(g, equipped.stats, true);
       beginGame(g);
       g.player.x = this.position.x;
       g.player.y = this.position.y;
@@ -316,12 +331,20 @@ export class HavenScene extends Phaser.Scene {
       this.training = 0;
       audio.play("attack");
     }
+    if (c.type === "haven-equipment") {
+      this.startData.character = c.character;
+      this.startData.weapon = c.weapon ? structuredClone(c.weapon) : null;
+      this.trainingGame = null;
+      this.trainingShots.forEach((s) => s.setVisible(false));
+      this.trainingEffects.clear();
+    }
     if (c.type === "haven-lock") {
       this.locked = c.locked;
       this.input.keyboard?.resetKeys();
       if (!c.locked) {
         this.trainingGame = null;
         this.trainingShots.forEach((s) => s.setVisible(false));
+        this.trainingEffects.clear();
       }
       if (c.locked) {
         this.drag = null;
@@ -334,7 +357,6 @@ export class HavenScene extends Phaser.Scene {
     if (c.type === "haven-interact") interact();
     if (c.type === "haven-look") {
       this.startData.outfit = c.outfit;
-      this.actor.setTexture("haven-player-" + c.outfit, 0);
     }
     if (c.type === "haven-locate") {
       const l = LANDMARKS.find((l) => l.id === c.id);
@@ -356,7 +378,12 @@ export class HavenScene extends Phaser.Scene {
       delta = Math.max(0, time - this.lastFrameAt);
     this.lastFrameAt = time;
     const prefs = useSettings.getState(),
-      targetFps = this.locked ? 15 : prefs.quality === "low" ? 30 : 60;
+      targetFps =
+        this.locked && !this.trainingGame
+          ? 15
+          : prefs.quality === "low"
+            ? 30
+            : 60;
     if (time - this.lastAmbience > (prefs.quality === "low" ? 300 : 100)) {
       this.lastAmbience = time;
       this.ambience.clear();
@@ -405,7 +432,15 @@ export class HavenScene extends Phaser.Scene {
         e.speed = 0;
       }
       advanceGame(g, delta / 1000, 0, 0);
-      g.feedback.length = 0;
+      drainFeedback(g, (event) => this.trainingVfx.emit(event, prefs));
+      this.trainingEffects.clear();
+      for (const spark of g.sparks)
+        this.trainingEffects
+          .fillStyle(
+            Number.parseInt(spark.color.slice(1), 16),
+            Math.max(0, 1 - spark.age / spark.life),
+          )
+          .fillRect(spark.x, spark.y, 3, 3);
       this.training = 1e9 - (g.enemies[0]?.hp ?? 0);
       for (let i = 0; i < Math.min(64, g.bullets.length); i++) {
         const b = g.bullets[i];
@@ -415,11 +450,16 @@ export class HavenScene extends Phaser.Scene {
             .image(b.x, b.y, "projectiles", 0)
             .setDepth(1e5)
             .setScale(1.5));
-        image.setPosition(b.x, b.y).setVisible(true);
+        image
+          .setPosition(b.x, b.y)
+          .setFrame(b.sprite ?? 0)
+          .setRotation(Math.atan2(b.vy, b.vx))
+          .setVisible(true);
       }
       for (let i = g.bullets.length; i < this.trainingShots.length; i++)
         this.trainingShots[i].setVisible(false);
     }
+    this.trainingVfx.draw(Math.min(0.1, delta / 1000), prefs);
     const k = this.keys,
       preset = useSettings.getState().keyboard,
       w = preset !== "arrows",
@@ -434,11 +474,23 @@ export class HavenScene extends Phaser.Scene {
         (this.drag?.dy ?? 0);
     this.moving = !this.locked && Math.hypot(x, y) > 0.05;
     if (!this.locked) this.position = move(this.position, x, y, delta / 1000);
-    this.actor
-      .setPosition(this.position.x, this.position.y)
-      .setDepth(this.position.y)
-      .setFrame(this.moving ? 1 + (Math.floor(time / 150) % 3) : 0);
-    if (x) this.actor.setFlipX(x < 0);
+    if (this.moving) this.facing = facingFromAngle(Math.atan2(y, x));
+    const active = this.trainingGame;
+    this.rig.update({
+      x: this.position.x,
+      y: this.position.y,
+      character: this.startData.character,
+      outfit: this.startData.outfit,
+      weapon: this.startData.weapon,
+      facing: active?.player.facing ?? this.facing,
+      time,
+      moving: this.moving,
+      attack: active
+        ? Math.max(0, (active.player.attackUntil ?? 0) - active.time)
+        : 0,
+      angle: active?.player.attackAngle,
+      reduced: prefs.reducedEffects,
+    });
     if (this.moving && time - this.lastStep > 360) {
       audio.play("step");
       this.lastStep = time;
@@ -475,6 +527,7 @@ declare global {
     __NOWRIFT_HAVEN__?: {
       state: () => { position: Point; locked: boolean; session: string };
       place: (p: Point) => void;
+      appearance: () => ReturnType<CharacterRig["describe"]>;
     };
   }
 }

@@ -3,14 +3,21 @@ import { useI18n } from "@/i18n/useI18n";
 import { useState } from "react";
 import { Modal } from "./GameUi";
 import { CHARACTERS, type CharacterId } from "@/game/loadout";
+import CharacterPreview from "./CharacterPreview";
+import type { WeaponSnapshot } from "@/game/rpg/model";
+import type { Outfit } from "@/game/world/save";
 export function CharacterSelection({
   selected,
   onSelect,
   onClose,
+  weapon = null,
+  outfit = "moss",
 }: {
   selected: CharacterId;
   onSelect: (id: CharacterId) => void;
   onClose: () => void;
+  weapon?: WeaponSnapshot | null;
+  outfit?: Outfit;
 }) {
   const { t, text } = useI18n();
   const [preview, setPreview] = useState(selected);
@@ -28,11 +35,7 @@ export function CharacterSelection({
         key={preview}
         style={{ "--character-color": c.color } as React.CSSProperties}
       >
-        <span
-          className={`character-sprite character-${preview}`}
-          role="img"
-          aria-label={`${text(c.name)} ${t("sanctuary", "idle preview")}`}
-        />
+        <CharacterPreview character={preview} outfit={outfit} weapon={weapon} />
         <div>
           <span className="eyebrow">{text(c.title)}</span>
           <h3>{text(c.name)}</h3>
@@ -70,9 +73,9 @@ export function CharacterSelection({
       </div>
       <p className="muted">
         {t(
-          "sanctuary",
-          "Shared original wanderer sprite with class tint. Stats apply at the start of each run. Choose any weapon in the sanctuary.",
-        )}{" "}
+          "equipment",
+          "Distinct body models share the same inventory weapon independently. Choosing a wanderer changes no equipment.",
+        )}
       </p>
       <button
         className="primary-button"

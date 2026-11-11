@@ -9,7 +9,7 @@ import {
 import { seededEquipment } from "./items";
 import { emptyEquipment, addEquipment } from "./inventory";
 import { SLOTS, type RpgState, type EquipmentInstance } from "./model";
-function validEquipment(e: EquipmentInstance) {
+export function validEquipmentInstance(e: EquipmentInstance) {
   return (
     !!e &&
     typeof e.id === "string" &&
@@ -43,7 +43,7 @@ export function validRpg(r: unknown): r is RpgState {
     p.revision < 0 ||
     p.capacity !== 60 ||
     !Array.isArray(p.equipment) ||
-    !p.equipment.every(validEquipment) ||
+    !p.equipment.every(validEquipmentInstance) ||
     new Set(p.equipment.map((e) => e.id)).size !== p.equipment.length ||
     !p.equipped ||
     Object.keys(p.equipped).length !== 6 ||
@@ -98,7 +98,7 @@ export function validRpg(r: unknown): r is RpgState {
       (o) =>
         typeof o.id === "string" &&
         (o.equipment
-          ? validEquipment(o.equipment)
+          ? validEquipmentInstance(o.equipment)
           : ITEMS[o.definitionId!]?.kind !== "equipment" &&
             !!ITEMS[o.definitionId!] &&
             Number.isSafeInteger(o.quantity) &&

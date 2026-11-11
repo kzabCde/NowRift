@@ -1,4 +1,9 @@
 "use client";
+import ItemIcon from "./ItemIcon";
+export { default as ItemIcon } from "./ItemIcon";
+import CharacterPreview from "./CharacterPreview";
+import EquippedWeapon from "./EquippedWeapon";
+import { resolveEquippedWeapon } from "@/game/rpg/stats";
 import {
   useCallback,
   useEffect,
@@ -54,21 +59,6 @@ type Confirm = {
   revision: number;
   content: ReactNode;
 };
-export function ItemIcon({ id, size = 40 }: { id: string; size?: number }) {
-  const icon = ITEMS[id]?.icon ?? 42;
-  return (
-    <span
-      aria-hidden="true"
-      className="rpg-icon"
-      style={{
-        width: size,
-        height: size,
-        backgroundSize: `${size * 8}px ${size * 6}px`,
-        backgroundPosition: `-${(icon % 8) * size}px -${Math.floor(icon / 8) * size}px`,
-      }}
-    />
-  );
-}
 export function formatStat(key: StatKey, value: number) {
   return ["attackSpeed", "critChance", "critDamage", "area"].includes(key)
     ? `${(value * 100).toFixed(1)}%`
@@ -141,7 +131,7 @@ function itemDescription(e: InventoryEntry, text: (value: string) => string) {
 export default function RpgScreen({
   onBack,
   weapon = "arcane",
-  character = "wanderer",
+  character: requestedCharacter = "wanderer",
   initialTab = "inventory",
   focusRecipes = false,
 }: {
@@ -346,6 +336,7 @@ export default function RpgScreen({
         </div>
       </main>
     );
+  const character = profile.local?.character ?? requestedCharacter;
   const r = profile.rpg!,
     stats = calculateStats(profile, weapon, character),
     level = characterLevel(profile.xp),
@@ -707,12 +698,16 @@ export default function RpgScreen({
                   {text("LV")} {level.level}
                 </small>
               </div>
+              <EquippedWeapon
+                weapon={resolveEquippedWeapon(profile, character)}
+              />
               <div className="rpg-paperdoll">
-                <div
-                  className={`rpg-avatar character-${character}`}
-                  style={{
-                    boxShadow: `0 0 65px ${RARITIES[all.find((e) => e.id === r.equipped.weapon)?.equipment?.rarity ?? "common"].color}22`,
-                  }}
+                <CharacterPreview
+                  className="rpg-avatar"
+                  character={character}
+                  outfit={profile.local?.world?.outfit ?? "moss"}
+                  weapon={resolveEquippedWeapon(profile, character)}
+                  size={112}
                 />
                 <div className="rpg-slots">
                   {SLOTS.map((slot) => {
@@ -769,7 +764,7 @@ export default function RpgScreen({
               </div>
               <p className="muted">
                 {text(
-                  "Permanent progression is separate from temporary run levels. Gear applies to your chosen Hub attack style.",
+                  "Permanent progression is separate from temporary run levels. Your equipped inventory weapon determines campaign attacks.",
                 )}
               </p>
               <dl className="rpg-stat-list">

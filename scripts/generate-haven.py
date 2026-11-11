@@ -3,7 +3,8 @@ Reference mood: inhabited woodland town; no reference-image pixels are used.
 """
 from PIL import Image, ImageDraw
 from pathlib import Path
-import random, math
+import random, math, importlib.util
+_spec=importlib.util.spec_from_file_location('character_art', Path(__file__).with_name('character-art.py')); _art=importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_art)
 R = random.Random(815)
 OUT = Path('public/assets/haven'); OUT.mkdir(parents=True, exist_ok=True)
 def save(im, name): im.save(OUT / (name + '.png'))
@@ -126,13 +127,9 @@ for name in ['board','dummy','chest']:
     save(im,name)
 # Original player poses with three authored cloak palettes, shared animation grid.
 source=Image.open('public/assets/forest/player.png').convert('RGBA')
-for name,cloak,trim in [('moss',(79,108,81),(181,195,144)),('ember',(144,73,63),(229,182,108)),('tide',(65,101,125),(160,205,209))]:
-    skin=source.copy();pix=skin.load()
-    for y in range(skin.height):
-        for x in range(skin.width):
-            r,g,b,a=pix[x,y]
-            if (r,g,b)==(114,63,69):pix[x,y]=(*cloak,a)
-            elif (r,g,b)==(180,156,101):pix[x,y]=(*trim,a)
+for name in _art.PALETTES:
+    skin=Image.new('RGBA',(320,32))
+    for frame,pose in enumerate([0,2,3,4,6,8,10,11,1,5]):skin.alpha_composite(_art.body('wanderer',name,'down',pose),(frame*32,0))
     save(skin,'player-'+name)
 save(source,'npc')
 # A separate broadleaf tree kit gives the town a softer, inhabited canopy.

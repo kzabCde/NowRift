@@ -7,7 +7,12 @@ import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import { CHARACTERS, type CharacterId } from "@/game/loadout";
 import { OUTFITS, type Outfit } from "@/game/world/save";
 import { characterName } from "@/game/persistence/identity";
-import { calculateStats, characterLevel } from "@/game/rpg/stats";
+import {
+  calculateStats,
+  characterLevel,
+  resolveEquippedWeapon,
+} from "@/game/rpg/stats";
+import CharacterPreview from "./CharacterPreview";
 import { emptyProgress } from "@/game/campaign/progression";
 import { initializeRpg } from "@/game/rpg/profile";
 import { ITEMS } from "@/game/rpg/content";
@@ -167,13 +172,10 @@ export default function CharacterEntry({
                 { "--soul": CHARACTERS[character].color } as React.CSSProperties
               }
             >
-              <span
-                className="journey-actor"
-                role="img"
-                aria-label={text(CHARACTERS[character].name)}
-                style={{
-                  backgroundImage: `url(/assets/haven/player-${outfit}.png)`,
-                }}
+              <CharacterPreview
+                character={character}
+                outfit={outfit}
+                weapon={resolveEquippedWeapon(base, character)}
               />
               <span className="eyebrow">
                 {text(CHARACTERS[character].title)}
@@ -255,10 +257,12 @@ export default function CharacterEntry({
                       aria-pressed={outfit === id}
                       onClick={() => setOutfit(id)}
                     >
-                      <span
-                        style={{
-                          backgroundImage: `url(/assets/haven/player-${id}.png)`,
-                        }}
+                      <CharacterPreview
+                        character={character}
+                        outfit={id}
+                        weapon={null}
+                        size={40}
+                        decorative
                       />
                       {t(
                         "haven",
@@ -318,11 +322,12 @@ export default function CharacterEntry({
                   aria-pressed={selected === p.local.id}
                   onClick={() => setSelected(p.local.id)}
                 >
-                  <span
-                    className="journey-mini"
-                    style={{
-                      backgroundImage: `url(/assets/haven/player-${p.local.world?.outfit ?? "moss"}.png)`,
-                    }}
+                  <CharacterPreview
+                    character={p.local.character}
+                    outfit={p.local.world?.outfit ?? "moss"}
+                    weapon={resolveEquippedWeapon(p)}
+                    size={64}
+                    decorative
                   />
                   <strong>{p.local.name}</strong>
                   <span>{text(CHARACTERS[p.local.character].name)}</span>

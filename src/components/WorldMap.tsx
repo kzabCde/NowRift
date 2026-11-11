@@ -1,7 +1,12 @@
 "use client";
 import type { CharacterId } from "@/game/loadout";
-import { calculateStats, campaignLoadout } from "@/game/rpg/stats";
-import type { WeaponId } from "@/game/content/forest";
+import {
+  calculateStats,
+  campaignLoadout,
+  resolveEquippedWeapon,
+} from "@/game/rpg/stats";
+import EquippedWeapon from "./EquippedWeapon";
+import CharacterPreview from "./CharacterPreview";
 import { useI18n } from "@/i18n/useI18n";
 import Atmosphere from "./Atmosphere";
 import { audio } from "@/game/audio/engine";
@@ -25,13 +30,13 @@ import type { StageSelection } from "@/game/campaign/loader";
 export default function WorldMap({
   onStart,
   onBack,
-  weapon = "arcane",
   character = "wanderer",
+  onInventory,
 }: {
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
-  weapon?: WeaponId;
   character?: CharacterId;
+  onInventory: () => void;
 }) {
   const { t, text } = useI18n();
   const [world, setWorld] = useState<WorldId>("forest"),
@@ -61,6 +66,7 @@ export default function WorldMap({
     audio.setScene("character", world);
   }, [world]);
   const w = worldById(world),
+    equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
     reason = lockedReason(selected, difficulty, progress.clears);
   return (
@@ -176,6 +182,13 @@ export default function WorldMap({
           </div>
         </div>
         <aside className="campaign-details">
+          <CharacterPreview
+            character={character}
+            outfit={progress.local?.world?.outfit ?? "moss"}
+            weapon={equipped}
+            decorative
+          />
+          <EquippedWeapon weapon={equipped} onInventory={onInventory} />
           <div
             role="img"
             aria-label={text(w.boss.name)}
@@ -220,7 +233,7 @@ export default function WorldMap({
           </p>
           <div className="campaign-wallet">
             {text("YOUR POWER")}{" "}
-            {calculateStats(progress, weapon, character).power}
+            {calculateStats(progress, undefined, character).power}
             <br />
             <span data-testid="campaign-gold">
               {progress.gold} {t("world", "GOLD")}
@@ -245,7 +258,7 @@ export default function WorldMap({
           )}
           <button
             className="primary-button"
-            disabled={!ready || !!reason}
+            disabled={!ready || !!reason || !equipped}
             onClick={() => {
               if (!lockedReason(stage.id, difficulty, progress.clears))
                 onStart({
@@ -253,7 +266,7 @@ export default function WorldMap({
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
-                  ...campaignLoadout(progress, weapon, character),
+                  ...campaignLoadout(progress, undefined, character),
                 });
             }}
           >

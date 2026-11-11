@@ -181,12 +181,12 @@ test("Sanctuary, nested inventory and settings retain the same Phaser world and 
   await expect(panel).toContainText("Rowan");
   await expect(panel.locator(".sanctuary-equipment > div")).toHaveCount(6);
   const beforeWeapon = await data(page);
-  await panel.getByRole("button", { name: "Fire Orb", exact: true }).click();
+  await expect(panel.locator(".equipped-weapon")).toContainText(
+    "Riftwood Staff +0",
+  );
   await expect(
     panel.getByRole("button", { name: "Fire Orb", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect((await data(page)).save.local.weapon).toBe("fire");
-  expect((await data(page)).save.rpg).toEqual(beforeWeapon.save.rpg);
+  ).toHaveCount(0);
   await panel.getByRole("button", { name: /^Open inventory/ }).click();
   await expect(page.locator(".haven-screen-overlay .rpg-page")).toBeVisible();
   await page.locator(".rpg-grid button").first().click();

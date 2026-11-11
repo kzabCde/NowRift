@@ -1,8 +1,18 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v13-journey";
+const VERSION = "nowrift-pwa-v14-equipment";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
+  "/assets/characters/wanderer-moss.png",
+  "/assets/characters/wanderer-ember.png",
+  "/assets/characters/wanderer-tide.png",
+  "/assets/characters/sentinel-moss.png",
+  "/assets/characters/sentinel-ember.png",
+  "/assets/characters/sentinel-tide.png",
+  "/assets/characters/strider-moss.png",
+  "/assets/characters/strider-ember.png",
+  "/assets/characters/strider-tide.png",
+  "/assets/characters/weapons.png",
   "/assets/haven/terrain.png",
   "/assets/haven/fountain.png",
   "/assets/haven/forge.png",
