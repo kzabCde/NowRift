@@ -33,6 +33,12 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import RpgScreen, { ItemIcon } from "./RpgScreen";
 import WorldMap from "./WorldMap";
 import { Brand, Modal, Settings, DialogSurface } from "./GameUi";
+import RiftTransition from "./RiftTransition";
+import SanctuaryPanel from "./SanctuaryPanel";
+import ProfileScreen from "./ProfileScreen";
+import type { RunCheckpoint } from "@/game/persistence/checkpoint";
+import { shortcutAllowed } from "@/game/navigation/flow";
+import { ACTIVITIES } from "@/game/world/activities";
 type Panel =
   | InteractionKind
   | "map"
@@ -41,18 +47,28 @@ type Panel =
   | "pause"
   | "campaign"
   | "tutorial"
+  | "sanctuary"
+  | "directory"
+  | "profile"
   | null;
 export default function HavenGame({
   slotId,
   onMenu,
   onAdventure,
+  onRecovery,
+  returning = false,
+  onChanged,
 }: {
   slotId: string;
   onMenu: (profiles?: boolean) => void;
   onAdventure: (stage: StageSelection) => void;
+  onRecovery: (save: SaveData, checkpoint: RunCheckpoint) => void;
+  returning?: boolean;
+  onChanged: (save: SaveData) => void;
 }) {
   const { t, text } = useI18n(),
-    h = (key: Parameters<typeof t<"haven">>[1]) => t("haven", key);
+    h = (key: Parameters<typeof t<"haven">>[1]) => t("haven", key),
+    j = (key: Parameters<typeof t<"journey">>[1]) => t("journey", key);
   const bridge = useMemo(() => new GameBridge(), []),
     writer = useRef(uid()),
     sequence = useRef(0),
@@ -64,10 +80,15 @@ export default function HavenGame({
     [loading, setLoading] = useState(0),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
-    [panel, setPanel] = useState<Panel>(null),
+    [panels, setPanels] = useState<Exclude<Panel, null>[]>([]),
     [busy, setBusy] = useState(false),
     [outfit, setOutfit] = useState<Outfit>("moss"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal");
+  const panel = panels.at(-1) ?? null;
+  const setPanel = (next: Panel) => setPanels(next ? [next] : []);
+  const [revealed, setRevealed] = useState(false),
+    [rendererError, setRendererError] = useState(""),
+    [attempt, setAttempt] = useState(0);
   const [hud, setHud] = useState<HavenSnapshot>({
     position: { ...HAVEN.spawn },
     near: null,
@@ -153,7 +174,7 @@ export default function HavenGame({
       bridge.on("haven", setHud),
       bridge.on("ready", setReady),
       bridge.on("loading", setLoading),
-      bridge.on("error", setError),
+      bridge.on("error", setRendererError),
       bridge.on("haven-save", savePosition),
       bridge.on("haven-shortcut", (name) =>
         setPanel(
@@ -187,13 +208,56 @@ export default function HavenGame({
   useEffect(() => {
     bridge.emit("command", {
       type: "haven-lock",
-      locked: panel !== null || busy || !!error,
+      locked: panel !== null || busy || !!error || !!rendererError || !revealed,
     });
-  }, [panel, busy, error, bridge, ready]);
+  }, [panel, busy, error, rendererError, revealed, bridge, ready]);
   const close = useCallback(() => {
-    setPanel(null);
+    setPanels((previous) => previous.slice(0, -1));
     void reload().catch((e) => setError(storageError(e)));
   }, [reload]);
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== "h" ||
+        !shortcutAllowed(event, event.target)
+      )
+        return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (panel === "sanctuary") close();
+      else if (
+        ready &&
+        revealed &&
+        !panel &&
+        !busy &&
+        !error &&
+        !rendererError
+      ) {
+        bridge.emit("command", { type: "haven-lock", locked: true });
+        savePosition(current.current.position);
+        setPanels(["sanctuary"]);
+      } else
+        setNotice(
+          t(
+            "journey",
+            "Sanctuary is available while freely exploring Rift Heaven. Close the current activity first.",
+          ),
+        );
+    };
+    window.addEventListener("keydown", keyboard, true);
+    return () => window.removeEventListener("keydown", keyboard, true);
+  }, [
+    panel,
+    ready,
+    revealed,
+    busy,
+    error,
+    rendererError,
+    bridge,
+    close,
+    savePosition,
+    t,
+  ]);
   async function leave(profiles = false) {
     savePosition(current.current.position);
     await pending.current;
@@ -274,23 +338,33 @@ export default function HavenGame({
           "No additional story chapters are included in this foundation release. The twenty campaign challenges remain available at the portal.",
         )}
       </p>
-      <button className="quiet-button" onClick={() => void leave(true)}>
+      <button
+        className="quiet-button"
+        onClick={() => setPanels((previous) => [...previous, "profile"])}
+      >
         {h("Daily objectives and achievements")} →
       </button>
     </>
   );
   return (
-    <main className="haven-page">
+    <main
+      className={`haven-page ${revealed ? "world-revealed" : "world-loading"}`}
+    >
       <div className="haven-canvas">
         {initial && (
-          <PhaserHost bridge={bridge} world="haven" haven={initial} />
+          <PhaserHost
+            key={attempt}
+            bridge={bridge}
+            world="haven"
+            haven={initial}
+          />
         )}
       </div>
       <header className="haven-topbar">
         <Brand />
         <div className="haven-title">
           <span className="eyebrow">{h("SAFE SANCTUARY")}</span>
-          <h1>{h("Rift Haven")}</h1>
+          <h1>{j("Rift Heaven")}</h1>
         </div>
         <div className="haven-toolbar">
           <SaveIndicator />
@@ -298,7 +372,7 @@ export default function HavenGame({
           <button onClick={() => void leave()}>{h("Menu")}</button>
         </div>
       </header>
-      <aside className="haven-status" aria-label={h("Rift Haven")}>
+      <aside className="haven-status" aria-label={j("Rift Heaven")}>
         <span
           className="haven-portrait"
           style={{
@@ -340,16 +414,27 @@ export default function HavenGame({
           )}
         </button>
       )}
-      {!ready && !error && (
-        <div className="haven-loading" role="status">
-          <span className="eyebrow">{h("THE WORLD BETWEEN WORLDS")}</span>
-          <h2>{h("Preparing Rift Haven…")}</h2>
-          <progress
-            max={1}
-            value={loading}
-            aria-label={h("Loading town assets")}
-          />
-        </div>
+      {(!revealed || rendererError) && (
+        <RiftTransition
+          home
+          key={attempt}
+          progress={loading}
+          ready={ready && !!p}
+          error={rendererError || error}
+          returning={returning}
+          onReveal={() => setRevealed(true)}
+          onRetry={() => {
+            if (!rendererError) location.reload();
+            else {
+              setRendererError("");
+              setRevealed(false);
+              setReady(false);
+              setLoading(0);
+              setAttempt((n) => n + 1);
+            }
+          }}
+          onBack={() => onMenu()}
+        />
       )}
       {notice && (
         <button
@@ -368,6 +453,19 @@ export default function HavenGame({
         </div>
       )}
       <nav className="haven-bottom">
+        <button
+          aria-label={j("Sanctuary")}
+          onClick={() => setPanel("sanctuary")}
+        >
+          <span className="sanctuary-pixel" aria-hidden="true" />
+          {j("Sanctuary")} <kbd>H</kbd>
+        </button>
+        <button
+          aria-label={j("Activity Directory")}
+          onClick={() => setPanel("directory")}
+        >
+          {j("Activity Directory")}
+        </button>
         <button aria-label={h("Inventory")} onClick={() => setPanel("storage")}>
           {h("Inventory")} <kbd>I</kbd>
         </button>
@@ -382,7 +480,7 @@ export default function HavenGame({
           {h("Paused")} <kbd>Esc</kbd>
         </button>
       </nav>
-      {ready && !panel && !error && (
+      {ready && revealed && !panel && !error && !rendererError && (
         <div className="haven-context">
           {near ? (
             <button
@@ -398,27 +496,104 @@ export default function HavenGame({
           )}
         </div>
       )}
-      {(panel === "storage" ||
-        panel === "blacksmith" ||
-        panel === "merchant" ||
-        panel === "crafting") && (
+      {revealed && panel === "sanctuary" && p && (
+        <SanctuaryPanel
+          save={p}
+          onClose={close}
+          onMenu={() => void leave()}
+          busy={busy}
+          onWeapon={(weapon) => {
+            void action({
+              type: "weapon",
+              writer: writer.current,
+              weapon,
+            }).then((next) => {
+              if (next) onChanged(next);
+            });
+          }}
+          onAction={(name) => setPanels(["sanctuary", name])}
+        />
+      )}
+      {revealed && panel === "directory" && (
+        <Modal title={j("Activity Directory")} onClose={close}>
+          <span className="eyebrow">
+            {j("Find your way through the city.")}
+          </span>
+          <h2>{j("Activity Directory")}</h2>
+          <p>
+            {j(
+              "Select a location to mark its entrance. Walk there to interact.",
+            )}
+          </p>
+          <div className="activity-directory">
+            {ACTIVITIES.map((activity) => (
+              <article key={activity.id}>
+                <span className="eyebrow">
+                  {text(
+                    LANDMARKS.find((l) => l.id === activity.landmark)!.name,
+                  )}
+                </span>
+                <h3>{j(activity.name)}</h3>
+                <p>{j(activity.description)}</p>
+                <button
+                  onClick={() => {
+                    bridge.emit("command", {
+                      type: "haven-locate",
+                      id: activity.landmark,
+                    });
+                    setPanel(null);
+                  }}
+                >
+                  {j("Mark entrance")} →
+                </button>
+              </article>
+            ))}
+          </div>
+        </Modal>
+      )}
+      {revealed && panel === "profile" && (
         <DialogSurface
           className="haven-screen-overlay"
-          title={text(
-            LANDMARKS.find((l) => l.kind === panel)?.name ?? "Inventory",
-          )}
+          title={j("Daily activities & achievements")}
           onClose={close}
         >
-          <RpgScreen
-            initialTab={stationTab}
-            focusRecipes={panel === "crafting"}
-            weapon={p?.local.weapon}
-            character={p?.local.character}
+          <ProfileScreen
+            initialTab="daily"
             onBack={close}
+            onChanged={(next) => {
+              onChanged(next);
+              if (next.local.id === slotId) setP(next);
+              else void leave(true);
+            }}
+            onResume={(next, checkpoint) => {
+              savePosition(current.current.position);
+              void pending.current.then(() => onRecovery(next, checkpoint));
+            }}
           />
         </DialogSurface>
       )}
-      {panel === "campaign" && (
+      {revealed &&
+        (panel === "storage" ||
+          panel === "blacksmith" ||
+          panel === "merchant" ||
+          panel === "crafting") && (
+          <DialogSurface
+            className="haven-screen-overlay"
+            title={text(
+              LANDMARKS.find((l) => l.kind === panel)?.name ?? "Inventory",
+            )}
+            onClose={close}
+          >
+            <RpgScreen
+              initialTab={stationTab}
+              focusRecipes={panel === "crafting"}
+              weapon={p?.local.weapon}
+              character={p?.local.character}
+              onBack={close}
+            />
+          </DialogSurface>
+        )}
+      {revealed && panel === "campaign" && (
         <DialogSurface
           className="haven-screen-overlay"
           title={h("Campaign challenges")}
@@ -432,8 +607,9 @@ export default function HavenGame({
           />
         </DialogSurface>
       )}
-      {panel === "settings" && <Settings onClose={close} />}
-      {panel &&
+      {revealed && panel === "settings" && <Settings onClose={close} />}
+      {revealed &&
+        panel &&
         ![
           "storage",
           "blacksmith",
@@ -441,6 +617,9 @@ export default function HavenGame({
           "crafting",
           "settings",
           "campaign",
+          "sanctuary",
+          "directory",
+          "profile",
         ].includes(panel) && (
           <Modal
             title={
@@ -470,8 +649,8 @@ export default function HavenGame({
               <>
                 <h2>{h("A place to return to.")}</h2>
                 <p>
-                  {h(
-                    "Walk with WASD or arrow keys. Drag in the world on touch screens. Press E near a doorway or NPC. I opens inventory, M opens the map, and Q opens your journal.",
+                  {j(
+                    "Walk with WASD or arrows, or drag on touch screens. E interacts. I opens inventory, M the map, Q your journal, and H Sanctuary.",
                   )}
                 </p>
                 <button
@@ -493,8 +672,10 @@ export default function HavenGame({
               <>
                 {panel === "npc" && (
                   <p>
-                    {h(
-                      "Welcome, Wanderer. These rifts once joined our worlds. Now they carry a corruption we do not understand. Help me reopen the forest supply route, and you will always have a home here.",
+                    {t(
+                      "journey",
+                      "Welcome, {name}. The rifts once joined our worlds. Help me reopen the forest supply route, and you will always have a home here.",
+                      { name: p?.local.name ?? "…" },
                     )}
                   </p>
                 )}

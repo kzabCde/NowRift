@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { STAGES, WORLDS, DIFFICULTIES } from "../src/game/campaign/content";
 async function atlas(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: "WORLD MAP →", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Worlds beyond the veil." }),

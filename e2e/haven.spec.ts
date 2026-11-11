@@ -24,16 +24,25 @@ async function save(page: Page): Promise<SaveData> {
 }
 async function guest(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await expect(
-    page.getByRole("button", { name: "ENTER RIFT HAVEN →", exact: true }),
+    page.getByRole("button", { name: "ENTER RIFT HEAVEN →", exact: true }),
   ).toBeVisible();
 }
 async function haven(page: Page) {
-  await page
-    .getByRole("button", { name: "ENTER RIFT HAVEN →", exact: true })
-    .click();
+  const legacy = page.getByRole("button", {
+    name: "Practice & legacy tools",
+    exact: true,
+  });
+  const entry = page.getByRole("button", {
+    name: "ENTER RIFT HEAVEN →",
+    exact: true,
+  });
+  await expect(legacy.or(entry)).toBeVisible();
+  if (await legacy.isVisible()) await legacy.click();
+  await entry.click();
   await expect(page.locator(".haven-canvas canvas")).toHaveCount(1);
+  await expect(page.locator(".haven-loading")).toHaveCount(0);
   const tutorial = page.getByRole("button", {
     name: "Begin exploring",
     exact: true,
@@ -57,7 +66,7 @@ async function place(page: Page, id: string) {
 async function close(page: Page) {
   await page.locator(".modal-panel .modal-close").click();
 }
-test("Rift Haven launches with the saved character, real canvas, localized map and journal", async ({
+test("Rift Heaven launches with the saved character, real canvas, localized map and journal", async ({
   page,
 }, info) => {
   const errors: string[] = [];
@@ -185,7 +194,9 @@ test.describe("instrumented open-world integration", () => {
       .toBe(1);
     const checkpoint = (await save(page)).local.checkpoint!;
     await page.reload();
-    await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+    await page
+      .getByRole("button", { name: /^Practice & legacy tools/ })
+      .click();
     await page
       .getByRole("button", { name: "RECOVER RUN →", exact: true })
       .click();
@@ -215,7 +226,7 @@ test.describe("instrumented open-world integration", () => {
       await page.evaluate(() => window.__NOWRIFT_TEST__!.state().player.hp),
     ).toBeLessThan(5);
     await page
-      .getByRole("button", { name: "← MAIN MENU", exact: true })
+      .getByRole("button", { name: "RETURN TO RIFT HEAVEN", exact: true })
       .click();
     await page
       .getByRole("button", { name: "EXIT TO HUB →", exact: true })
@@ -251,7 +262,7 @@ test.describe("instrumented open-world integration", () => {
       expect((await save(other)).rpg).toEqual(before.rpg);
       await page.getByRole("button", { name: "Retry", exact: true }).click();
       await expect(
-        page.getByRole("button", { name: /^CONTINUE AS GUEST/ }),
+        page.getByRole("button", { name: /^Practice & legacy tools/ }),
       ).toBeVisible();
       expect((await save(other)).rpg).toEqual(before.rpg);
     } finally {
@@ -415,7 +426,7 @@ test.describe("instrumented open-world integration", () => {
       g.player.x = 900;
       g.player.y = 760;
     });
-    await page.getByRole("button", { name: /Extract to Rift Haven/ }).click();
+    await page.getByRole("button", { name: /Extract to Rift Heaven/ }).click();
     await expect(
       page.getByRole("heading", { name: "Expedition complete", exact: true }),
     ).toBeVisible();
@@ -426,9 +437,10 @@ test.describe("instrumented open-world integration", () => {
     expect(banked.clears).toEqual(original.clears);
     const receipt = banked.receipts.at(-1)!;
     await page
-      .getByRole("button", { name: "RETURN TO HAVEN", exact: true })
+      .getByRole("dialog", { name: "Victory", exact: true })
+      .getByRole("button", { name: "RETURN TO RIFT HEAVEN", exact: true })
       .click();
-    await expect(page.locator(".haven-title h1")).toHaveText("Rift Haven");
+    await expect(page.locator(".haven-title h1")).toHaveText("Rift Heaven");
     await expect(page.locator("canvas")).toHaveCount(1);
     await place(page, "mara");
     await page
@@ -458,7 +470,9 @@ test.describe("instrumented open-world integration", () => {
       .getByRole("button", { name: "← RETURN TO HUB", exact: true })
       .click();
     await page.reload();
-    await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+    await page
+      .getByRole("button", { name: /^Practice & legacy tools/ })
+      .click();
     await haven(page);
     const restored = await save(page);
     expect(restored.local.id).toBe(original.local.id);
@@ -548,7 +562,7 @@ test("the cached town, character and map continue after an offline reload", asyn
     .toBeGreaterThanOrEqual(17);
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await haven(page);
   await page.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Town map" })).toBeVisible();

@@ -1,16 +1,16 @@
-# NowRift — Rift Haven Foundation
+# NowRift — Character-First Rift Heaven
 
 A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Choose one of four attack styles, explore four worlds with twenty stages, and grow stronger through real equipment, character progression and a local economy. Three local characters, recoverable runs, daily rewards, quests, achievements and JSON backups keep progression on your device. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
 
-**Enter Rift Haven** adds the first connected open-world RPG slice: walk around an original pixel-art town, meet Mara, visit working RPG stations, change your cloak palette, train against a real target, and travel through the portal to a repeatable forest expedition. Gather resources, extract, return, craft with the same inventory, and continue after a refresh. The existing launcher and all twenty campaign challenges remain available. See [implemented scope, architecture, controls, migration, tests and remaining expansion work](docs/open-world-foundation.md).
+**Play → Create/select a character → Cross the Rift → Rift Heaven.** Your named character lives in the original pixel-art town: meet Mara, visit working RPG stations, change your cloak palette, train, and take a forest expedition through the portal. Gather, extract, return, craft with the same inventory, and continue after a refresh. **H** opens Sanctuary over the retained world; the Activity Directory marks real building entrances. The approved main-menu design, previous launcher and all twenty campaign challenges remain available. See [journey, controls, architecture, save safety and validation](docs/character-first-journey.md) and the [preceding open-world foundation](docs/open-world-foundation.md).
 
-Open **Profile & Saves** in the Hub to customize your guest name, create/select/rename characters, claim rewards, inspect actual statistics, and export or restore a save. Check-in rewards are shared across the local player’s three slots and reset at midnight in **Asia/Bangkok**. Daily quests and achievements use actual combat and inventory actions. See [Phase IV persistence rules, validation and limitations](docs/phase-4-validation.md).
+Open **Sanctuary → Daily activities & achievements** in the city, or **Manage saves & backups** during character selection, to manage characters, claim rewards, inspect actual statistics, and export or restore a save. Check-in rewards are shared across the local player’s three slots and reset at midnight in **Asia/Bangkok**. Daily quests and achievements use actual combat and inventory actions. See [Phase IV persistence rules, validation and limitations](docs/phase-4-validation.md).
 
 ## Campaign
 
-For the new journey, use **Continue as Guest → Profile & Saves** to select a character, then **Enter Rift Haven**. Move with WASD/arrows or touch drag; press **E** near a building, NPC or portal. **I** opens inventory, **M** opens the town map, and **Q** opens the journal. The portal’s forest expedition requires 20 seconds and 5 kills before returning to its extraction point. Successful extraction banks enemy loot and gathered supplies; defeat/abandonment loses unbanked expedition loot while existing equipment remains safe. The inn restores health for the next trip. The first prologue rewards one actual extraction.
+Press **Play** to create or continue a character. Move with WASD/arrows or touch drag; press **E** near a building, NPC or portal. **I** opens inventory, **M** opens the town map, **Q** opens the journal, and **H** toggles Sanctuary. The portal’s forest expedition requires 20 seconds and 5 kills before returning to its extraction point. Successful extraction banks enemy loot and gathered supplies; defeat/abandonment loses unbanked expedition loot while existing equipment remains safe. The inn restores health for the next trip. The first prologue rewards one actual extraction.
 
-Enter as a guest, choose your weapon, then open **World Map**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. The original **Start New Run** button remains a Phase I practice route.
+Choose a weapon in Sanctuary and walk to **Portal Sanctuary → Campaign challenges**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. City adventures return to Rift Heaven. **Practice & legacy tools** explicitly opens the retained launcher and original **Start New Run** practice route.
 
 **Inventory & equipment** opens the sanctuary: a 60-slot inventory, six equipment slots, five rarities, character stats and permanent disciplines, +0–15 enhancement with pity, a trader, material crafting, confirmed dismantling, protected overflow loot and a transaction journal. Actual enemy, elite, boss and stage rewards fund the same wallet and inventory. Equipment, affixes and enhancement affect real campaign combat; the selected Hub attack style remains available.
 
@@ -32,20 +32,23 @@ npm run build
 npm run start
 ```
 
-Use the guest gateway, choose your weapon in the Hub, and select **Start New Run**. The development server does not register a service worker. Production builds cache the app shell, async gameplay code, and local art for offline play after successful initial caching. Browser storage eviction or private browsing can remove/prevent caches and saves.
+Use **Play** for the persistent-world journey, or **Practice & legacy tools → Start New Run** for the retained survival mode. The development server does not register a service worker. Production builds cache the app shell, async gameplay code, and local art for offline play after successful initial caching. Browser storage eviction or private browsing can remove/prevent caches and saves.
 
 ## Controls
 
-| Action         | Desktop                                                      | Mobile                                              |
-| -------------- | ------------------------------------------------------------ | --------------------------------------------------- |
-| Move           | WASD / arrow keys; choose either set in Settings             | Touch and drag; optional left/right starting region |
-| Attack         | Automatic nearest-target attacks                             | Automatic                                           |
-| Level up       | Select one of three blessings                                | Tap one blessing                                    |
-| Pause / resume | Escape / Pause                                               | Pause / Resume                                      |
-| Focus mode     | Focus / Exit Focus                                           | Focus / Exit Focus                                  |
-| Settings       | Audio, effects, quality, input, language and fullscreen      | Same; fullscreen where supported                    |
-| Inventory      | Hub → Inventory & equipment; click an item or equipment slot | Tap; details scroll into view                       |
-| Tonics         | Pause a campaign, then select a tonic                        | Same; real inventory is consumed                    |
+| Action          | Desktop                                                      | Mobile                                              |
+| --------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| Move            | WASD / arrow keys; choose either set in Settings             | Touch and drag; optional left/right starting region |
+| Attack          | Automatic nearest-target attacks                             | Automatic                                           |
+| Level up        | Select one of three blessings                                | Tap one blessing                                    |
+| Pause / resume  | Escape / Pause                                               | Pause / Resume                                      |
+| Focus mode      | Focus / Exit Focus                                           | Focus / Exit Focus                                  |
+| Settings        | Audio, effects, quality, input, language and fullscreen      | Same; fullscreen where supported                    |
+| Sanctuary       | H opens/closes personal management over the city             | Sanctuary button                                    |
+| Interact        | E near a station, NPC or resource                            | Contextual action button                            |
+| Find activities | Activity Directory marks real station entrances              | Same; walk to the marked entrance                   |
+| Inventory       | Hub → Inventory & equipment; click an item or equipment slot | Tap; details scroll into view                       |
+| Tonics          | Pause a campaign, then select a tonic                        | Same; real inventory is consumed                    |
 
 Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or rotating changes the camera viewport without resizing/resetting the simulation world. Trees and rocks have collision footprints at their bases; foliage is depth-sorted above characters.
 

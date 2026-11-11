@@ -4,7 +4,12 @@ on:
   pull_request:
     branches: [main, feat/phase-1-mobile-pwa]
   push:
-    branches: [fix/gameplay-stability-mobile, "codex/**"]
+    branches:
+      [
+        fix/gameplay-stability-mobile,
+        "codex/**",
+        feature/character-first-rift-heaven,
+      ]
 
 jobs:
   validate:
@@ -21,6 +26,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Formatting
+        run: npm run format:check
       - name: Unit tests
         run: npm test
       - name: Seeded full survival and boss playthrough

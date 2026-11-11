@@ -500,14 +500,20 @@ describe("world extension and backup compatibility", () => {
       roundTrip = await importSave(await exportSave(view.player, view.active!));
     expect(roundTrip.save.local.world).toEqual(view.active!.local.world);
   });
-  test("future world schemas and corrupt coordinates are rejected without writing", async () => {
+  test("future world schemas are rejected without writing; stale coordinates recover safely", async () => {
     const view = await repo.view();
-    for (const corrupt of [{ schema: 99 }, { position: { x: -100, y: 5 } }]) {
+    for (const corrupt of [{ schema: 99 }]) {
       const file = JSON.parse(await exportSave(view.player, view.active!));
       Object.assign(file.payload.save.local.world, corrupt);
       file.checksum = await checksum(file.payload);
       await expect(importSave(JSON.stringify(file))).rejects.toThrow("damaged");
     }
+    const file = JSON.parse(await exportSave(view.player, view.active!));
+    file.payload.save.local.world.position = { x: -100, y: 5 };
+    file.checksum = await checksum(file.payload);
+    const recovered = await importSave(JSON.stringify(file));
+    expect(recovered.save.local.world!.position).toEqual(HAVEN.spawn);
+    expect(recovered.save.rpg).toEqual(view.active!.rpg);
     expect((await repo.load()).local.world!.position).toEqual(HAVEN.spawn);
   });
 });

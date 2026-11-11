@@ -48,6 +48,9 @@ export class HavenScene extends Phaser.Scene {
   staticSprites: Phaser.GameObjects.Image[] = [];
   lastCull = 0;
   fpsLimit = 0;
+  ambience!: Phaser.GameObjects.Graphics;
+  animated: { image: Phaser.GameObjects.Image; kind: string }[] = [];
+  lastAmbience = 0;
   constructor() {
     super("HavenScene");
   }
@@ -57,11 +60,12 @@ export class HavenScene extends Phaser.Scene {
     this.position = validPosition(this.startData.position)
       ? { ...this.startData.position }
       : { ...HAVEN.spawn };
-    this.locked = false;
+    this.locked = true;
     this.pointer = null;
     this.drag = null;
     this.labels = [];
     this.staticSprites = [];
+    this.animated = [];
     this.lastSave = 0;
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
@@ -83,6 +87,8 @@ export class HavenScene extends Phaser.Scene {
         .setDepth(l.y);
       this.staticSprites.push(image);
       if (l.kind === "portal") image.setAlpha(0.95);
+      if (l.kind === "portal" || l.kind === "npc")
+        this.animated.push({ image, kind: l.kind });
       if (l.kind !== "treasure")
         this.labels.push({
           id: l.id,
@@ -107,6 +113,7 @@ export class HavenScene extends Phaser.Scene {
           .setDepth(tree.y),
       );
     this.ring = this.add.graphics().setDepth(1e5);
+    this.ambience = this.add.graphics().setDepth(691);
     this.stick = this.add.graphics().setScrollFactor(0).setDepth(1e6);
     this.actor = this.add
       .sprite(
@@ -126,7 +133,7 @@ export class HavenScene extends Phaser.Scene {
         "aria-label",
         translateText(
           useLocale.getState().locale,
-          "Rift Haven. Move with WASD, arrows or touch. Press E near a station.",
+          "Rift Heaven. Move with WASD, arrows or touch. E interacts; H opens Sanctuary.",
         ),
       );
       for (const label of this.labels) {
@@ -170,7 +177,7 @@ export class HavenScene extends Phaser.Scene {
       "aria-label",
       translateText(
         useLocale.getState().locale,
-        "Rift Haven. Move with WASD, arrows or touch. Press E near a station.",
+        "Rift Heaven. Move with WASD, arrows or touch. E interacts; H opens Sanctuary.",
       ),
     );
     const clear = () => {
@@ -311,6 +318,7 @@ export class HavenScene extends Phaser.Scene {
     }
     if (c.type === "haven-lock") {
       this.locked = c.locked;
+      this.input.keyboard?.resetKeys();
       if (!c.locked) {
         this.trainingGame = null;
         this.trainingShots.forEach((s) => s.setVisible(false));
@@ -349,6 +357,21 @@ export class HavenScene extends Phaser.Scene {
     this.lastFrameAt = time;
     const prefs = useSettings.getState(),
       targetFps = this.locked ? 15 : prefs.quality === "low" ? 30 : 60;
+    if (time - this.lastAmbience > (prefs.quality === "low" ? 300 : 100)) {
+      this.lastAmbience = time;
+      this.ambience.clear();
+      if (!prefs.reducedEffects) {
+        const ripple = (time % 1800) / 1800;
+        this.ambience
+          .lineStyle(1, 0xb4ddcd, 0.4 * (1 - ripple))
+          .strokeEllipse(900, 652, 45 + ripple * 76, 13 + ripple * 20);
+        for (const entry of this.animated) {
+          if (entry.kind === "portal")
+            entry.image.setAlpha(0.78 + 0.16 * Math.sin(time / 700));
+          else entry.image.setFrame(Math.floor(time / 700) % 2);
+        }
+      }
+    }
     if (targetFps !== this.fpsLimit) {
       this.game.loop.setFPSLimit(targetFps);
       this.fpsLimit = targetFps;

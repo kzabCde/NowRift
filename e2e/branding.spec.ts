@@ -14,7 +14,7 @@ test("official transparent logo appears on guest gateway and throughout the web 
   );
   const obsolete = await page.request.get("/branding/nowrift-logo-black.png");
   expect(obsolete.status()).toBe(404);
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await expect(page.locator(".wordmark img")).toBeVisible();
   await page.getByRole("button", { name: "WORLD MAP →", exact: true }).click();
   await expect(page.locator(".wordmark img")).toBeVisible();

@@ -3,6 +3,7 @@ import { grantGift } from "../persistence/daily";
 import type { SaveData } from "../persistence/model";
 import { HAVEN, LANDMARKS, near, validPosition } from "./content";
 import { OUTFITS, type WorldCommand } from "./save";
+import { WEAPONS } from "../content/forest";
 export function applyWorldCommand(
   p: SaveData,
   command: WorldCommand,
@@ -55,6 +56,14 @@ export function applyWorldCommand(
     if (!OUTFITS.includes(command.outfit))
       throw new Error("Invalid appearance.");
     w.outfit = command.outfit;
+    return;
+  }
+  if (command.type === "weapon") {
+    if (p.local.activeRun || p.local.checkpoint)
+      throw new Error("Recover or discard the saved run before travelling.");
+    if (!Object.hasOwn(WEAPONS, command.weapon))
+      throw new Error("Invalid character loadout.");
+    p.local.weapon = command.weapon;
     return;
   }
   if (command.type === "accept") {

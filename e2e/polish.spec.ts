@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 async function hub(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
 }
 async function run(page: Page) {
   await page.getByRole("button", { name: "START NEW RUN" }).click();
@@ -242,7 +242,7 @@ test.describe("real audio and game integration", () => {
         };
       });
     });
-    await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+    await page.getByRole("button", { name: "Practice & legacy tools" }).click();
     await page.getByRole("button", { name: /^Wanderer/ }).click();
     await page
       .getByRole("button", { name: "Ash Sentinel", exact: true })
@@ -282,7 +282,7 @@ test.describe("real audio and game integration", () => {
     });
     expect(stats).toEqual({ hp: 130, speed: 162, regen: 0.5 });
     await page.reload();
-    await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+    await page.getByRole("button", { name: "Practice & legacy tools" }).click();
     await page.getByRole("button", { name: "RECOVER RUN →" }).click();
     await page.getByRole("button", { name: "RESUME CHECKPOINT →" }).click();
     await expect(page.locator(".game-state")).toContainText("PAUSED");

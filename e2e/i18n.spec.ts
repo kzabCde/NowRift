@@ -7,14 +7,14 @@ test("Thai language selection persists and localizes the campaign without changi
   await page.locator(".language-switcher.compact button").nth(1).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "th");
   await expect(
-    page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ }),
+    page.getByRole("button", { name: /โหมดฝึกและเครื่องมือเดิม/ }),
   ).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("nowrift-locale-v1")))
     .toBe("th");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "th");
-  await page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ }).click();
+  await page.getByRole("button", { name: /โหมดฝึกและเครื่องมือเดิม/ }).click();
   await expect(page.locator(".weapon-card").first()).toContainText(
     "กระสุนมนตรา",
   );
@@ -34,7 +34,7 @@ test("language changes do not remount Phaser or reset an active run", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: "START NEW RUN" }).click();
   const canvas = page.locator("canvas.game-canvas");
   await expect(canvas).toHaveCount(1);
@@ -64,7 +64,7 @@ test("a new Thai-speaking visitor uses Thai without server hydration errors", as
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "th");
     await expect(
-      page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ }),
+      page.getByRole("button", { name: /โหมดฝึกและเครื่องมือเดิม/ }),
     ).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
@@ -95,6 +95,6 @@ test("Thai locale and installation metadata remain available offline after cachi
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("html")).toHaveAttribute("lang", "th");
   await expect(
-    page.getByRole("button", { name: /เล่นแบบผู้มาเยือน/ }),
+    page.getByRole("button", { name: /โหมดฝึกและเครื่องมือเดิม/ }),
   ).toBeVisible();
 });

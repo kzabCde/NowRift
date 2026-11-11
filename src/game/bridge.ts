@@ -4,6 +4,7 @@ import type { CampaignResult } from "./campaign/rewards";
 import type { Snapshot } from "./engine";
 import type { UpgradeId, WeaponId } from "./content/forest";
 export type Command =
+  | { type: "transition-lock"; locked: boolean }
   | import("./world/bridge").HavenCommand
   | { type: "expedition-interact" }
   | {
@@ -13,6 +14,7 @@ export type Command =
       loadout?: Loadout;
       run?: import("./persistence/model").RunOwner;
       checkpoint?: import("./persistence/checkpoint").RunCheckpoint | null;
+      hold?: boolean;
     }
   | { type: "pause" }
   | { type: "checkpoint" | "storage-blocked" | "storage-ready" }
