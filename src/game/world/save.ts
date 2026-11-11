@@ -55,6 +55,11 @@ export function validWorld(value: unknown): value is WorldSave {
   );
 }
 export type WorldCommand =
+  | {
+      type: "weapon";
+      writer: string;
+      weapon: import("../content/forest").WeaponId;
+    }
   | { type: "enter"; writer: string }
   | { type: "position"; writer: string; sequence: number; position: Point }
   | { type: "visit"; writer: string; id: string; position: Point }

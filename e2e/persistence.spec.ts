@@ -6,7 +6,7 @@ import { seededEquipment } from "../src/game/rpg/items";
 import type { PlayerProfile, SaveData } from "../src/game/persistence/model";
 async function guest(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await expect(page.locator(".profile-subtitle")).toBeVisible();
 }
 async function profile(page: Page) {
@@ -85,7 +85,7 @@ async function seed(page: Page) {
       }),
     p,
   );
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await expect(page.locator(".profile-subtitle")).toBeVisible();
 }
 async function confirm(page: Page, title: string) {
@@ -164,7 +164,7 @@ test("guest identity, three save slots, selection, names and deletion persist in
     .click();
   await expect(firstCard.getByRole("heading")).toHaveText("Moss Lantern");
   await page.reload();
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await profile(page);
   expect((await player(page)).id).toBe(id);
   await expect(
@@ -381,7 +381,7 @@ test("successful enhancement completes a daily quest and its reward persists onc
   ).toBeDisabled();
   expect((await slot(page)).gold).toBe(earned.gold + 100);
   await page.reload();
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await profile(page);
   await page.getByRole("button", { name: "DAILY QUESTS", exact: true }).click();
   await expect(
@@ -423,7 +423,7 @@ test("daily claims and JSON export work offline and survive an offline reload", 
     .click();
   expect((await download).suggestedFilename()).toMatch(/NowRift.*json/);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+  await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await profile(page);
   expect((await player(page)).id).toBe(id);
   expect((await slot(page)).gold).toBe(500);
@@ -484,7 +484,9 @@ test.describe("checkpoint and complete RPG backup integration", () => {
       await page.evaluate(() => window.__NOWRIFT_TEST__!.state().player.x),
     ).toBeGreaterThan(x + 20);
     await page.reload();
-    await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+    await page
+      .getByRole("button", { name: /^Practice & legacy tools/ })
+      .click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(
       page.getByLabel("Keyboard controls", { exact: true }),
@@ -524,7 +526,9 @@ test.describe("checkpoint and complete RPG backup integration", () => {
     ).toBe(1);
     expect(earned.clears).toContain("forest-1:normal");
     await page.reload();
-    await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+    await page
+      .getByRole("button", { name: /^Practice & legacy tools/ })
+      .click();
     await profile(page);
     expect((await slot(page)).rpg!.equipped.weapon).toBe("backup-blade");
     await page
@@ -604,7 +608,9 @@ test.describe("checkpoint and complete RPG backup integration", () => {
     const before = await slot(page),
       c = before.local.checkpoint!;
     await page.reload();
-    await page.getByRole("button", { name: /^CONTINUE AS GUEST/ }).click();
+    await page
+      .getByRole("button", { name: /^Practice & legacy tools/ })
+      .click();
     await page
       .getByRole("button", { name: "RECOVER RUN →", exact: true })
       .click();

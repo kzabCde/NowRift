@@ -1,5 +1,5 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v12-haven";
+const VERSION = "nowrift-pwa-v13-journey";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [

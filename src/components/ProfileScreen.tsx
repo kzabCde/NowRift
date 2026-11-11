@@ -54,14 +54,16 @@ export default function ProfileScreen({
   onBack,
   onChanged,
   onResume,
+  initialTab = "profile",
 }: {
   onBack: () => void;
   onChanged: (save: SaveData) => void;
   onResume: (save: SaveData, checkpoint: RunCheckpoint) => void;
+  initialTab?: Tab;
 }) {
   const { text, locale } = useI18n(),
     [view, setView] = useState<PlayerView | null>(null),
-    [tab, setTab] = useState<Tab>("profile"),
+    [tab, setTab] = useState<Tab>(initialTab),
     [backups, setBackups] = useState<Backup[]>([]),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),

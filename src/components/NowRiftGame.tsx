@@ -1,5 +1,7 @@
 "use client";
 import SaveIndicator from "./SaveIndicator";
+import RiftTransition from "./RiftTransition";
+import { shortcutAllowed } from "@/game/navigation/flow";
 import { profileRepository } from "@/game/persistence/repository";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
@@ -36,6 +38,8 @@ import type { Rewards } from "@/game/campaign/rewards";
 import { runRepository } from "@/game/services/saves";
 
 type Props = {
+  characterName?: string;
+  returnToHaven?: boolean;
   loadout?: Loadout;
   slotId?: string;
   recovery?: RunCheckpoint;
@@ -52,8 +56,16 @@ export default function NowRiftGame({
   autoStart = true,
   onExitToMenu,
   weapon = "arcane",
+  returnToHaven = false,
+  characterName,
 }: Props) {
   const { t, text } = useI18n();
+  const [revealed, setRevealed] = useState(!returnToHaven),
+    [rendererError, setRendererError] = useState(""),
+    [attempt, setAttempt] = useState(0),
+    [shortcutNotice, setShortcutNotice] = useState("");
+  const cinematicComplete = useRef(!returnToHaven),
+    loadingFailed = useRef(false);
   const definition = stage ? stageById(stage.stageId) : null,
     world = definition ? worldById(definition.worldId) : null;
   const resultRun = useRef<string | null>(null);
@@ -90,7 +102,13 @@ export default function NowRiftGame({
     const off = [
       bridge.on("hud", setHud),
       bridge.on("loading", setLoading),
-      bridge.on("error", setError),
+      bridge.on("error", (message) => {
+        if (!cinematicComplete.current) {
+          loadingFailed.current = true;
+          setRendererError(message);
+        }
+        setError(message);
+      }),
       bridge.on("touch", setTouch),
       bridge.on("expedition", setExpedition),
       bridge.on("ready", (value) => {
@@ -152,6 +170,22 @@ export default function NowRiftGame({
     };
   }, [autoStart, bridge, weapon, stage, loadout]);
   useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() === "h" &&
+        shortcutAllowed(event, event.target)
+      )
+        setShortcutNotice(
+          t(
+            "journey",
+            "Return to Rift Heaven to open Sanctuary. Finish or abandon your adventure first.",
+          ),
+        );
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [t]);
+  useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
   }, [immersive]);
@@ -201,7 +235,8 @@ export default function NowRiftGame({
     if (!tonicGuard.current) bridge.emit("command", { type: "pause" });
   }, [bridge]);
   const start = async () => {
-    if (tonicGuard.current || startGuard.current) return;
+    if (tonicGuard.current || startGuard.current || loadingFailed.current)
+      return;
     startGuard.current = true;
     setStarting(true);
     try {
@@ -251,6 +286,7 @@ export default function NowRiftGame({
         loadout: c?.loadout ?? practiceLoadout(p, p.local.character),
         run: prepared.run,
         checkpoint: c,
+        hold: returnToHaven && !cinematicComplete.current,
       });
     } catch (e) {
       setError("Run could not start. " + String(e));
@@ -331,6 +367,40 @@ export default function NowRiftGame({
   const terminal = hud.phase === "gameover" || hud.phase === "victory";
   return (
     <main className={`site-shell ${immersive ? "immersive" : ""}`}>
+      {returnToHaven && (!revealed || rendererError) && (
+        <RiftTransition
+          key={attempt}
+          progress={loading}
+          ready={ready && !!hud.runId && hud.phase !== "menu" && !starting}
+          error={rendererError || error}
+          onReveal={() => {
+            cinematicComplete.current = true;
+            setRevealed(true);
+            bridge.emit("command", { type: "transition-lock", locked: false });
+          }}
+          onRetry={() => {
+            if (!rendererError) void start();
+            else {
+              loadingFailed.current = false;
+              setRendererError("");
+              setError("");
+              setReady(false);
+              setLoading(0);
+              setAttempt((n) => n + 1);
+            }
+          }}
+          onBack={() => onExitToMenu?.()}
+        />
+      )}
+      {shortcutNotice && (
+        <button
+          className="haven-toast"
+          role="status"
+          onClick={() => setShortcutNotice("")}
+        >
+          {shortcutNotice}
+        </button>
+      )}
       <header className="topbar">
         <Brand />
         <div className="header-right">
@@ -340,7 +410,9 @@ export default function NowRiftGame({
             {t("game", "A JOURNEY BEYOND THE BREACH")}
           </span>
           <button className="quiet-button" onClick={requestLeave} type="button">
-            {t("game", "← MAIN MENU")}{" "}
+            {returnToHaven
+              ? t("journey", "RETURN TO RIFT HEAVEN")
+              : t("game", "← MAIN MENU")}{" "}
           </button>
         </div>
       </header>
@@ -386,6 +458,9 @@ export default function NowRiftGame({
         >
           <div className="game-topbar">
             <div className="sector-heading">
+              {characterName && (
+                <span className="run-identity">{characterName}</span>
+              )}
               <span className="live-dot" />{" "}
               {text(world?.name ?? "Whispering Forest").toUpperCase()}{" "}
               <span className="game-state">
@@ -509,7 +584,7 @@ export default function NowRiftGame({
                     {t(
                       "haven",
                       expedition.target === "extract"
-                        ? "Extract to Rift Haven"
+                        ? "Extract to Rift Heaven"
                         : expedition.target === "fallen-wood"
                           ? "Gather fallen wood"
                           : expedition.target === "slime-nest"
@@ -535,8 +610,8 @@ export default function NowRiftGame({
                 {hud.statuses.map(text).join(" · ")}
               </span>
             )}
-            <PhaserHost bridge={bridge} world={world?.id} />
-            {!ready && (
+            <PhaserHost key={attempt} bridge={bridge} world={world?.id} />
+            {!ready && !returnToHaven && (
               <div className="arena-overlay">
                 <span className="eyebrow">
                   {t("game", "ENTERING THE FOREST")}
@@ -599,106 +674,115 @@ export default function NowRiftGame({
                 </span>
               </>
             )}
-            {hud.phase === "paused" && !confirmLeave && !settings && (
-              <DialogSurface
-                className="arena-overlay"
-                title={t("game", "Paused")}
-                onClose={pause}
-              >
-                <span className="eyebrow">{t("game", "TAKE A BREATH")}</span>
-                <h2>{t("game", "Paused")}</h2>
-                <p>{t("game", "The forest will wait.")}</p>
-                {stage && (
-                  <div className="run-tonics" aria-label="Campaign consumables">
-                    <button
-                      className="rpg-button"
-                      disabled={
-                        tonicBusy ||
-                        !tonics["health-tonic"] ||
-                        hud.hp >= hud.maxHp
-                      }
-                      onClick={() => void useTonic("health-tonic")}
+            {revealed &&
+              hud.phase === "paused" &&
+              !confirmLeave &&
+              !settings && (
+                <DialogSurface
+                  className="arena-overlay"
+                  title={t("game", "Paused")}
+                  onClose={pause}
+                >
+                  <span className="eyebrow">{t("game", "TAKE A BREATH")}</span>
+                  <h2>{t("game", "Paused")}</h2>
+                  <p>{t("game", "The forest will wait.")}</p>
+                  {stage && (
+                    <div
+                      className="run-tonics"
+                      aria-label="Campaign consumables"
                     >
-                      {text("CRIMSON TONIC")} ×{tonics["health-tonic"] ?? 0}
-                      <small>{text("Restore 35 HP")}</small>
-                    </button>
-                    <button
-                      className="rpg-button"
-                      disabled={tonicBusy || !tonics["focus-tonic"]}
-                      onClick={() => void useTonic("focus-tonic")}
-                    >
-                      {text("AZURE TONIC")} ×{tonics["focus-tonic"] ?? 0}
-                      <small>{text("30% faster attacks / 20s")}</small>
-                    </button>
-                  </div>
-                )}
-                {tonicBusy && <p role="status">{text("Using tonic…")}</p>}
-                <button
-                  className="primary-button"
-                  onClick={pause}
-                  disabled={saveBlocked || tonicBusy}
-                  type="button"
-                >
-                  {t("game", "RESUME RUN")} <span>→</span>
-                </button>
-                <button
-                  className="quiet-button"
-                  onClick={openSettings}
-                  type="button"
-                >
-                  {t("game", "Settings")}{" "}
-                </button>
-                <button
-                  className="quiet-button"
-                  onClick={requestLeave}
-                  type="button"
-                >
-                  {t("game", "Return to main menu")}{" "}
-                </button>
-              </DialogSurface>
-            )}
-            {hud.phase === "upgrade" && !confirmLeave && !settings && (
-              <DialogSurface
-                className="arena-overlay upgrade-overlay"
-                title={t("game", "Choose an upgrade")}
-              >
-                <span className="eyebrow">
-                  {t("game", "LEVEL")} {hud.level} /{" "}
-                  {t("game", "A NEW AWAKENING")}
-                </span>
-                <h2>
-                  {t("game", "Choose your")} <em>{t("game", "power.")}</em>
-                </h2>
-                <p>{t("game", "One choice. A different path.")}</p>
-                <div className="upgrade-grid">
-                  {hud.offers.map((id) => {
-                    const u = UPGRADES.find((u) => u.id === id)!;
-                    return (
                       <button
-                        className="upgrade-card"
-                        key={id}
-                        onClick={() =>
-                          bridge.emit("command", { type: "upgrade", id })
+                        className="rpg-button"
+                        disabled={
+                          tonicBusy ||
+                          !tonics["health-tonic"] ||
+                          hud.hp >= hud.maxHp
                         }
-                        type="button"
+                        onClick={() => void useTonic("health-tonic")}
                       >
-                        <span className="card-rarity">
-                          {t("game", "BLESSING")} · {(hud.stacks[id] ?? 0) + 1}/
-                          {u.max}
-                        </span>
-                        <PixelIcon index={u.icon} large />
-                        <strong>{text(u.name)}</strong>
-                        <small>{text(u.description)}</small>
-                        <span className="upgrade-select">
-                          {t("game", "EMBRACE →")}
-                        </span>
+                        {text("CRIMSON TONIC")} ×{tonics["health-tonic"] ?? 0}
+                        <small>{text("Restore 35 HP")}</small>
                       </button>
-                    );
-                  })}
-                </div>
-              </DialogSurface>
-            )}
-            {terminal && (
+                      <button
+                        className="rpg-button"
+                        disabled={tonicBusy || !tonics["focus-tonic"]}
+                        onClick={() => void useTonic("focus-tonic")}
+                      >
+                        {text("AZURE TONIC")} ×{tonics["focus-tonic"] ?? 0}
+                        <small>{text("30% faster attacks / 20s")}</small>
+                      </button>
+                    </div>
+                  )}
+                  {tonicBusy && <p role="status">{text("Using tonic…")}</p>}
+                  <button
+                    className="primary-button"
+                    onClick={pause}
+                    disabled={saveBlocked || tonicBusy}
+                    type="button"
+                  >
+                    {t("game", "RESUME RUN")} <span>→</span>
+                  </button>
+                  <button
+                    className="quiet-button"
+                    onClick={openSettings}
+                    type="button"
+                  >
+                    {t("game", "Settings")}{" "}
+                  </button>
+                  <button
+                    className="quiet-button"
+                    onClick={requestLeave}
+                    type="button"
+                  >
+                    {t("game", "Return to main menu")}{" "}
+                  </button>
+                </DialogSurface>
+              )}
+            {revealed &&
+              hud.phase === "upgrade" &&
+              !confirmLeave &&
+              !settings && (
+                <DialogSurface
+                  className="arena-overlay upgrade-overlay"
+                  title={t("game", "Choose an upgrade")}
+                >
+                  <span className="eyebrow">
+                    {t("game", "LEVEL")} {hud.level} /{" "}
+                    {t("game", "A NEW AWAKENING")}
+                  </span>
+                  <h2>
+                    {t("game", "Choose your")} <em>{t("game", "power.")}</em>
+                  </h2>
+                  <p>{t("game", "One choice. A different path.")}</p>
+                  <div className="upgrade-grid">
+                    {hud.offers.map((id) => {
+                      const u = UPGRADES.find((u) => u.id === id)!;
+                      return (
+                        <button
+                          className="upgrade-card"
+                          key={id}
+                          onClick={() =>
+                            bridge.emit("command", { type: "upgrade", id })
+                          }
+                          type="button"
+                        >
+                          <span className="card-rarity">
+                            {t("game", "BLESSING")} ·{" "}
+                            {(hud.stacks[id] ?? 0) + 1}/{u.max}
+                          </span>
+                          <PixelIcon index={u.icon} large />
+                          <strong>{text(u.name)}</strong>
+                          <small>{text(u.description)}</small>
+                          <span className="upgrade-select">
+                            {t("game", "EMBRACE →")}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </DialogSurface>
+              )}
+            {revealed && terminal && (
               <DialogSurface
                 className="arena-overlay results-overlay"
                 title={
@@ -731,7 +815,7 @@ export default function NowRiftGame({
                       : t(
                           "haven",
                           hud.phase === "victory"
-                            ? "Your supplies are banked. Return to Rift Haven to craft and rest."
+                            ? "Your supplies are banked. Return to Rift Heaven to craft and rest."
                             : "Unbanked expedition loot was lost. Previously owned items are safe.",
                         )
                     : hud.phase === "victory"
@@ -800,8 +884,8 @@ export default function NowRiftGame({
                   onClick={() => void leave()}
                   type="button"
                 >
-                  {farming
-                    ? t("haven", "RETURN TO HAVEN")
+                  {returnToHaven
+                    ? t("journey", "RETURN TO RIFT HEAVEN")
                     : t("game", "RETURN TO MAIN MENU")}{" "}
                 </button>
                 <small className="muted">

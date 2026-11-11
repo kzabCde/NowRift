@@ -696,6 +696,7 @@ export class MainMenuScene extends Phaser.Scene {
           loadout: command.loadout,
           run: command.run,
           checkpoint: command.checkpoint,
+          hold: command.hold,
         });
     });
     onSceneEnd(this, off);
@@ -724,6 +725,7 @@ export class GameScene extends Phaser.Scene {
   storageBlocked = false;
   farmNodes: Phaser.GameObjects.Image[] = [];
   tonicPending = false;
+  transitionLocked = false;
   tonicReceipts = new Set<string>();
   constructor() {
     super("GameScene");
@@ -734,11 +736,13 @@ export class GameScene extends Phaser.Scene {
     loadout?: Loadout;
     run?: RunOwner;
     checkpoint?: RunCheckpoint | null;
+    hold?: boolean;
   }) {
     this.seed =
       data.checkpoint?.seed ??
       data.stage?.seed ??
       crypto.getRandomValues(new Uint32Array(1))[0];
+    this.transitionLocked = !!data.hold;
     this.run = data.run;
     this.stage = data.checkpoint?.stage ?? data.stage;
     this.registry.set("outfit", this.stage?.outfit);
@@ -1033,6 +1037,23 @@ export class GameScene extends Phaser.Scene {
     }
   }
   command(command: Command) {
+    if (command.type === "transition-lock") {
+      this.transitionLocked = command.locked;
+      this.clearInput();
+      this.lastFrameAt = performance.now();
+      return;
+    }
+    if (
+      this.transitionLocked &&
+      ![
+        "checkpoint",
+        "storage-blocked",
+        "storage-ready",
+        "start",
+        "exit",
+      ].includes(command.type)
+    )
+      return;
     if (command.type === "expedition-interact") {
       const g = this.simulation;
       if (
@@ -1117,6 +1138,7 @@ export class GameScene extends Phaser.Scene {
           loadout: command.loadout,
           run: command.run,
           checkpoint: command.checkpoint,
+          hold: command.hold,
         });
         break;
       case "pause":
@@ -1160,6 +1182,10 @@ export class GameScene extends Phaser.Scene {
     this.renderFrames++;
     const g = this.simulation,
       k = this.keys;
+    if (this.transitionLocked) {
+      this.visuals.draw(g, 0, null);
+      return;
+    }
     const preset = useSettings.getState().keyboard,
       wasd = preset !== "arrows",
       arrows = preset !== "wasd";

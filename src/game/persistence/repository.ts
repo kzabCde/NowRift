@@ -33,6 +33,9 @@ import { validCheckpoint, type RunCheckpoint } from "./checkpoint";
 import { applyWorldCommand } from "../world/actions";
 import type { WorldCommand } from "../world/save";
 import { HAVEN } from "../world/content";
+import { characterName } from "./identity";
+import { OUTFITS, type Outfit } from "../world/save";
+import { calculateStats } from "../rpg/stats";
 let selected: string | null = null,
   writerId: string | null = null;
 const listeners = new Set<() => void>();
@@ -75,10 +78,7 @@ export function activeSlotId() {
   return selected;
 }
 function name(value: string) {
-  const n = value.trim();
-  if (!n || n.length > 24 || Array.from(n).some((c) => c.charCodeAt(0) < 32))
-    throw new Error("Use a name from 1 to 24 characters.");
-  return n;
+  return characterName(value);
 }
 function scope(
   records: Map<string, unknown>,
@@ -263,6 +263,105 @@ export const profileRepository = {
     }, slotId);
   },
   subscribe: subscribeSaves,
+  /** Inspect entry without materializing a default character on a fresh installation. */
+  async entryView(): Promise<PlayerView | null> {
+    const exists = await transact((records) => {
+      if (records.has("player") || records.has("profile")) return true;
+      if ([...records.keys()].some((key) => key.startsWith("slot:")))
+        throw new Error(
+          "Local player profile is damaged or incompatible. Original data was preserved. Import a backup to recover.",
+        );
+      return false;
+    });
+    return exists ? profileRepository.view() : null;
+  },
+  /** One transaction creates the identity, appearance, root membership and active slot. */
+  async createCharacter(input: {
+    id: string;
+    name: string;
+    character: CharacterId;
+    outfit: Outfit;
+  }) {
+    const normalized = characterName(input.name);
+    if (
+      !/^[a-zA-Z0-9-]{16,80}$/.test(input.id) ||
+      !Object.hasOwn(CHARACTERS, input.character) ||
+      !OUTFITS.includes(input.outfit)
+    )
+      throw new Error("Invalid character identity.");
+    const result = await transact((records, store) => {
+      const at = Date.now(),
+        fresh = !records.has("player") && !records.has("profile");
+      if (fresh && [...records.keys()].some((key) => key.startsWith("slot:")))
+        throw new Error(
+          "Local player profile is damaged or incompatible. Original data was preserved. Import a backup to recover.",
+        );
+      const root: PlayerProfile = fresh
+        ? {
+            schema: 2,
+            id: playerId(),
+            username: "Guest Wanderer",
+            createdAt: at,
+            revision: 0,
+            activeSlotId: input.id,
+            slots: [],
+            checkins: [],
+          }
+        : scope(records, store, at);
+      if (root.slots.some((s) => s.id === input.id)) {
+        const existing = slot(records, root, at, input.id);
+        if (
+          existing.local.name !== normalized ||
+          existing.local.character !== input.character ||
+          existing.local.world?.outfit !== input.outfit
+        )
+          throw new Error(
+            "This character changed in another tab. Refresh the profile and review the latest values.",
+          );
+        root.activeSlotId = input.id;
+        root.revision++;
+        store.put(root, "player");
+        return existing;
+      }
+      if (root.slots.length >= 3)
+        throw new Error("All three save slots are occupied.");
+      const p = migrateSave(emptyProgress(), input.id, at, normalized);
+      p.local.character = input.character;
+      p.local.world!.outfit = input.outfit;
+      p.local.world!.hp = calculateStats(
+        p,
+        p.local.weapon,
+        input.character,
+      ).maxHp;
+      p.local.legacyImported = !fresh;
+      if (fresh) {
+        try {
+          p.local.stats.bestKills = parseBestKills(
+            preferences.get(BEST_SCORE_KEY),
+          );
+        } catch {
+          /* Keep original preference data. */
+        }
+      }
+      root.slots.push({
+        id: input.id,
+        key: fresh ? "profile" : "slot:" + input.id,
+      });
+      root.activeSlotId = input.id;
+      root.revision++;
+      store.put(root, "player");
+      put(store, root, p, at);
+      return p;
+    });
+    selected = result.local.id;
+    try {
+      preferences.set("nowrift-active-slot-v2", selected);
+    } catch {
+      /* IndexedDB selection is committed. */
+    }
+    changed();
+    return result;
+  },
   async view(): Promise<PlayerView> {
     return transact((records, store) => {
       const at = Date.now(),

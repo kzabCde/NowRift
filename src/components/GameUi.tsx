@@ -26,10 +26,17 @@ function useDialogFocus(onClose?: () => void) {
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const element = ref.current;
-    element
-      ?.querySelector<HTMLElement>("button:not(:disabled),select,input")
-      ?.focus();
+    (
+      element?.querySelector<HTMLElement>(
+        "button:not(:disabled),select,input",
+      ) ?? element
+    )?.focus();
     const trap = (event: KeyboardEvent) => {
+      // Nested confirmations own keyboard focus before the screen beneath them.
+      const dialogs = document.querySelectorAll(
+        '[role="dialog"][aria-modal="true"]',
+      );
+      if (dialogs.item(dialogs.length - 1) !== element) return;
       if (event.key === "Escape") {
         event.stopImmediatePropagation();
         if (onClose) {
@@ -44,7 +51,11 @@ function useDialogFocus(onClose?: () => void) {
           'button:not(:disabled),select,input,[tabindex="0"]',
         ) ?? [],
       );
-      if (!nodes.length) return;
+      if (!nodes.length) {
+        event.preventDefault();
+        element?.focus();
+        return;
+      }
       const first = nodes[0],
         last = nodes[nodes.length - 1];
       if (event.shiftKey && document.activeElement === first) {
@@ -82,6 +93,7 @@ export function DialogSurface({
       role="dialog"
       aria-label={title}
       aria-modal="true"
+      tabIndex={-1}
     >
       {children}
     </div>

@@ -1,6 +1,8 @@
 "use client";
 import ProfileScreen from "./ProfileScreen";
 import HavenGame from "./HavenGame";
+import CharacterEntry from "./CharacterEntry";
+import { flowReducer, initialFlow, type Screen } from "@/game/navigation/flow";
 import SaveIndicator from "./SaveIndicator";
 import { profileRepository } from "@/game/persistence/repository";
 import type { SaveData } from "@/game/persistence/model";
@@ -20,7 +22,14 @@ import WorldMap from "./WorldMap";
 import { audio } from "@/game/audio/engine";
 import type { StageSelection } from "@/game/campaign/loader";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useReducer,
+  useRef,
+} from "react";
 import NowRiftGame from "./NowRiftGame";
 import PwaControls from "./PwaControls";
 import { Brand, Modal, PixelIcon, Settings, clock } from "./GameUi";
@@ -30,9 +39,16 @@ import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
 export default function NowRiftMainMenu() {
   const { t, text, date, plural } = useI18n();
-  const [screen, setScreen] = useState<
-    "gateway" | "lobby" | "game" | "worlds" | "rpg" | "profile" | "haven"
-  >("gateway");
+  const [flow, dispatch] = useReducer(flowReducer, initialFlow),
+    screen = flow.screen;
+  const setScreen = useCallback(
+    (next: Screen) => dispatch({ type: "navigate", screen: next }),
+    [],
+  );
+  const profileReturn = useRef<Screen>("characters"),
+    transitionId = useRef(0);
+  const createEntry = useCallback(() => setScreen("creation"), [setScreen]);
+  const selectEntry = useCallback(() => setScreen("characters"), [setScreen]);
   useEffect(() => {
     window.scrollTo(0, 0);
     audio.setScene(
@@ -54,6 +70,7 @@ export default function NowRiftMainMenu() {
   const [selection, setSelection] = useState<StageSelection | undefined>();
   const [recovery, setRecovery] = useState<RunCheckpoint | undefined>();
   const [returnHaven, setReturnHaven] = useState(false);
+  const [returning, setReturning] = useState(false);
   const onProfileChange = useCallback((p: SaveData) => {
     setProgress(p);
     setCharacter(p.local.character);
@@ -125,20 +142,47 @@ export default function NowRiftMainMenu() {
       cancelled = true;
     };
   }, [screen]);
+  const resumeRun = (save: SaveData, checkpoint: RunCheckpoint) => {
+    enterPreferredFullscreen();
+    onProfileChange(save);
+    setSelection(checkpoint.stage);
+    setWeapon(checkpoint.weapon);
+    setRecovery(checkpoint);
+    setReturnHaven(
+      profileReturn.current !== "lobby" ||
+        checkpoint.stage?.returnTo === "haven",
+    );
+    setScreen("game");
+  };
+  if (screen === "characters" || screen === "creation")
+    return (
+      <CharacterEntry
+        creating={screen === "creation"}
+        onCreate={createEntry}
+        onSelect={selectEntry}
+        onBack={() => setScreen("gateway")}
+        onManage={() => {
+          profileReturn.current = "characters";
+          setScreen("profile");
+        }}
+        onResume={resumeRun}
+        onEnter={(save) => {
+          const id = ++transitionId.current;
+          dispatch({ type: "prepare", target: "haven", id });
+          onProfileChange(save);
+          setReturning(false);
+          setReturnHaven(true);
+          enterPreferredFullscreen();
+          dispatch({ type: "commit", id });
+        }}
+      />
+    );
   if (screen === "profile")
     return (
       <ProfileScreen
-        onBack={() => setScreen("lobby")}
+        onBack={() => setScreen(profileReturn.current)}
         onChanged={onProfileChange}
-        onResume={(save, checkpoint) => {
-          enterPreferredFullscreen();
-          onProfileChange(save);
-          setSelection(checkpoint.stage);
-          setWeapon(checkpoint.weapon);
-          setRecovery(checkpoint);
-          setReturnHaven(checkpoint.stage?.returnTo === "haven");
-          setScreen("game");
-        }}
+        onResume={resumeRun}
       />
     );
   if (screen === "rpg")
@@ -153,7 +197,13 @@ export default function NowRiftMainMenu() {
     return (
       <HavenGame
         slotId={progress.local.id}
-        onMenu={(profiles) => setScreen(profiles ? "profile" : "lobby")}
+        returning={returning}
+        onRecovery={resumeRun}
+        onChanged={onProfileChange}
+        onMenu={(profiles) => {
+          profileReturn.current = "haven";
+          setScreen(profiles ? "profile" : "gateway");
+        }}
         onAdventure={(stage) => {
           setReturnHaven(true);
           setRecovery(undefined);
@@ -187,6 +237,8 @@ export default function NowRiftMainMenu() {
       <>
         <NowRiftGame
           autoStart
+          returnToHaven={returnHaven}
+          characterName={progress.local?.name}
           slotId={progress.local?.id}
           recovery={recovery}
           loadout={loadout}
@@ -194,6 +246,7 @@ export default function NowRiftMainMenu() {
           weapon={weapon}
           onExitToMenu={(message) => {
             if (message) setWarning(message);
+            setReturning(true);
             setScreen(returnHaven ? "haven" : "lobby");
           }}
         />
@@ -250,10 +303,23 @@ export default function NowRiftMainMenu() {
             </p>
             <button
               className="primary-button gateway-enter"
-              onClick={() => setScreen("lobby")}
+              onClick={() => {
+                profileReturn.current = "characters";
+                setScreen("characters");
+              }}
               type="button"
             >
-              {t("main", "CONTINUE AS GUEST")} <span>→</span>
+              {t("journey", "PLAY")} <span aria-hidden="true">→</span>
+            </button>
+            <button
+              className="quiet-button gateway-legacy"
+              onClick={() => {
+                profileReturn.current = "lobby";
+                setScreen("lobby");
+              }}
+              type="button"
+            >
+              {t("journey", "Practice & legacy tools")}
             </button>
             <small className="gateway-note">
               {t("main", "No account. No connection required after caching.")}{" "}
@@ -470,7 +536,7 @@ export default function NowRiftMainMenu() {
                   <span className="eyebrow">
                     {t("haven", "THE WORLD BETWEEN WORLDS")}
                   </span>
-                  <h2>{t("haven", "Rift Haven")}</h2>
+                  <h2>{t("haven", "Rift Heaven")}</h2>
                 </div>
                 <button
                   className="primary-button"
@@ -479,7 +545,7 @@ export default function NowRiftMainMenu() {
                     setScreen("haven");
                   }}
                 >
-                  {t("haven", "ENTER RIFT HAVEN →")}
+                  {t("haven", "ENTER RIFT HEAVEN →")}
                 </button>
               </div>
             )}
@@ -641,6 +707,7 @@ export default function NowRiftMainMenu() {
         <Modal title={t("main", "Run records")} onClose={closeHistory}>
           <span className="eyebrow">{t("main", "REMEMBER EVERY JOURNEY")}</span>
           <h2>{t("main", "Run records")}</h2>
+          {progress.local && <p>{progress.local.name}</p>}
           <p className="muted">
             {t(
               "main",

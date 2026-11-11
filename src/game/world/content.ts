@@ -189,7 +189,9 @@ export function nearest(p: Point): Landmark | null {
   }
   return found;
 }
-export function validPosition(p: Point) {
+export function validPosition(value: unknown): value is Point {
+  if (!value || typeof value !== "object") return false;
+  const p = value as Point;
   const r = HAVEN.radius;
   return (
     Number.isFinite(p.x) &&

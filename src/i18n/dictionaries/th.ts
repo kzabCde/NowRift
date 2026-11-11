@@ -1,8 +1,10 @@
 import { profileTh } from "./profile-th";
 import { havenTh } from "./haven-th";
+import { journeyTh } from "./journey-th";
 import { rpgTh } from "./rpg-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  journey: journeyTh,
   haven: havenTh,
   profile: profileTh,
   rpg: rpgTh,

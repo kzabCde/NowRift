@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 async function enterHub(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await expect(
     page.getByRole("heading", { name: "The forest is calling." }),
   ).toBeVisible();
@@ -183,7 +183,7 @@ test("settings persist and corrupted preferences preserve playable defaults", as
     page.getByRole("status").filter({ hasText: "defaults are in use" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "DONE" }).click();
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: "START NEW RUN" }).click();
   await expect(page.locator(".game-state")).toContainText("LIVE RUN");
 });
@@ -231,7 +231,7 @@ test("PWA assets and game chunks launch offline after initial online load", asyn
   await page.waitForTimeout(1000);
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: "START NEW RUN" }).click();
   await expect(page.locator(".game-state")).toContainText("LIVE RUN");
   await expect(page.locator("canvas")).toHaveCount(1);

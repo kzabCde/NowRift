@@ -10,6 +10,7 @@ import { gameDay, reconcile, QUESTS, ACHIEVEMENTS } from "./daily";
 import { validCheckpoint } from "./checkpoint";
 import { defaultWorld, validWorld } from "../world/save";
 import { calculateStats } from "../rpg/stats";
+import { HAVEN, validPosition } from "../world/content";
 export const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 export const count = (v: unknown, max = Number.MAX_SAFE_INTEGER): v is number =>
@@ -263,6 +264,9 @@ export function migrateSave(
 ): SaveData {
   const p = structuredClone(assertProgress(value)) as SaveData;
   if (p.local !== undefined) {
+    // A stale map coordinate is recoverable; retain every other field and validate it normally.
+    if (p.local.world?.schema === 1 && !validPosition(p.local.world.position))
+      p.local.world.position = { ...HAVEN.spawn };
     if (!validLocal(p.local) || p.local.id !== id)
       throw new Error(
         "Character save metadata is damaged or belongs to another slot. Original data was preserved.",

@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "test:stress": "tsx scripts/stress.ts",
-    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css",
+    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css src/components/CharacterEntry.tsx src/components/RiftTransition.tsx src/components/SanctuaryPanel.tsx src/app/journey.css",
     "test:playthrough": "tsx scripts/playthrough.ts",
     "predev": "node scripts/generate-branding.mjs",
     "pretest": "node scripts/generate-branding.mjs"

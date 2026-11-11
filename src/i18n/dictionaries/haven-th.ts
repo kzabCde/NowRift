@@ -1,12 +1,12 @@
 /** English source keys and complete Thai copy for the first open-world slice. */
 export const havenTh = {
   "Saving expedition results…": "กำลังบันทึกผลการสำรวจ…",
-  "Rift Haven": "ริฟต์เฮเวน",
-  "ENTER RIFT HAVEN →": "เข้าสู่ริฟต์เฮเวน →",
-  "RETURN TO HAVEN": "กลับริฟต์เฮเวน",
+  "Rift Heaven": "ริฟต์เฮเวน",
+  "ENTER RIFT HEAVEN →": "เข้าสู่ริฟต์เฮเวน →",
+  "RETURN TO RIFT HEAVEN": "กลับริฟต์เฮเวน",
   "THE WORLD BETWEEN WORLDS": "โลกที่เชื่อมทุกพิภพ",
   "A place to return to.": "ที่พักพิงให้หวนกลับ",
-  "Preparing Rift Haven…": "กำลังเตรียมริฟต์เฮเวน…",
+  "Preparing Rift Heaven…": "กำลังเตรียมริฟต์เฮเวน…",
   "Loading town assets": "กำลังโหลดภาพเมือง",
   "SAFE SANCTUARY": "เขตปลอดภัย",
   Gold: "ทอง",
@@ -34,7 +34,7 @@ export const havenTh = {
   "Walk with WASD or arrow keys. Drag in the world on touch screens. Press E near a doorway or NPC. I opens inventory, M opens the map, and Q opens your journal.":
     "เดินด้วย WASD หรือปุ่มลูกศร บนจอสัมผัสให้ลากในพื้นที่เมือง กด E ใกล้ประตูหรือ NPC กด I เปิดคลัง M เปิดแผนที่ และ Q เปิดบันทึกภารกิจ",
   "Begin exploring": "เริ่มสำรวจ",
-  "Rift Haven. Move with WASD, arrows or touch. Press E near a station.":
+  "Rift Heaven. Move with WASD, arrows or touch. Press E near a station.":
     "ริฟต์เฮเวน เดินด้วย WASD ปุ่มลูกศร หรือสัมผัส กด E เมื่ออยู่ใกล้สถานี",
   "Ember & Anvil": "เปลวเพลิงและทั่งเหล็ก",
   "The Tinker’s Workshop": "โรงงานนักประดิษฐ์",
@@ -118,7 +118,7 @@ export const havenTh = {
   "Gather fallen wood": "เก็บไม้ที่ล้ม",
   "Gather slime residue": "เก็บแกนเมือก",
   "Mine copper": "ขุดทองแดง",
-  "Extract to Rift Haven": "ถอนตัวกลับริฟต์เฮเวน",
+  "Extract to Rift Heaven": "ถอนตัวกลับริฟต์เฮเวน",
   "Reach 20 seconds and 5 kills to extract.":
     "ผ่าน 20 วินาทีและกำจัดศัตรู 5 ตัวเพื่อถอนตัว",
   "Return to the marked portal to extract.":
@@ -127,7 +127,7 @@ export const havenTh = {
   "UNBANKED EXPEDITION": "เสบียงที่ยังไม่ฝาก",
   "Expedition complete": "สำรวจสำเร็จ",
   "Expedition lost": "การสำรวจล้มเหลว",
-  "Your supplies are banked. Return to Rift Haven to craft and rest.":
+  "Your supplies are banked. Return to Rift Heaven to craft and rest.":
     "ฝากเสบียงเข้าคลังแล้ว กลับเมืองเพื่อประดิษฐ์และพักผ่อน",
   "Unbanked expedition loot was lost. Previously owned items are safe.":
     "เสียของที่ยังไม่ฝากจากการสำรวจ ไอเทมที่เป็นเจ้าของอยู่ก่อนยังปลอดภัย",

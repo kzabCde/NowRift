@@ -41,7 +41,7 @@ async function seed(page: Page, p = fixture(), ready = true) {
       };
     });
   }, p);
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: /Inventory & equipment/ }).click();
   if (ready)
     await expect(
@@ -363,7 +363,7 @@ test("permanent disciplines consume resources and survive reload", async ({
   expect(s.gold).toBe(p.gold - 100);
   expect(s.rpg!.upgrades.training).toBe(1);
   await page.reload();
-  await page.getByRole("button", { name: "CONTINUE AS GUEST" }).click();
+  await page.getByRole("button", { name: "Practice & legacy tools" }).click();
   await page.getByRole("button", { name: /Inventory & equipment/ }).click();
   await page.getByRole("button", { name: "CHARACTER", exact: true }).click();
   await expect(
