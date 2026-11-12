@@ -62,26 +62,26 @@ export default function RiftTransition({
         <div className="rift-art">
           <div className="rift-scene" aria-hidden="true">
             <span className="rift-island island-one" />
-          <span className="rift-island island-two" />
-          <div className="rift-portal">
-            <span />
-          </div>
-          <div className="rift-fragments">
-            {Array.from(
-              { length: quality === "low" || reduced ? 6 : 14 },
-              (_, n) => (
-                <i
-                  key={n}
-                  style={
-                    {
-                      "--i": n,
-                      "--x": `${16 + ((n * 31) % 72)}%`,
-                      "--y": `${10 + ((n * 23) % 78)}%`,
-                    } as React.CSSProperties
-                  }
-                />
-              ),
-            )}
+            <span className="rift-island island-two" />
+            <div className="rift-portal">
+              <span />
+            </div>
+            <div className="rift-fragments">
+              {Array.from(
+                { length: quality === "low" || reduced ? 6 : 14 },
+                (_, n) => (
+                  <i
+                    key={n}
+                    style={
+                      {
+                        "--i": n,
+                        "--x": `${16 + ((n * 31) % 72)}%`,
+                        "--y": `${10 + ((n * 23) % 78)}%`,
+                      } as React.CSSProperties
+                    }
+                  />
+                ),
+              )}
             </div>
           </div>
           <Image
