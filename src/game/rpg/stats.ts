@@ -5,6 +5,7 @@ import {
   type Loadout,
   type RelicId,
 } from "../loadout";
+import { resolveAppearance } from "../presentation/appearance";
 import type { Progress } from "../campaign/progression";
 import { validEquipmentInstance } from "./profile";
 import {
@@ -187,6 +188,7 @@ export function campaignLoadout(
   return {
     character,
     weaponSnapshot: equipped,
+    visualAppearance: resolveAppearance(profile, character),
     build: equipped.stats,
     appearance: {
       rarity: equipped.rarity,

@@ -233,6 +233,7 @@ export default function WorldMap({
             character={character}
             outfit={progress.local?.world?.outfit ?? "moss"}
             weapon={equipped}
+            profile={progress}
             decorative
           />
           <EquippedWeapon weapon={equipped} onInventory={onInventory} />

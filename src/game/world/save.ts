@@ -1,10 +1,15 @@
 import { HAVEN, LANDMARKS, validPosition, type Point } from "./content";
+import {
+  validCustomization,
+  type AppearanceCustomization,
+} from "../presentation/customization";
 export const OUTFITS = ["moss", "ember", "tide"] as const;
 export type Outfit = (typeof OUTFITS)[number];
 export type WorldSave = {
   schema: 1;
   position: Point;
   outfit: Outfit;
+  customization?: AppearanceCustomization;
   hp: number;
   writer: string;
   sequence: number;
@@ -37,6 +42,7 @@ export function validWorld(value: unknown): value is WorldSave {
     !!w.position &&
     validPosition(w.position) &&
     OUTFITS.includes(w.outfit) &&
+    (w.customization === undefined || validCustomization(w.customization)) &&
     Number.isFinite(w.hp) &&
     w.hp >= 1 &&
     w.hp <= 5000 &&
@@ -64,6 +70,12 @@ export type WorldCommand =
   | { type: "position"; writer: string; sequence: number; position: Point }
   | { type: "visit"; writer: string; id: string; position: Point }
   | { type: "outfit"; writer: string; outfit: Outfit }
+  | {
+      type: "appearance";
+      writer: string;
+      outfit: Outfit;
+      customization: AppearanceCustomization;
+    }
   | {
       type: "accept" | "claim" | "rest" | "treasure" | "tutorial" | "travel";
       writer: string;

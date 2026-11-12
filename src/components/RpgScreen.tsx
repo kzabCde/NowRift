@@ -3,6 +3,11 @@ import ItemIcon from "./ItemIcon";
 export { default as ItemIcon } from "./ItemIcon";
 import CharacterPreview from "./CharacterPreview";
 import EquippedWeapon from "./EquippedWeapon";
+import ActionReceipt from "./ActionReceipt";
+import {
+  committedRpgVisual,
+  type ActionVisualReceipt,
+} from "@/game/presentation/action-feedback";
 import { resolveEquippedWeapon } from "@/game/rpg/stats";
 import {
   useCallback,
@@ -134,12 +139,14 @@ export default function RpgScreen({
   character: requestedCharacter = "wanderer",
   initialTab = "inventory",
   focusRecipes = false,
+  onCommitted,
 }: {
   onBack: () => void;
   weapon?: WeaponId;
   character?: CharacterId;
   initialTab?: Tab;
   focusRecipes?: boolean;
+  onCommitted?: (receipt: ActionVisualReceipt, progress: Progress) => void;
 }) {
   const { text } = useI18n();
   const [profile, setProfile] = useState<Progress | null>(null),
@@ -154,6 +161,8 @@ export default function RpgScreen({
     [busy, setBusy] = useState(false),
     [sound, setSound] = useState(true),
     [flash, setFlash] = useState("");
+  const [visualReceipt, setVisualReceipt] =
+    useState<ActionVisualReceipt | null>(null);
   const details = useRef<HTMLElement | null>(null),
     bagPanel = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -214,6 +223,11 @@ export default function RpgScreen({
         });
         setProfile(result.progress);
         setNotice(result.entry?.message ?? "Action already applied.");
+        const receipt = committedRpgVisual(profile, result, action);
+        if (receipt) {
+          setVisualReceipt(receipt);
+          onCommitted?.(receipt, result.progress);
+        }
         if (result.entry?.enhancement) {
           const success = result.entry.enhancement.success;
           setFlash(success ? "success" : "failure");
@@ -231,7 +245,7 @@ export default function RpgScreen({
         setBusy(false);
       }
     },
-    [profile, sound],
+    [profile, sound, onCommitted],
   );
   const all = useMemo(() => (profile ? inventory(profile) : []), [profile]);
   const chosen = all.find((e) => e.id === selection),
@@ -428,6 +442,16 @@ export default function RpgScreen({
             </p>
           )}
           {busy && <p className="muted">{text("Saving transaction…")}</p>}
+          {visualReceipt && (
+            <ActionReceipt
+              receipt={visualReceipt}
+              onFinish={() =>
+                setVisualReceipt((current) =>
+                  current?.id === visualReceipt.id ? null : current,
+                )
+              }
+            />
+          )}
         </div>
         {r.overflow.length > 0 && (
           <section className="rpg-overflow">
@@ -707,6 +731,9 @@ export default function RpgScreen({
                   character={character}
                   outfit={profile.local?.world?.outfit ?? "moss"}
                   weapon={resolveEquippedWeapon(profile, character)}
+                  profile={profile}
+                  pose={visualReceipt?.pose ?? "idle"}
+                  actionKey={visualReceipt?.id}
                   size={112}
                 />
                 <div className="rpg-slots">

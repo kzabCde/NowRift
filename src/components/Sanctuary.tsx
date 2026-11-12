@@ -5,6 +5,7 @@ import { Modal } from "./GameUi";
 import { CHARACTERS, type CharacterId } from "@/game/loadout";
 import CharacterPreview from "./CharacterPreview";
 import type { WeaponSnapshot } from "@/game/rpg/model";
+import type { Progress } from "@/game/campaign/progression";
 import type { Outfit } from "@/game/world/save";
 export function CharacterSelection({
   selected,
@@ -12,12 +13,14 @@ export function CharacterSelection({
   onClose,
   weapon = null,
   outfit = "moss",
+  profile,
 }: {
   selected: CharacterId;
   onSelect: (id: CharacterId) => void;
   onClose: () => void;
   weapon?: WeaponSnapshot | null;
   outfit?: Outfit;
+  profile?: Progress;
 }) {
   const { t, text } = useI18n();
   const [preview, setPreview] = useState(selected);
@@ -35,7 +38,12 @@ export function CharacterSelection({
         key={preview}
         style={{ "--character-color": c.color } as React.CSSProperties}
       >
-        <CharacterPreview character={preview} outfit={outfit} weapon={weapon} />
+        <CharacterPreview
+          character={preview}
+          outfit={outfit}
+          weapon={weapon}
+          profile={profile}
+        />
         <div>
           <span className="eyebrow">{text(c.title)}</span>
           <h3>{text(c.name)}</h3>

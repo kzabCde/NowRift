@@ -1,5 +1,7 @@
 # NowRift visual and audio specification
 
+This document records the earlier presentation release. Its composite character and Graphics-only effect descriptions are superseded by the [modular pixel-art specification](pixel-art-specification.md) and [current migration/validation report](pixel-art-validation.md); the established audio, accessibility and authoritative simulation contracts remain in use.
+
 ## Direction
 
 A weathered sanctuary at the edge of a broken world. Retain the repository’s original pixel art, readable silhouettes, restrained gold, moss and bone. UI uses modern spacing around serif titles and concise monospaced labels. No external fonts, sampled music or copied game assets were introduced.

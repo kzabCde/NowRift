@@ -418,6 +418,7 @@ export default function NowRiftMainMenu() {
                 character={character}
                 outfit={progress.local?.world?.outfit ?? "moss"}
                 weapon={resolveEquippedWeapon(progress, character)}
+                profile={progress}
                 size={64}
                 decorative
               />
@@ -652,6 +653,7 @@ export default function NowRiftMainMenu() {
         <CharacterSelection
           selected={character}
           weapon={resolveEquippedWeapon(progress, character)}
+          profile={progress}
           outfit={progress.local?.world?.outfit ?? "moss"}
           onSelect={(id) => {
             setCharacter(id);

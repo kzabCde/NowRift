@@ -176,6 +176,7 @@ export default function CharacterEntry({
                 character={character}
                 outfit={outfit}
                 weapon={resolveEquippedWeapon(base, character)}
+                profile={base}
               />
               <span className="eyebrow">
                 {text(CHARACTERS[character].title)}
@@ -326,6 +327,7 @@ export default function CharacterEntry({
                     character={p.local.character}
                     outfit={p.local.world?.outfit ?? "moss"}
                     weapon={resolveEquippedWeapon(p)}
+                    profile={p}
                     size={64}
                     decorative
                   />

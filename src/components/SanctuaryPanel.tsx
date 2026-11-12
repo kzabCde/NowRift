@@ -51,6 +51,7 @@ export default function SanctuaryPanel({
           character={save.local.character}
           outfit={save.local.world?.outfit ?? "moss"}
           weapon={resolveEquippedWeapon(save)}
+          profile={save}
           size={64}
           decorative
         />

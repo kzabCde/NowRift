@@ -1,4 +1,4 @@
-# NowRift — Independent Characters & Weapons
+# NowRift — Modular Pixel Fantasy RPG
 
 A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**, **React 19**, **TypeScript**, and **Phaser 4.2.1**. Three distinct wanderers can wield any owned weapon: staff projectiles, sword slashes, slowing frost pulses or a fire-lit glaive sweep. Explore four worlds with twenty stages and grow stronger through real equipment, character progression and a local economy. Three local characters, recoverable runs, daily rewards, quests, achievements and JSON backups keep progression on your device. The original eight-minute Forest Guardian practice encounter remains available. No account, database server, keys, or multiplayer services are required.
 
@@ -18,6 +18,8 @@ Use the World Map to earn permanent rewards, then improve your gear and enter ha
 
 See [equipment contracts, original layered art, save compatibility and validation](docs/weapon-decoupling.md) for the character/weapon refactor.
 
+Characters now use synchronized, independently replaceable 48px body, skin, face, hair, clothing and owned equipment layers. The wardrobe saves skin/hair/face choices alongside cloak palettes. Inventory, town and combat share the same appearance resolver; run recovery preserves the original equipped look. Original pixel sprite effects accompany actual attacks, impacts, status effects and committed gathering/crafting receipts. All four biomes have distinct enemy, boss and prop silhouettes. See the [asset audit](docs/pixel-asset-audit.md), [pixel-art specification](docs/pixel-art-specification.md), and [visual migration, validation and production backlog](docs/pixel-art-validation.md).
+
 ## Run locally
 
 Use Node **22.12+ or 24 LTS** (Node 24 was used for development) and npm. Versions are pinned in `package.json` and `package-lock.json`.
@@ -34,7 +36,7 @@ npm run build
 npm run start
 ```
 
-Use **Play** for the persistent-world journey, or **Practice & legacy tools → Start New Run** for the retained survival mode. The development server does not register a service worker. Production builds cache the app shell, async gameplay code, and local art for offline play after successful initial caching. Browser storage eviction or private browsing can remove/prevent caches and saves.
+Use **Play** for the persistent-world journey, or **Practice & legacy tools → Start New Run** for the retained survival mode. The development server does not register a service worker. Production builds cache the app shell, starting Forest/Haven art and async gameplay code, and warm visited world/appearance art. Visit additional worlds and appearance variants online before expecting them to work offline; the full wardrobe and later biomes are intentionally loaded on demand. Browser storage eviction or private browsing can remove/prevent caches and saves.
 
 ## Controls
 
@@ -56,7 +58,7 @@ Leaving the tab pauses the run. Touch cancellation clears movement. Resizing or 
 
 ## Combat and content
 
-- **Characters:** Rift Wanderer (100 HP / 180 speed / 5% critical), Ash Sentinel (130 / 162 / 5%), Dusk Strider (80 / 207 / 10%). All use the original wanderer sprite with class tint.
+- **Characters:** Rift Wanderer (100 HP / 180 speed / 5% critical), Ash Sentinel (130 / 162 / 5%), Dusk Strider (80 / 207 / 10%). Each has a distinct body and clothing silhouette, four facing directions and interchangeable appearance/equipment layers.
 - **Relics:** Heartwood Sigil grants regeneration, Sunken Sun grants damage, Warden’s Tear grants health, Cinder Crown grants critical chance. Earn them from campaign world guardians; enhance with the displayed resources in Inventory.
 - **Default weapon:** Arcane Bolt starts at 10 damage / 0.8 seconds.
 - **Arcane Bolt:** precise targeted magic projectiles.
@@ -127,9 +129,12 @@ npm run build
 npm run test:browser
 npm run test:stress
 npm run test:playthrough
+npm run assets:check
 ```
 
 `npm run build` also runs typechecking and unit tests. Playwright launches a production server on port 3100. The config uses an installed `/usr/bin/chromium` if available, or the browser installed by `npx playwright install --with-deps chromium`. Override with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` when needed. Art is committed, so Python is not required for installation or play.
+
+To regenerate the original game art, install the optional pinned Pillow dependency (`python3 -m pip install -r scripts/requirements-art.txt`), then run `npm run assets:generate`. The consolidated generator preserves ordering between character layers, environment/item refinements and effects, then regenerates the hashed manifest. Production builds validate the committed manifest without needing Python.
 
 The full browser suite includes RPG economy and migration checks, plus explicit opt-in scenario fixtures for the eight-minute boss, campaign worlds, equipment/tonic combat integration, upgrades, defeat and a 150-enemy stress load. Build them only for testing:
 

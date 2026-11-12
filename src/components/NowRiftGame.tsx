@@ -9,6 +9,7 @@ import type { ExpeditionPrompt } from "@/game/world/farming";
 import { travelReason } from "@/game/world/content";
 import { expeditionLayout } from "@/game/world/farming";
 import { ITEMS } from "@/game/rpg/content";
+import { resolveAppearance } from "@/game/presentation/appearance";
 import { practiceLoadout } from "@/game/rpg/stats";
 import { RARITIES } from "@/game/rpg/content";
 import ItemIcon from "./ItemIcon";
@@ -127,7 +128,10 @@ export default function NowRiftGame({
             setError((message) =>
               message.startsWith("Checkpoint save failed.") ? "" : message,
             );
-            bridge.emit("command", { type: "storage-ready" });
+            bridge.emit("command", {
+              type: "storage-ready",
+              sequence: checkpoint.run.sequence,
+            });
           })
           .catch((error) => {
             setSaveBlocked(true);
@@ -289,6 +293,8 @@ export default function NowRiftGame({
       );
       bridge.emit("command", {
         type: "start",
+        visualAppearance:
+          c?.state.visualAppearance ?? resolveAppearance(canonical),
         weapon: c?.weapon ?? selection?.weaponSnapshot?.attackId ?? weapon,
         stage: selection,
         loadout:

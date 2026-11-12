@@ -1,3 +1,4 @@
+import type { CharacterAppearance } from "./presentation/appearance";
 import { temporaryStats, incomingDamage } from "./rpg/stats";
 import { enemyScale } from "./campaign/scaling";
 import type { CharacterStats, Rarity, WeaponSnapshot } from "./rpg/model";
@@ -103,6 +104,8 @@ export type Hazard = {
   damage: number;
 };
 export type Game = FeedbackQueue & {
+  visualAppearance?: CharacterAppearance;
+  visualAction?: { pose: "mine" | "gather"; at: number; until: number };
   equippedWeapon?: WeaponSnapshot;
   character: CharacterId;
   id?: string;
@@ -582,6 +585,11 @@ function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
     critical ? 28 : 15,
     angle,
     critical,
+    e.x,
+    e.y,
+    1.8,
+    g.weaponId,
+    "impact",
   );
   text(g, e.x, e.y - e.r, String(Math.round(amount)), critical);
   emit(g, e.x, e.y, critical ? "#ffe09b" : "#b7edcb", 4);
@@ -665,6 +673,8 @@ function shoot(g: Game) {
       p.x,
       p.y,
       arc,
+      g.weaponId,
+      "release",
     );
     for (const enemy of g.enemies) {
       if (enemy.hp <= 0 || dist2(enemy, p) > (radius + enemy.r) ** 2) continue;
@@ -709,6 +719,12 @@ function shoot(g: Game) {
     color,
     g.weaponId === "frost" ? w.range * w.area : 36,
     p.angle,
+    false,
+    p.x,
+    p.y,
+    1.8,
+    g.weaponId,
+    "release",
   );
   if (attack.kind === "pulse" || g.weaponId === "frost") {
     const radius = w.range * w.area;

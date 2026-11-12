@@ -1,0 +1,2 @@
+# Optional asset production only. Not needed to run or build the committed game.
+Pillow==13.0.0

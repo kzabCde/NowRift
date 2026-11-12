@@ -403,6 +403,7 @@ export default function ProfileScreen({
                     character={active.local.character}
                     outfit={active.local.world?.outfit ?? "moss"}
                     weapon={resolveEquippedWeapon(active)}
+                    profile={active}
                     size={96}
                   />
                   <div>
@@ -502,6 +503,7 @@ export default function ProfileScreen({
                           character={p.local.character}
                           outfit={p.local.world?.outfit ?? "moss"}
                           weapon={resolveEquippedWeapon(p)}
+                          profile={p}
                           size={96}
                         />
                         <p>
