@@ -461,6 +461,23 @@ describe("expedition, extraction and a path home", () => {
     expect((await repo.settle(result)).reward).toBeNull();
     expect((await repo.load()).gold).toBe(next.gold);
   });
+  test("distant Free Mode supply trips do not complete the forest quest or Story", async () => {
+    const { result } = await expedition();
+    const node = expeditionLayout("desert-2").nodes[0];
+    const returned = await repo.settle({
+      ...result,
+      stageId: "desert-2",
+      mode: "free",
+      harvested: [node.id],
+      victory: true,
+    });
+    expect(returned.progress.materials[node.item]).toBeGreaterThanOrEqual(
+      node.amount,
+    );
+    expect(returned.progress.clears).toEqual([]);
+    expect(returned.progress.local.world!.location).toBe("haven");
+    expect(returned.progress.local.world!.quest).toBe("active");
+  });
   test("defeat loses only unbanked expedition resources", async () => {
     const { p, result } = await expedition();
     const lost = await repo.settle({ ...result, victory: false, hp: 0 });
