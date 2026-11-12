@@ -94,7 +94,7 @@ export function farmPrompt(
 }
 export function validHarvest(
   v: unknown,
-  stageId = FARM.stageId,
+  stageId: string = FARM.stageId,
 ): v is string[] {
   if (!STAGES.some((stage) => stage.id === stageId)) return false;
   const nodes = expeditionLayout(stageId).nodes;
