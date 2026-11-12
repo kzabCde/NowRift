@@ -39,6 +39,7 @@ export default function WorldMap({
   onInventory: () => void;
 }) {
   const { t, text } = useI18n();
+  const [mode, setMode] = useState<"story" | "free">("story");
   const [world, setWorld] = useState<WorldId>("forest"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
     [selected, setSelected] = useState("forest-1");
@@ -68,7 +69,7 @@ export default function WorldMap({
   const w = worldById(world),
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
-    reason = lockedReason(selected, difficulty, progress.clears);
+    reason = mode === "free" ? null : lockedReason(selected, difficulty, progress.clears);
   return (
     <section className="world-map">
       <div className="hub-heading">
@@ -83,6 +84,10 @@ export default function WorldMap({
         <button className="quiet-button" onClick={onBack}>
           {t("world", "← HUB")}{" "}
         </button>
+      </div>
+      <div role="group" aria-label="Game mode" style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        <button className={mode === "story" ? "primary-button" : "quiet-button"} aria-pressed={mode === "story"} onClick={() => setMode("story")}>Story Mode</button>
+        <button className={mode === "free" ? "primary-button" : "quiet-button"} aria-pressed={mode === "free"} onClick={() => setMode("free")}>Free Mode · All Maps</button>
       </div>
       <div className="world-cards">
         {WORLDS.map((w, i) => {
@@ -156,7 +161,7 @@ export default function WorldMap({
           <h3>{t("world", "Stage selection")}</h3>
           <div className="stage-list">
             {STAGES.filter((s) => s.worldId === world).map((s) => {
-              const lock = lockedReason(s.id, difficulty, progress.clears);
+              const lock = mode === "free" ? null : lockedReason(s.id, difficulty, progress.clears);
               return (
                 <button
                   key={s.id}
@@ -246,6 +251,9 @@ export default function WorldMap({
               </small>
             ))}
           </div>
+          {mode === "free" && (
+            <p className="notice" role="status">All worlds and stages are available for repeatable farming. Free Mode does not advance Story completion.</p>
+          )}
           {reason && (
             <p className="notice" role="status">
               {text(reason)}
@@ -260,9 +268,10 @@ export default function WorldMap({
             className="primary-button"
             disabled={!ready || !!reason || !equipped}
             onClick={() => {
-              if (!lockedReason(stage.id, difficulty, progress.clears))
+              if (mode === "free" || !lockedReason(stage.id, difficulty, progress.clears))
                 onStart({
                   stageId: stage.id,
+                  mode,
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
@@ -270,7 +279,7 @@ export default function WorldMap({
                 });
             }}
           >
-            {t("world", "START STAGE →")}{" "}
+            {mode === "free" ? "ENTER FREE MODE →" : t("world", "START STAGE →")}{" "}
           </button>
         </aside>
       </div>
