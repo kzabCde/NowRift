@@ -512,7 +512,8 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
     e.hp = e.maxHp =
       (kind === "boss" ? c.world.boss.hp : def!.hp) *
       c.definition.modifiers.health *
-      c.difficulty.hp * scaling.hp;
+      c.difficulty.hp *
+      scaling.hp;
     e.speed = (def?.speed ?? d.speed) * c.difficulty.speed * scaling.speed;
     e.pattern = 0;
     e.charge = undefined;
@@ -1061,7 +1062,8 @@ export function updateGame(
           ? Math.round(
               (g.campaign.world.enemies.find((d) => d.kind === e.kind)
                 ?.damage ?? 25) * g.campaign.difficulty.damage,
-            ) * (e.damageScale ?? 1)
+            ) *
+              (e.damageScale ?? 1)
           : ENEMIES[e.kind].damage,
         e,
       );
