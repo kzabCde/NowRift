@@ -53,7 +53,9 @@ export function expeditionLayout(
         (p) =>
           Math.hypot(p.x - FARM.portal.x, p.y - FARM.portal.y) > 130 &&
           occupied.every((q) => Math.hypot(p.x - q.x, p.y - q.y) > 120) &&
-          !(map?.props.some((o) => Math.hypot(p.x - o.x, p.y - o.y) < o.r + 38)) &&
+          !map?.props.some(
+            (o) => Math.hypot(p.x - o.x, p.y - o.y) < o.r + 38,
+          ) &&
           map?.tiles[Math.floor(p.y / 32)]?.[Math.floor(p.x / 32)] !== 2,
       ) ?? positions[i];
     occupied.push(point);
