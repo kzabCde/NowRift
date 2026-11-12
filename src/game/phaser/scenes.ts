@@ -8,18 +8,30 @@ import { seeded } from "../campaign/content";
 import { applyBuild } from "../engine";
 import { translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
-import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
+import { applyLoadout, type Loadout } from "../loadout";
 import { CombatVfx } from "./combat-vfx";
 import { audio } from "../audio/engine";
 import type { SoundId } from "../audio/palette";
 import { FARM } from "../world/content";
 import { onSceneEnd } from "./lifecycle";
 import { CharacterRig } from "./character-rig";
-import { bodyKey, facingFromAngle } from "../presentation/character";
+import {
+  queueSceneAssets,
+  queueAppearanceAssets,
+  warmSceneAssets,
+} from "./asset-preloader";
+import {
+  appearanceAssets,
+  defaultAppearance,
+  type CharacterAppearance,
+} from "../presentation/appearance";
+import { assetAnimationFrame, type AssetWorld } from "../presentation/assets";
+import { animationDuration } from "../presentation/animation";
+import { feedback } from "../feedback";
+import { facingFromAngle } from "../presentation/character";
 import { farmPrompt } from "../world/farming";
 import { ITEMS } from "../rpg/content";
 import { drainFeedback, type Feedback } from "../feedback";
-import { WORLDS } from "../campaign/content";
 import { loadStage, type StageSelection } from "../campaign/loader";
 import { buildWorld } from "./world-renderer";
 import Phaser from "phaser";
@@ -38,7 +50,6 @@ import { FOREST, OBSTACLES, type WeaponId } from "../content/forest";
 import { GameBridge, type Command } from "../bridge";
 import { useSettings } from "../../state/settings";
 
-const ASSETS = "/assets/forest/";
 const PARTICLE_COLORS = [
   "#b7edcb",
   "#ffb369",
@@ -64,49 +75,22 @@ export class PreloadScene extends Phaser.Scene {
   }
   preload() {
     const bridge = this.registry.get("bridge") as GameBridge;
-    for (const character of Object.keys(
-      CHARACTERS,
-    ) as (keyof typeof CHARACTERS)[])
-      for (const outfit of ["moss", "ember", "tide"] as const)
-        this.load.spritesheet(
-          bodyKey(character, outfit),
-          `/assets/characters/${character}-${outfit}.png`,
-          { frameWidth: 32, frameHeight: 32 },
-        );
-    this.load.spritesheet(
-      "equipment-weapons",
-      "/assets/characters/weapons.png",
-      { frameWidth: 32, frameHeight: 32 },
-    );
-    for (const outfit of ["moss", "ember", "tide"])
-      this.load.spritesheet(
-        "haven-player-" + outfit,
-        "/assets/haven/player-" + outfit + ".png",
-        { frameWidth: 32, frameHeight: 32 },
+    const selected = this.registry.get("world") ?? "forest";
+    const haven = this.registry.get("haven");
+    const look =
+      haven?.visualAppearance ??
+      defaultAppearance(
+        haven?.character ?? "wanderer",
+        haven?.outfit ?? "moss",
       );
+    const queued = queueSceneAssets(
+      this,
+      selected as AssetWorld,
+      appearanceAssets(look).map((asset) => asset.path),
+    );
+    this.load.once("complete", () => warmSceneAssets(queued));
+    // Farming portal uses the hub portal art in a combat world.
     this.load.image("haven-rift", "/assets/haven/portal.png");
-    if (this.registry.get("world") === "haven") {
-      for (const asset of [
-        "terrain",
-        "fountain",
-        "forge",
-        "workshop",
-        "wardrobe",
-        "market",
-        "inn",
-        "store",
-        "board",
-        "portal",
-        "dummy",
-        "chest",
-        "tree",
-      ])
-        this.load.image("haven-" + asset, "/assets/haven/" + asset + ".png");
-      this.load.spritesheet("haven-npc", "/assets/haven/npc.png", {
-        frameWidth: 32,
-        frameHeight: 32,
-      });
-    }
     this.load.on("progress", (value: number) => bridge.emit("loading", value));
     this.load.on("loaderror", (file: Phaser.Loader.File) =>
       bridge.emit(
@@ -114,52 +98,6 @@ export class PreloadScene extends Phaser.Scene {
         "Missing art: " + file.key + ". A fallback is in use; reload to retry.",
       ),
     );
-    this.load.spritesheet("items", "/assets/items/atlas.png", {
-      frameWidth: 32,
-      frameHeight: 32,
-    });
-    const selected = this.registry.get("world") ?? "forest";
-    for (const w of WORLDS.filter((w) => w.id === selected)) {
-      this.load.spritesheet(
-        w.id + "-projectiles",
-        "/assets/worlds/" + w.id + "/projectiles.png",
-        { frameWidth: 16, frameHeight: 16 },
-      );
-      for (const kind of [...SHEETS.filter((k) => k !== "player")]) {
-        const n = kind === "boss" ? 64 : 32;
-        this.load.spritesheet(
-          w.id + "-" + kind,
-          "/assets/worlds/" + w.id + "/" + kind + ".png",
-          { frameWidth: n, frameHeight: n },
-        );
-      }
-      for (const name of ["tiles", "tree", "rock"])
-        this.load.image(
-          w.id + "-" + name,
-          "/assets/worlds/" + w.id + "/" + name + ".png",
-        );
-    }
-    for (const key of SHEETS) {
-      const size = key === "boss" ? 64 : 32;
-      this.load.spritesheet(key, ASSETS + key + ".png", {
-        frameWidth: size,
-        frameHeight: size,
-      });
-    }
-    this.load.spritesheet("particles", ASSETS + "particles.png", {
-      frameWidth: 4,
-      frameHeight: 4,
-    });
-    this.load.spritesheet("projectiles", ASSETS + "projectiles.png", {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
-    this.load.spritesheet("icons", ASSETS + "icons.png", {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
-    for (const key of ["ground", "tree", "rock"])
-      this.load.image(key, ASSETS + key + ".png");
   }
   create() {
     // Procedural fallback uses a readable miniature sprite, never a broken-image dependency.
@@ -197,6 +135,8 @@ class ForestRenderer {
   enemies: Phaser.GameObjects.Image[] = [];
   bullets: Phaser.GameObjects.Image[] = [];
   drops: Phaser.GameObjects.Image[] = [];
+  statuses: Phaser.GameObjects.Image[] = [];
+  dropShadows: Phaser.GameObjects.Graphics;
   sparks: Phaser.GameObjects.Image[] = [];
   texts: Phaser.GameObjects.Text[] = [];
   deaths: Phaser.GameObjects.Image[] = [];
@@ -218,6 +158,7 @@ class ForestRenderer {
     g?: Simulation,
   ) {
     this.vfx = new CombatVfx(scene);
+    this.dropShadows = scene.add.graphics().setDepth(-79);
     this.atmosphere = scene.add.graphics().setDepth(4500);
     this.accents = scene.add.graphics().setDepth(6100);
     this.world = g?.campaign?.world.id ?? "forest";
@@ -387,6 +328,12 @@ class ForestRenderer {
       character: g.character,
       outfit: this.scene.registry.get("outfit") ?? "moss",
       weapon: g.equippedWeapon ?? null,
+      appearance: g.visualAppearance,
+      pose:
+        g.visualAction && g.time < g.visualAction.until
+          ? g.visualAction.pose
+          : undefined,
+      poseAge: g.visualAction ? (g.time - g.visualAction.at) * 1000 : undefined,
       practice: g.equippedWeapon ? undefined : g.weaponId,
       facing:
         attack > 0
@@ -395,6 +342,7 @@ class ForestRenderer {
       time: this.tick,
       moving: g.player.moving,
       attack,
+      attackId: g.player.attackUntil,
       angle: g.player.attackAngle ?? g.player.angle,
       hit: g.player.hit > 0,
       invincible: g.player.invincible > 0,
@@ -458,16 +406,24 @@ class ForestRenderer {
 
     const hp = this.health;
     hp.clear().setDepth(7000);
-    let i = 0;
+    let i = 0,
+      statusCount = 0;
     for (const e of g.enemies) {
-      const frame =
+      const pose =
         (e.hit ?? 0) > 0
-          ? 5
+          ? "hit"
           : ((e.kind === "caster" || e.kind === "boss") &&
                 (e.attack ?? 9) < 0.25) ||
               e.contact > 0.55
-            ? 4
-            : 1 + (Math.floor((this.tick + e.id * 39) / 160) % 3);
+            ? "attack"
+            : e.speed > 0
+              ? "walk"
+              : "idle";
+      const frame = assetAnimationFrame(
+        this.skin + e.kind,
+        pose,
+        this.tick + e.id * 39,
+      );
       const image = this.image(this.enemies, i++, this.skin + e.kind, frame);
       image
         .setPosition(e.x, e.y)
@@ -477,8 +433,22 @@ class ForestRenderer {
       if ((e.hit ?? 0) > 0) image.setTint(0xf6e6bc).setTintFill();
       else if ((e.slow ?? 0) > 0) {
         image.setTint(0xa4e2ed);
-        accent.lineStyle(1, 0xafe2ec, 0.65);
-        accent.strokeCircle(e.x, e.y + e.r * 0.4, e.r + 4);
+        if (
+          statusCount < (prefs.quality === "low" ? 24 : 64) &&
+          camera.worldView.contains(e.x, e.y) &&
+          this.scene.textures.exists("pixel-vfx-frost")
+        ) {
+          this.image(
+            this.statuses,
+            statusCount++,
+            "pixel-vfx-frost",
+            8 + (reduced ? 0 : Math.floor(this.tick / 100) % 8),
+          )
+            .setPosition(Math.round(e.x), Math.round(e.y - e.r - 12))
+            .setScale(0.5)
+            .setDepth(e.y + 5)
+            .setAlpha(0.8);
+        }
       }
       if (e.hp < e.maxHp && e.kind !== "boss") {
         hp.fillStyle(0x172b2b, 0.9);
@@ -493,6 +463,7 @@ class ForestRenderer {
       }
     }
     this.trim(this.enemies, i);
+    this.trim(this.statuses, statusCount);
     i = 0;
     for (const b of g.bullets) {
       const image = this.image(
@@ -510,9 +481,15 @@ class ForestRenderer {
     }
     this.trim(this.bullets, i);
     i = 0;
+    const shadows = this.dropShadows.clear().fillStyle(0x091b20, 0.4);
     for (const d of g.drops) {
+      if (!camera.worldView.contains(d.x, d.y)) continue;
+      shadows.fillEllipse(Math.round(d.x), Math.round(d.y + 5), 10, 4);
       this.image(this.drops, i++, "icons", d.kind === "heal" ? 7 : 0)
-        .setPosition(d.x, d.y + Math.sin(this.tick / 260 + d.x) * 1.5)
+        .setPosition(
+          Math.round(d.x),
+          Math.round(d.y + (reduced ? 0 : Math.sin(this.tick / 260 + d.x) * 2)),
+        )
         .setScale(0.8)
         .setDepth(d.y - 1)
         .setTint(d.kind === "heal" ? 0xffbeb1 : 0xa9e8cf);
@@ -551,6 +528,7 @@ class ForestRenderer {
         continue;
       }
       if (t.kind === "death") {
+        if (t.value === "player") continue; // The modular rig owns the real character death.
         const key = t.value === "player" ? "player" : this.skin + t.value;
         this.image(
           this.deaths,
@@ -662,8 +640,10 @@ export class MainMenuScene extends Phaser.Scene {
   }
   create() {
     const bridge = this.registry.get("bridge") as GameBridge;
-    const renderer = new ForestRenderer(this);
-    renderer.draw(makeGame(), 0, null);
+    if ((this.registry.get("world") ?? "forest") === "forest") {
+      const renderer = new ForestRenderer(this);
+      renderer.draw(makeGame(), 0, null);
+    }
     this.cameras.main.centerOn(900, 700);
     const off = bridge.on("command", (command) => {
       if (command.type === "start")
@@ -673,6 +653,7 @@ export class MainMenuScene extends Phaser.Scene {
           loadout: command.loadout,
           run: command.run,
           checkpoint: command.checkpoint,
+          visualAppearance: command.visualAppearance,
           hold: command.hold,
         });
     });
@@ -701,6 +682,7 @@ export class GameScene extends Phaser.Scene {
   lastCheckpoint = 0;
   storageBlocked = false;
   farmNodes: Phaser.GameObjects.Image[] = [];
+  pendingGather: { id: string; sequence: number }[] = [];
   tonicPending = false;
   transitionLocked = false;
   tonicReceipts = new Set<string>();
@@ -709,6 +691,7 @@ export class GameScene extends Phaser.Scene {
   }
   init(data: {
     weapon: WeaponId;
+    visualAppearance?: CharacterAppearance;
     stage?: StageSelection;
     loadout?: Loadout;
     run?: RunOwner;
@@ -737,6 +720,14 @@ export class GameScene extends Phaser.Scene {
           data.stage?.character ?? data.loadout?.character ?? "wanderer";
       else applyLoadout(this.simulation, data.loadout);
     }
+    if (!data.checkpoint && !this.simulation.visualAppearance)
+      this.simulation.visualAppearance =
+        data.visualAppearance ??
+        defaultAppearance(
+          this.simulation.character,
+          this.stage?.outfit ?? "moss",
+        );
+    this.pendingGather = [];
     this.lastFrameAt = performance.now();
     this.renderFrames = 0;
     this.lastHud = 0;
@@ -749,6 +740,32 @@ export class GameScene extends Phaser.Scene {
     this.tonicReceipts = new Set(data.checkpoint?.tonics ?? []);
     this.joystick = null;
     this.pointer = null;
+  }
+  preload() {
+    const look =
+      this.simulation.visualAppearance ??
+      defaultAppearance(
+        this.simulation.character,
+        this.stage?.outfit ?? "moss",
+      );
+    const queued = queueAppearanceAssets(
+      this,
+      appearanceAssets(look).map((asset) => asset.path),
+    );
+    this.load.once("complete", () => warmSceneAssets(queued));
+    const progress = (value: number) =>
+        (this.registry.get("bridge") as GameBridge).emit("loading", value),
+      loadError = (file: Phaser.Loader.File) =>
+        (this.registry.get("bridge") as GameBridge).emit(
+          "error",
+          `Missing art: ${file.key}. A fallback is in use; reload to retry.`,
+        );
+    this.load.on("progress", progress);
+    this.load.on("loaderror", loadError);
+    onSceneEnd(this, () => {
+      this.load.off("progress", progress);
+      this.load.off("loaderror", loadError);
+    });
   }
   create() {
     this.bridge = this.registry.get("bridge");
@@ -896,6 +913,9 @@ export class GameScene extends Phaser.Scene {
       canvas.removeEventListener("pointercancel", up);
       canvas.removeEventListener("lostpointercapture", up);
     });
+    // Render recovered paused runs before publishing their ready HUD. Waiting
+    // for the first throttled update briefly exposes the default weapon/rig.
+    this.visuals.draw(g, 0, null);
     this.publish();
     // Test-only fixture control is excluded unless explicitly enabled at build time.
     this.checkpoint();
@@ -905,6 +925,7 @@ export class GameScene extends Phaser.Scene {
         audio: () => audio.diagnostics(),
         effects: () => this.visuals.vfx.count,
         appearance: () => this.visuals.rig.describe(),
+        vfx: () => this.visuals.vfx.describe(),
         metrics: () => ({
           frames: this.renderFrames,
           fpsLimit: this.game.loop.fpsLimit,
@@ -971,8 +992,9 @@ export class GameScene extends Phaser.Scene {
           this.publish();
         },
       };
-      this.events.once("shutdown", () => {
-        delete window.__NOWRIFT_TEST__;
+      const fixture = window.__NOWRIFT_TEST__;
+      onSceneEnd(this, () => {
+        if (window.__NOWRIFT_TEST__ === fixture) delete window.__NOWRIFT_TEST__;
       });
     }
   }
@@ -1053,8 +1075,11 @@ export class GameScene extends Phaser.Scene {
         audio.play("launch");
       } else if (prompt.target && prompt.target !== "extract") {
         g.campaign!.harvested!.push(prompt.target);
-        audio.play("pickup");
         this.checkpoint();
+        this.pendingGather.push({
+          id: prompt.target,
+          sequence: this.run?.sequence ?? 0,
+        });
       }
       this.publish();
       return;
@@ -1072,6 +1097,36 @@ export class GameScene extends Phaser.Scene {
     }
     if (command.type === "storage-ready") {
       this.storageBlocked = false;
+      if (command.sequence !== undefined) {
+        const completed = this.pendingGather.filter(
+          (pending) => pending.sequence <= command.sequence!,
+        );
+        this.pendingGather = this.pendingGather.filter(
+          (pending) => pending.sequence > command.sequence!,
+        );
+        for (const receipt of completed) {
+          const node = FARM.nodes.find((entry) => entry.id === receipt.id)!;
+          const g = this.simulation,
+            pose = receipt.id === "copper-vein" ? "mine" : "gather";
+          g.visualAction = {
+            pose,
+            at: g.time,
+            until: g.time + animationDuration(pose) / 1000,
+          };
+          feedback(
+            g,
+            pose === "mine" ? "spark" : "pickup",
+            node.x,
+            node.y,
+            pose === "mine" ? 0xe8c990 : 0xb8dea6,
+            26,
+            0,
+            true,
+          );
+          audio.play("pickup");
+        }
+        this.publish();
+      }
       return;
     }
     if (this.storageBlocked && ["pause", "upgrade"].includes(command.type))
@@ -1117,6 +1172,7 @@ export class GameScene extends Phaser.Scene {
           loadout: command.loadout,
           run: command.run,
           checkpoint: command.checkpoint,
+          visualAppearance: command.visualAppearance,
           hold: command.hold,
         });
         break;
@@ -1147,7 +1203,10 @@ export class GameScene extends Phaser.Scene {
       );
       for (let i = 0; i < this.farmNodes.length; i++)
         this.farmNodes[i].setVisible(
-          !g.campaign?.harvested?.includes(FARM.nodes[i].id),
+          !g.campaign?.harvested?.includes(FARM.nodes[i].id) ||
+            this.pendingGather.some(
+              (pending) => pending.id === FARM.nodes[i].id,
+            ),
         );
     }
   }
@@ -1277,6 +1336,7 @@ export class ResultsScene extends Phaser.Scene {
           loadout: command.loadout,
           run: command.run,
           checkpoint: command.checkpoint,
+          visualAppearance: command.visualAppearance,
         });
       if (command.type === "exit") this.scene.start("MainMenuScene");
     });
@@ -1289,6 +1349,7 @@ declare global {
       state: () => Simulation;
       audio?: () => ReturnType<typeof audio.diagnostics>;
       appearance?: () => ReturnType<CharacterRig["describe"]>;
+      vfx?: () => ReturnType<CombatVfx["describe"]>;
       effects?: () => number;
       metrics?: () => {
         frames: number;

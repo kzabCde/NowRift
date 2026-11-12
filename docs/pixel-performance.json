@@ -1,0 +1,195 @@
+{
+  "baseline_commit": "8969177",
+  "environment": {
+    "node": "24.22.1",
+    "chromium": "156.0.0.0",
+    "renderer": "Phaser 4.2.1 Canvas2D"
+  },
+  "assets": {
+    "public_pngs": 354,
+    "public_png_bytes": 1644734,
+    "byte_identical_regenerated_game_pngs": 348
+  },
+  "ordinary_early_forest_before": {
+    "fps": {
+      "frames": 181,
+      "fps": 60.130892661373366,
+      "p95FrameMs": 16.799999999999272,
+      "scope": "ordinary production, natural early forest scene; browser requestAnimationFrame, not a 150-enemy fixture",
+      "fixtureApi": "undefined"
+    },
+    "errors": []
+  },
+  "ordinary_early_forest_after": {
+    "fps": {
+      "frames": 181,
+      "fps": 60.2489847546469,
+      "p95FrameMs": 16.700000000000728,
+      "scope": "ordinary production, natural early forest scene; browser requestAnimationFrame, not a 150-enemy fixture",
+      "fixtureApi": "undefined"
+    },
+    "errors": []
+  },
+  "rendered_stress_after": {
+    "desktop": {
+      "frames": 481,
+      "fps": 60.08294194062477,
+      "p95FrameMs": 16.799999999999272,
+      "enemies": 150
+    },
+    "mobile_4x_cpu": {
+      "frames": 469,
+      "fps": 58.54157825099234,
+      "p95FrameMs": 16.799999999999727,
+      "enemies": 150
+    },
+    "scope": "8-second instrumented Chromium 156 Canvas2D fixtures, 150 active enemies, 1280x900 desktop and 390x844 viewport with 4x CPU throttle; not physical mobile hardware"
+  },
+  "simulation_comparison": {
+    "scope": "Node 24.22.1, 180 enemies, 3600 simulation frames; three alternating runs per source version, without builds or browser tests running",
+    "baseline_commit": "8969177",
+    "summary": {
+      "baseline": {
+        "meanMs": 0.33463700083333275,
+        "p95Ms": 0.43484300000000076,
+        "maxMs": 3.1413379999999904
+      },
+      "after": {
+        "meanMs": 0.327911868055554,
+        "p95Ms": 0.41535399999997935,
+        "maxMs": 2.8781229999999596
+      }
+    },
+    "runs": [
+      {
+        "version": "baseline",
+        "iteration": 1,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.34527541194444517,
+        "p95Ms": 0.47212900000010904,
+        "maxMs": 6.024038000000019,
+        "bullets": 47,
+        "particles": 2,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      },
+      {
+        "version": "after",
+        "iteration": 1,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.3265371624999999,
+        "p95Ms": 0.4089139999999958,
+        "maxMs": 4.27965800000004,
+        "bullets": 47,
+        "particles": 1,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      },
+      {
+        "version": "baseline",
+        "iteration": 2,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.33463700083333275,
+        "p95Ms": 0.43484300000000076,
+        "maxMs": 2.672122999999999,
+        "bullets": 43,
+        "particles": 2,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      },
+      {
+        "version": "after",
+        "iteration": 2,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.33128999805555537,
+        "p95Ms": 0.41535399999997935,
+        "maxMs": 2.8781229999999596,
+        "bullets": 42,
+        "particles": 0,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      },
+      {
+        "version": "baseline",
+        "iteration": 3,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.3310643963888888,
+        "p95Ms": 0.43050699999999154,
+        "maxMs": 3.1413379999999904,
+        "bullets": 47,
+        "particles": 2,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      },
+      {
+        "version": "after",
+        "iteration": 3,
+        "frames": 3600,
+        "enemies": 180,
+        "meanMs": 0.327911868055554,
+        "p95Ms": 0.4206220000000087,
+        "maxMs": 1.9940249999999935,
+        "bullets": 49,
+        "particles": 1,
+        "scope": "Node simulation only, not rendering or mobile hardware"
+      }
+    ]
+  },
+  "seeded_playthrough_after": {
+    "phase": "victory",
+    "seconds": 527.8499999998486,
+    "hp": 175,
+    "level": 23,
+    "kills": 911,
+    "gold": 2749,
+    "stacks": {
+      "rapid": 5,
+      "regen": 5,
+      "power": 3,
+      "multishot": 4,
+      "vitality": 3,
+      "stride": 1,
+      "critical": 1
+    }
+  },
+  "production_customization_review": {
+    "customizationSaved": true,
+    "equipmentPreserved": true,
+    "goldPreserved": true,
+    "persistedAfterReload": true,
+    "productionFixtureApis": "undefined",
+    "errors": []
+  },
+  "checks": {
+    "unit": {
+      "passed": 320,
+      "files": 19
+    },
+    "instrumented_browser_full": {
+      "passed": 91,
+      "reported_duration": "8.8m"
+    },
+    "strengthened_crowded_vfx_case": {
+      "passed": 1,
+      "reported_duration": "9.9s"
+    },
+    "ordinary_browser_full": {
+      "passed": 53,
+      "fixture_only_skipped": 38,
+      "reported_duration": "3.8m"
+    },
+    "production_build": "passed",
+    "final_build_mode": "ordinary production",
+    "typecheck": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "final_metadata_followup": {
+      "town_and_offline_browser_passed": 2,
+      "reported_duration": "22.4s",
+      "production_build": "passed",
+      "unit_passed": 320,
+      "lint": "passed",
+      "format": "passed"
+    }
+  }
+}

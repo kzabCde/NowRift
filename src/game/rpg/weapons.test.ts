@@ -394,7 +394,7 @@ test("shared presentation selects all facing and animation rows without changing
     expect(facingFromAngle(angle)).toBe(facing);
     for (const pose of ["idle", "walk", "attack", "hit", "death"] as const) {
       expect(bodyFrame(facing, pose, 200, 900)).toBeGreaterThanOrEqual(0);
-      expect(bodyFrame(facing, pose, 200, 900)).toBeLessThan(48);
+      expect(bodyFrame(facing, pose, 200, 900)).toBeLessThan(104);
     }
   }
 });

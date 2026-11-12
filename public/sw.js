@@ -1,17 +1,8 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v14-equipment";
+const VERSION = "nowrift-pwa-v15-pixel";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
-  "/assets/characters/wanderer-moss.png",
-  "/assets/characters/wanderer-ember.png",
-  "/assets/characters/wanderer-tide.png",
-  "/assets/characters/sentinel-moss.png",
-  "/assets/characters/sentinel-ember.png",
-  "/assets/characters/sentinel-tide.png",
-  "/assets/characters/strider-moss.png",
-  "/assets/characters/strider-ember.png",
-  "/assets/characters/strider-tide.png",
   "/assets/characters/weapons.png",
   "/assets/haven/terrain.png",
   "/assets/haven/fountain.png",
@@ -32,9 +23,6 @@ const CORE_URLS = [
   "/assets/haven/player-tide.png",
   "/assets/items/atlas.png",
   "/assets/worlds/forest/projectiles.png",
-  "/assets/worlds/desert/projectiles.png",
-  "/assets/worlds/frozen/projectiles.png",
-  "/assets/worlds/infernal/projectiles.png",
   "/assets/worlds/forest/tiles.png",
   "/assets/worlds/forest/tree.png",
   "/assets/worlds/forest/rock.png",
@@ -45,35 +33,8 @@ const CORE_URLS = [
   "/assets/worlds/forest/elite.png",
   "/assets/worlds/forest/boss.png",
   "/assets/worlds/forest/preview.png",
-  "/assets/worlds/desert/tiles.png",
-  "/assets/worlds/desert/tree.png",
-  "/assets/worlds/desert/rock.png",
-  "/assets/worlds/desert/slime.png",
-  "/assets/worlds/desert/goblin.png",
-  "/assets/worlds/desert/wolf.png",
-  "/assets/worlds/desert/caster.png",
-  "/assets/worlds/desert/elite.png",
-  "/assets/worlds/desert/boss.png",
   "/assets/worlds/desert/preview.png",
-  "/assets/worlds/frozen/tiles.png",
-  "/assets/worlds/frozen/tree.png",
-  "/assets/worlds/frozen/rock.png",
-  "/assets/worlds/frozen/slime.png",
-  "/assets/worlds/frozen/goblin.png",
-  "/assets/worlds/frozen/wolf.png",
-  "/assets/worlds/frozen/caster.png",
-  "/assets/worlds/frozen/elite.png",
-  "/assets/worlds/frozen/boss.png",
   "/assets/worlds/frozen/preview.png",
-  "/assets/worlds/infernal/tiles.png",
-  "/assets/worlds/infernal/tree.png",
-  "/assets/worlds/infernal/rock.png",
-  "/assets/worlds/infernal/slime.png",
-  "/assets/worlds/infernal/goblin.png",
-  "/assets/worlds/infernal/wolf.png",
-  "/assets/worlds/infernal/caster.png",
-  "/assets/worlds/infernal/elite.png",
-  "/assets/worlds/infernal/boss.png",
   "/assets/worlds/infernal/preview.png",
   "/assets/forest/particles.png",
   "/assets/forest/projectiles.png",
@@ -179,7 +140,7 @@ self.addEventListener("message", (event) => {
             .slice(0, 100)
             .filter((input) => {
               const url = typeof input === "string" ? localUrl(input) : null;
-              return url && url.pathname.startsWith("/_next/static/");
+              return url && (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/assets/"));
             })
             .map((url) => cacheUrl(cache, url)),
         );
@@ -218,6 +179,7 @@ self.addEventListener("fetch", (event) => {
   }
   if (
     !url.pathname.startsWith("/_next/static/") &&
+    !url.pathname.startsWith("/assets/") &&
     !CORE_URLS.includes(url.pathname) &&
     url.pathname !== "/icons/favicon-48.png"
   )

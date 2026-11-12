@@ -23,6 +23,8 @@ export type EffectKind =
   | "phase"
   | "step";
 export type Feedback = {
+  skill?: import("./content/forest").WeaponId;
+  stage?: "release" | "impact";
   kind: EffectKind;
   x: number;
   y: number;
@@ -47,6 +49,8 @@ export function feedback(
   tx = x,
   ty = y,
   arc = 1.8,
+  skill?: import("./content/forest").WeaponId,
+  stage?: "release" | "impact",
 ) {
   if (g.feedback.length >= 128) {
     if (!important) return;
@@ -66,6 +70,8 @@ export function feedback(
     tx,
     ty,
     arc,
+    skill,
+    stage,
   });
   g.feedback.push(event);
 }

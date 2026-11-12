@@ -132,7 +132,7 @@ export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
       name: RELICS[w.boss.reward as keyof typeof RELICS].name,
       kind: "equipment" as const,
       slot: "necklace" as const,
-      icon: i * 6 + 5,
+      icon: 36 + i,
       primary: (["regen", "damage", "maxHp", "critChance"] as const)[i],
       description: `A unique relic recovered from ${w.boss.name}.`,
     })),

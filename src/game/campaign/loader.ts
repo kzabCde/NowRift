@@ -1,3 +1,4 @@
+import type { CharacterAppearance } from "../presentation/appearance";
 import type { CharacterStats, Rarity, WeaponSnapshot } from "../rpg/model";
 import type { CharacterId } from "../loadout";
 import { makeGame, beginGame, applyBuild } from "../engine";
@@ -6,6 +7,7 @@ import { stageById, seeded, type DifficultyId } from "./content";
 import { lockedReason } from "./progression";
 import { stageRuntime } from "./runtime";
 export type StageSelection = {
+  visualAppearance?: CharacterAppearance;
   character?: CharacterId;
   weaponSnapshot?: WeaponSnapshot;
   activity?: "farming";
@@ -37,6 +39,8 @@ export function loadStage(
       seeded(selection.seed),
     );
   g.character = selection.character ?? "wanderer";
+  if (selection.visualAppearance)
+    g.visualAppearance = structuredClone(selection.visualAppearance);
   if (selection.weaponSnapshot)
     g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);

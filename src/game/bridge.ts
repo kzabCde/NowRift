@@ -9,6 +9,7 @@ export type Command =
   | { type: "expedition-interact" }
   | {
       type: "start";
+      visualAppearance?: import("./presentation/appearance").CharacterAppearance;
       weapon: WeaponId;
       stage?: StageSelection;
       loadout?: Loadout;
@@ -17,7 +18,8 @@ export type Command =
       hold?: boolean;
     }
   | { type: "pause" }
-  | { type: "checkpoint" | "storage-blocked" | "storage-ready" }
+  | { type: "checkpoint" | "storage-blocked" }
+  | { type: "storage-ready"; sequence?: number }
   | { type: "upgrade"; id: UpgradeId }
   | { type: "exit" }
   | {

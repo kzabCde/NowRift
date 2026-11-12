@@ -1,14 +1,17 @@
 import type { CharacterId } from "../loadout";
 import type { Outfit } from "../world/save";
 import type { WeaponId } from "../content/forest";
+import { animationFrame, type AnimationPose } from "./animation";
 export type Facing = "down" | "right" | "up" | "left";
-export type Pose = "idle" | "walk" | "attack" | "hit" | "death";
+export type Pose = AnimationPose | "attack";
 export const CHARACTER_ART = {
-  size: 32,
-  columns: 12,
+  size: 48,
+  columns: 26,
   rows: 4,
   directions: ["down", "right", "up", "left"] as const,
 };
+export const WEAPON_ART = { size: 32, columns: 18 };
+/** Retained composite paths are fallback art; actual actors use independent layers. */
 export const bodyKey = (character: CharacterId, outfit: Outfit) =>
   `character-${character}-${outfit}`;
 export const bodyPath = (character: CharacterId, outfit: Outfit) =>
@@ -24,35 +27,44 @@ export function bodyFrame(
   time: number,
   deathAge = 0,
 ) {
-  const offset =
-    CHARACTER_ART.directions.indexOf(facing) * CHARACTER_ART.columns;
-  return (
-    offset +
-    (pose === "death"
-      ? 9 + Math.min(2, Math.floor(deathAge / 160))
-      : pose === "hit"
-        ? 8
-        : pose === "attack"
-          ? 6 + (Math.floor(time / 85) % 2)
-          : pose === "walk"
-            ? 2 + (Math.floor(time / 120) % 4)
-            : Math.floor(time / 600) % 2)
+  return animationFrame(
+    pose === "attack" ? "melee" : pose,
+    facing,
+    pose === "death" ? deathAge : time,
   );
 }
+export const BODY_BOB = [
+  0, -1, 0, 0, 0, -1, 0, 1, 0, -1, -1, -2, 0, 1, -1, -2, -2, -1, 1, 0, 0, 0, 1,
+  2, 3, 1,
+] as const;
+/** These exact source-pixel anchors match scripts/character-layers.py anatomy. */
 export function handPoint(
   character: CharacterId,
   facing: Facing,
-  attacking = false,
+  _attacking = false,
   frame = 0,
 ) {
-  const width = character === "sentinel" ? 8 : character === "strider" ? 5 : 6;
-  const bob = [0, -1, 0, -1, 0, 1, -1, 0, 1][frame] ?? 0;
+  const width = character === "sentinel" ? 10 : character === "strider" ? 7 : 8;
+  const lean =
+    frame >= 10 && frame < 14
+      ? [-1, 0, 2, 1][frame - 10]
+      : frame === 18
+        ? -2
+        : 0;
+  const stride = frame >= 4 && frame <= 9 ? [-2, -3, 0, 2, 3, 0][frame - 4] : 0;
+  const arm =
+    frame >= 10 && frame <= 11
+      ? -5
+      : frame >= 14 && frame <= 17
+        ? -7
+        : frame >= 22
+          ? [-6, -3, 4, 1][frame - 22]
+          : Math.round(-stride / 2);
   return {
-    x: facing === "left" || facing === "up" ? -width : width,
-    y: -5 + bob + (attacking ? -1 : 0),
+    x: facing === "left" ? -width - lean - 3 : width + lean + 2,
+    y: -9 + (BODY_BOB[frame] ?? 0) + arm,
   };
 }
-/** Explicit temporary practice visuals, never represented as inventory ownership. */
 export const practiceFrame: Record<WeaponId, number> = {
   arcane: 0,
   daggers: 4,

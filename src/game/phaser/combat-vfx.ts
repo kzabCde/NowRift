@@ -1,168 +1,180 @@
 import Phaser from "phaser";
 import type { Feedback } from "../feedback";
 import type { Preferences } from "../../state/settings";
-type Effect = Feedback & { age: number; life: number };
-/** Bounded, recycled semantic shapes, batched into one Phaser Graphics object. */
+import {
+  VfxTimeline,
+  effectDefinition,
+  inEffectView,
+  vfxFrame,
+  type ActiveVfx,
+} from "../presentation/vfx";
+import { onSceneEnd } from "./lifecycle";
+
+/** Recycled pixel sprites consume authoritative simulation events; the update clock owns all animation. */
 export class CombatVfx {
-  private active: Effect[] = [];
-  private pool: Effect[] = [];
-  private graphics: Phaser.GameObjects.Graphics;
-  constructor(scene: Phaser.Scene) {
-    this.graphics = scene.add.graphics().setDepth(6200);
+  private readonly timeline = new VfxTimeline();
+  private readonly sprites: Phaser.GameObjects.Image[] = [];
+  private readonly graphics: Phaser.GameObjects.Graphics;
+  private visibleSprites = 0;
+  private disposed = false;
+  constructor(private readonly scene: Phaser.Scene) {
+    this.graphics = scene.add.graphics().setDepth(6199);
+    onSceneEnd(scene, () => this.destroy());
   }
   emit(event: Feedback, prefs: Preferences) {
-    const cap = prefs.reducedEffects
-      ? 20
-      : prefs.quality === "low"
-        ? 32
-        : prefs.quality === "high"
-          ? 96
-          : 64;
-    if (this.active.length >= cap) {
-      if (!event.important) return;
-      this.pool.push(this.active.shift()!);
-    }
-    const item = this.pool.pop() ?? ({} as Effect);
-    Object.assign(item, event, {
-      age: 0,
-      life:
-        event.kind === "bossDeath"
-          ? 1.4
-          : event.kind === "bossSpawn" || event.kind === "level"
-            ? 0.9
-            : event.kind === "slash"
-              ? 0.16
-              : 0.4,
-    });
-    this.active.push(item);
+    if (!this.disposed) this.timeline.emit(event, prefs);
   }
   draw(dt: number, prefs: Preferences) {
-    const g = this.graphics.clear();
-    for (let i = this.active.length - 1; i >= 0; i--) {
-      const e = this.active[i];
-      e.age += dt;
-      if (e.age >= e.life) {
-        this.pool.push(e);
-        this.active.splice(i, 1);
-        continue;
-      }
-      const t = e.age / e.life,
-        alpha = (1 - t) * (prefs.reducedEffects ? 0.6 : 1),
-        r = e.radius;
-      g.lineStyle(e.important ? 3 : 2, e.color, alpha);
-      switch (e.kind) {
-        case "slash": {
-          const arc = e.arc ?? 1.8,
-            turn = (t - 0.5) * 0.3;
-          g.beginPath();
-          g.arc(
-            e.x,
-            e.y,
-            r * (0.7 + t * 0.4),
-            e.angle - arc / 2 + turn,
-            e.angle + arc / 2 + turn,
+    if (this.disposed) return;
+    this.timeline.update(dt, prefs);
+    const graphics = this.graphics.clear(),
+      view = this.scene.cameras.main.worldView;
+    let spriteIndex = 0;
+    for (const event of this.timeline.active) {
+      if (!inEffectView(event, view)) continue;
+      const def = effectDefinition(event),
+        t = event.age / event.life;
+      const alpha =
+        (1 - t * 0.75) *
+        (prefs.reducedEffects ? 0.45 : event.important ? 0.8 : 0.7);
+      const key = `pixel-vfx-${def.family}`;
+      if (this.scene.textures.exists(key)) {
+        let image = this.sprites[spriteIndex];
+        if (!image)
+          image = this.sprites[spriteIndex] = this.scene.add.image(
+            0,
+            0,
+            key,
+            def.frameStart,
           );
-          g.strokePath();
-          g.lineStyle(1, 0xf0ebca, alpha);
-          g.beginPath();
-          g.arc(
-            e.x,
-            e.y,
-            r * 0.7,
-            e.angle - arc * 0.4 + turn,
-            e.angle + arc * 0.4 + turn,
+        const rise = def.motion === "rise" ? -t * 16 : 0;
+        image
+          .setTexture(key, vfxFrame(event))
+          .setVisible(true)
+          .setAlpha(alpha)
+          .setOrigin(def.origin[0], def.origin[1]);
+        image
+          .setPosition(Math.round(event.x), Math.round(event.y + rise))
+          .setDepth(def.depth);
+        if (def.motion === "link") {
+          const distance = Math.hypot(event.tx - event.x, event.ty - event.y);
+          image.setPosition(
+            Math.round((event.x + event.tx) / 2),
+            Math.round((event.y + event.ty) / 2),
           );
-          g.strokePath();
-          break;
+          image
+            .setDisplaySize(Math.max(48, Math.round(distance)), 24)
+            .setRotation(Math.atan2(event.ty - event.y, event.tx - event.x));
+        } else {
+          const size = Math.max(
+            24,
+            Math.min(event.important ? 288 : 240, event.radius * 2 * def.scale),
+          );
+          const scale = Math.max(1, Math.round(size / 48));
+          image
+            .setScale(scale)
+            .setRotation(def.motion === "directional" ? event.angle : 0);
         }
-        case "lightning": {
-          g.beginPath();
-          g.moveTo(e.x, e.y);
-          for (let j = 1; j < 6; j++) {
-            const f = j / 6;
-            g.lineTo(
-              e.x + (e.tx - e.x) * f + (j % 2 ? 9 : -9),
-              e.y + (e.ty - e.y) * f,
-            );
-          }
-          g.lineTo(e.tx, e.ty);
-          g.strokePath();
-          break;
-        }
-        case "heal":
-          for (let j = 0; j < 4; j++) {
-            const x = e.x + (j - 1.5) * 12,
-              y = e.y - t * 45 + (j % 2) * 12;
-            g.lineBetween(x - 3, y, x + 3, y);
-            g.lineBetween(x, y - 3, x, y + 3);
-          }
-          break;
-        case "spark":
-        case "magic":
-        case "burn":
-        case "trail":
-        case "poison":
-          for (let j = 0; j < (prefs.reducedEffects ? 3 : 6); j++) {
-            const a = e.angle + (j * Math.PI) / 3;
-            const x = e.x + Math.cos(a) * r * t,
-              y = e.y + Math.sin(a) * r * t;
-            g.lineBetween(
-              x,
-              y,
-              x + Math.cos(a) * 5 * (1 - t),
-              y + Math.sin(a) * 5 * (1 - t),
-            );
-          }
-          break;
-        case "step":
-        case "pickup":
-          g.fillStyle(e.color, alpha * 0.4);
-          g.fillRect(e.x - 2, e.y - t * 14, 4, 4);
-          break;
-        case "shield":
-          g.beginPath();
-          g.arc(e.x, e.y, r, e.angle - 1, e.angle + 1);
-          g.strokePath();
-          break;
-        case "freeze":
-          for (let j = 0; j < 6; j++) {
-            const a = (j * Math.PI) / 3;
-            g.lineBetween(
-              e.x + Math.cos(a) * r * t,
-              e.y + Math.sin(a) * r * t,
-              e.x + Math.cos(a) * (r * t + 7),
-              e.y + Math.sin(a) * (r * t + 7),
-            );
-          }
-          g.strokeCircle(e.x, e.y, r * t);
-          break;
-        default:
-          g.strokeCircle(e.x, e.y, r * (0.2 + 0.8 * t));
-          if (e.important || e.kind === "explosion") {
-            g.lineStyle(1, e.color, alpha * 0.45);
-            g.strokeCircle(e.x, e.y, r * (0.1 + 0.6 * t));
-            for (let j = 0; j < 8; j++) {
-              const a = (j * Math.PI) / 4;
-              g.lineBetween(
-                e.x + Math.cos(a) * r * t,
-                e.y + Math.sin(a) * r * t,
-                e.x + Math.cos(a) * r * t * 1.12,
-                e.y + Math.sin(a) * r * t * 1.12,
-              );
-            }
-          }
+        if (def.tint) image.setTint(event.color);
+        else image.clearTint();
+        spriteIndex++;
       }
-      if (
-        prefs.glow > 0 &&
-        !prefs.reducedEffects &&
-        (e.important || e.kind === "explosion")
-      ) {
-        g.fillStyle(e.color, alpha * prefs.glow * 0.08);
-        g.fillCircle(e.x, e.y, r * 0.6);
+      this.drawReadability(event, t, prefs);
+      if (!prefs.reducedEffects) {
+        const count = Math.min(
+          prefs.quality === "low" ? 2 : 6,
+          Math.ceil(def.particles.count * prefs.particles),
+        );
+        graphics.fillStyle(event.color, alpha * 0.75);
+        for (let i = 0; i < count; i++) {
+          const angle = event.angle + (i / Math.max(1, count)) * Math.PI * 2;
+          const distance =
+            Math.min(event.radius, 50) * t + def.particles.speed * event.age;
+          graphics.fillRect(
+            Math.round(event.x + Math.cos(angle) * distance),
+            Math.round(event.y + Math.sin(angle) * distance - t * 8),
+            def.particles.size,
+            def.particles.size,
+          );
+        }
       }
     }
+    for (let i = spriteIndex; i < this.sprites.length; i++)
+      this.sprites[i].setVisible(false);
+    this.visibleSprites = spriteIndex;
+  }
+  /** Exact gameplay radii stay legible even with reduced motion, missing art or a full effect pool. */
+  private drawReadability(event: ActiveVfx, t: number, prefs: Preferences) {
+    const g = this.graphics,
+      alpha = (1 - t) * (prefs.reducedEffects ? 0.8 : 0.55);
+    const ring = [
+      "telegraph",
+      "bossSpawn",
+      "bossDeath",
+      "shockwave",
+      "freeze",
+      "phase",
+    ].includes(event.kind);
+    if (ring) {
+      g.lineStyle(event.kind === "telegraph" ? 3 : 2, event.color, alpha);
+      g.strokeCircle(Math.round(event.x), Math.round(event.y), event.radius);
+      if (event.kind === "telegraph") {
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4;
+          g.fillStyle(event.color, alpha).fillRect(
+            Math.round(event.x + Math.cos(a) * event.radius - 2),
+            Math.round(event.y + Math.sin(a) * event.radius - 2),
+            4,
+            4,
+          );
+        }
+      }
+    }
+    if (event.kind === "slash") {
+      const half = (event.arc ?? 1.8) / 2;
+      g.lineStyle(2, event.color, alpha).beginPath();
+      g.arc(
+        event.x,
+        event.y,
+        event.radius,
+        event.angle - half,
+        event.angle + half,
+      );
+      g.strokePath();
+    }
+  }
+  clear() {
+    this.timeline.clear();
+    this.sprites.forEach((image) => image.setVisible(false));
+    this.visibleSprites = 0;
+    if (!this.disposed) this.graphics.clear();
+  }
+  destroy() {
+    if (this.disposed) return;
+    this.clear();
+    this.disposed = true;
+    this.sprites.forEach((image) => image.destroy());
+    this.sprites.length = 0;
+    this.graphics.destroy();
   }
   get count() {
-    return this.active.length;
+    return this.timeline.active.length;
+  }
+  describe() {
+    return {
+      active: this.count,
+      spriteCount: this.visibleSprites,
+      atlasKeys: [
+        ...new Set(
+          this.sprites
+            .filter((image) => image.visible)
+            .map((image) => image.texture.key),
+        ),
+      ],
+      frames: this.sprites
+        .filter((image) => image.visible)
+        .map((image) => Number(image.frame.name)),
+      pooled: this.timeline.recycled,
+    };
   }
 }

@@ -12,7 +12,7 @@ def sprite(kind,frame):
     im=Image.new('RGBA',(size,size));d=ImageDraw.Draw(im)
     bob=[0,-1,0,1,0,0,2,4,-1,0][frame]; cx=size//2; cy=size//2+bob
     dead=6<=frame<=7
-    if kind=='player' and dead: return _art.body('wanderer','moss','down',10 if frame==6 else 11)
+    if kind=='player' and dead: return _art.body('wanderer','moss','down',10 if frame==6 else 11).resize((32,32),Image.Resampling.NEAREST)
     if dead:
         if kind=='player':
             rect(d,(8,22,25,25),'#273c40');rect(d,(11,20,24,23),'#7e4748');rect(d,(8,19,13,22),'#c7b8a2')
@@ -20,7 +20,7 @@ def sprite(kind,frame):
             d.ellipse((cx-10,cy+3,cx+11,cy+9),fill='#364b38');rect(d,(cx-7,cy+3,cx+5,cy+5),'#8b9b64')
         return im
     if kind=='player':
-        return _art.body('wanderer','moss','down',[0,2,3,4,6,8,10,11,1,5][frame])
+        return _art.body('wanderer','moss','down',[0,2,3,4,6,8,10,11,1,5][frame]).resize((32,32),Image.Resampling.NEAREST)
     elif kind=='slime':
         d.ellipse((6,cy-6,26,cy+10),fill='#243d34');d.ellipse((7,cy-7,25,cy+7),fill='#67895b');rect(d,(10,cy-6,19,cy-3),'#a0b97a');rect(d,(7,cy+7,26,cy+9),'#344f3d')
         rect(d,(12,cy,13,cy+2),'#152b2b');rect(d,(20,cy,21,cy+2),'#152b2b');rect(d,(13,cy,13,cy),'#d4e7b2')
@@ -107,7 +107,8 @@ for i in range(4):projectiles.paste(im.crop((16*i,0,16*(i+1),16)),(16*i,0))
 thorn=Image.new('RGBA',(16,16));td=ImageDraw.Draw(thorn)
 td.polygon([(1,14),(5,7),(9,6),(14,1),(13,7),(9,10),(7,13)],fill='#9c6d9e')
 td.line([(3,12),(11,4)],fill='#ecc3dd',width=2);rect(td,(6,5,7,9),'#b992bd')
-projectiles.paste(thorn,(64,0));projectiles.save(out/'projectiles.png')
+projectiles.paste(thorn,(64,0))
+if not (out/'projectiles.png').exists():projectiles.save(out/'projectiles.png')
 # Hero background, assembled from the same original sprite set.
 im=Image.new('RGB',(480,270),'#26382e');im.paste(Image.open(out/'ground.png'),(0,0));im.paste(Image.open(out/'ground.png'),(256,0));d=ImageDraw.Draw(im)
 d.polygon([(240,0),(280,0),(210,135),(340,270),(250,270),(170,140)],fill='#555447')
@@ -122,3 +123,7 @@ for x,y in [(203,70),(264,71),(200,141),(268,143)]:rect(d,(x,y,x+7,y+8),'#c2b980
 p=sprite('player',0);im.paste(p,(227,190),p)
 im.resize((1440,810),Image.Resampling.NEAREST).save(out/'key-art.png')
 print('Generated original forest sprite sheets, scenery, icons and key art.')
+
+# Refined forest art shares the same authored source as the campaign biome.
+_world_spec=importlib.util.spec_from_file_location('world_art',Path(__file__).with_name('world-art.py'));_world_art=importlib.util.module_from_spec(_world_spec);_world_spec.loader.exec_module(_world_art)
+_world_art.legacy()

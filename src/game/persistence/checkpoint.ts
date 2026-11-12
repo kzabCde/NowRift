@@ -14,6 +14,7 @@ import { validProgress, emptyProgress } from "../campaign/progression";
 import type { RunOwner } from "./model";
 import { validHarvest } from "../world/farming";
 import { OUTFITS } from "../world/save";
+import { validAppearance as validCharacterAppearance } from "../presentation/appearance";
 import { validWeaponSnapshot } from "../rpg/weapon-validation";
 type State = Pick<
   Game,
@@ -43,6 +44,7 @@ type State = Pick<
   | "appearance"
   | "character"
   | "equippedWeapon"
+  | "visualAppearance"
 >;
 type EnvironmentState = Pick<
   NonNullable<Game["campaign"]>,
@@ -96,6 +98,7 @@ const fields = [
   "appearance",
   "character",
   "equippedWeapon",
+  "visualAppearance",
 ] as const;
 export function captureCheckpoint(
   g: Game,
@@ -439,6 +442,18 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (s.player.attackUntil !== undefined && !finite(s.player.attackUntil))
     return false;
   if (s.player.attackAngle !== undefined && !finite(s.player.attackAngle, -10))
+    return false;
+  if (
+    s.visualAppearance !== undefined &&
+    (!validCharacterAppearance(s.visualAppearance) ||
+      s.visualAppearance.character !== s.character)
+  )
+    return false;
+  if (
+    c.stage?.visualAppearance !== undefined &&
+    (!validCharacterAppearance(c.stage.visualAppearance) ||
+      !sameRecord(c.stage.visualAppearance, s.visualAppearance))
+  )
     return false;
   if (s.appearance && !validAppearance(s.appearance)) return false;
   if (c.stage?.build && !validBuild(c.stage.build)) return false;

@@ -3,6 +3,7 @@ import { grantGift } from "../persistence/daily";
 import type { SaveData } from "../persistence/model";
 import { HAVEN, LANDMARKS, near, validPosition } from "./content";
 import { OUTFITS, type WorldCommand } from "./save";
+import { validCustomization } from "../presentation/customization";
 export function applyWorldCommand(
   p: SaveData,
   command: WorldCommand,
@@ -55,6 +56,16 @@ export function applyWorldCommand(
     if (!OUTFITS.includes(command.outfit))
       throw new Error("Invalid appearance.");
     w.outfit = command.outfit;
+    return;
+  }
+  if (command.type === "appearance") {
+    if (
+      !OUTFITS.includes(command.outfit) ||
+      !validCustomization(command.customization)
+    )
+      throw new Error("Invalid appearance.");
+    w.outfit = command.outfit;
+    w.customization = { ...command.customization };
     return;
   }
   if (command.type === "weapon") {

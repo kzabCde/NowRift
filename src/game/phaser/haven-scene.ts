@@ -2,8 +2,15 @@ import Phaser from "phaser";
 import { CharacterRig } from "./character-rig";
 import { CombatVfx } from "./combat-vfx";
 import { drainFeedback } from "../feedback";
+import {
+  createVisualActionState,
+  commitVisualAction,
+  advanceVisualAction,
+  type ActionVisualReceipt,
+} from "../presentation/action-feedback";
 import { facingFromAngle, type Facing } from "../presentation/character";
 import { GameBridge, type Command } from "../bridge";
+import { assetAnimationFrame } from "../presentation/assets";
 import {
   HAVEN,
   LANDMARKS,
@@ -59,6 +66,10 @@ export class HavenScene extends Phaser.Scene {
   ambience!: Phaser.GameObjects.Graphics;
   animated: { image: Phaser.GameObjects.Image; kind: string }[] = [];
   lastAmbience = 0;
+  stationLoops: { image: Phaser.GameObjects.Image }[] = [];
+  visualAction = createVisualActionState();
+  lastReceipt: ActionVisualReceipt | null = null;
+  didEnter = false;
   constructor() {
     super("HavenScene");
   }
@@ -74,11 +85,15 @@ export class HavenScene extends Phaser.Scene {
     this.labels = [];
     this.staticSprites = [];
     this.animated = [];
+    this.stationLoops = [];
     this.lastSave = 0;
     this.trainingGame = null;
     this.trainingShots = [];
     this.training = 0;
     this.facing = "down";
+    this.visualAction = createVisualActionState();
+    this.lastReceipt = null;
+    this.didEnter = false;
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
     this.add
@@ -95,7 +110,7 @@ export class HavenScene extends Phaser.Scene {
       const image = this.add
         .image(l.x, l.y, "haven-" + l.art, 0)
         .setOrigin(0.5, 1)
-        .setScale(l.kind === "npc" ? 1.6 : 2)
+        .setScale(l.kind === "npc" ? (1.6 * 32) / 48 : 2)
         .setDepth(l.y);
       this.staticSprites.push(image);
       if (l.kind === "portal") image.setAlpha(0.95);
@@ -124,6 +139,17 @@ export class HavenScene extends Phaser.Scene {
           .setScale(1.6)
           .setDepth(tree.y),
       );
+    for (const station of [
+      { key: "portal", x: 1310, y: 1074, scale: 3, depth: 1181 },
+      { key: "fire", x: 282, y: 368, scale: 1, depth: 421 },
+      { key: "water", x: 900, y: 614, scale: 2, depth: 691 },
+    ])
+      this.stationLoops.push({
+        image: this.add
+          .image(station.x, station.y, "pixel-station-" + station.key, 0)
+          .setScale(station.scale)
+          .setDepth(station.depth),
+      });
     this.ring = this.add.graphics().setDepth(1e5);
     this.ambience = this.add.graphics().setDepth(691);
     this.stick = this.add.graphics().setScrollFactor(0).setDepth(1e6);
@@ -295,6 +321,12 @@ export class HavenScene extends Phaser.Scene {
           session: this.startData.session,
         }),
         appearance: () => this.rig.describe(),
+        action: () => ({
+          active: this.visualAction.active
+            ? { ...this.visualAction.active }
+            : null,
+          lastReceipt: this.lastReceipt,
+        }),
         place: (p) => {
           if (!validPosition(p)) throw new Error("Blocked test position");
           this.position = { ...p };
@@ -334,14 +366,29 @@ export class HavenScene extends Phaser.Scene {
     if (c.type === "haven-equipment") {
       this.startData.character = c.character;
       this.startData.weapon = c.weapon ? structuredClone(c.weapon) : null;
+      this.startData.visualAppearance = c.visualAppearance
+        ? structuredClone(c.visualAppearance)
+        : undefined;
       this.trainingGame = null;
       this.trainingShots.forEach((s) => s.setVisible(false));
       this.trainingEffects.clear();
     }
+    if (c.type === "haven-feedback") this.present(c.receipt);
     if (c.type === "haven-lock") {
       this.locked = c.locked;
       this.input.keyboard?.resetKeys();
       if (!c.locked) {
+        if (!this.didEnter) {
+          this.didEnter = true;
+          this.present({
+            id: `${this.startData.session}:entry`,
+            pose: "respawn",
+            effect: "magic",
+            label: "Saved",
+            items: [],
+            gold: 0,
+          });
+        }
         this.trainingGame = null;
         this.trainingShots.forEach((s) => s.setVisible(false));
         this.trainingEffects.clear();
@@ -363,6 +410,39 @@ export class HavenScene extends Phaser.Scene {
       if (l) this.marker.setPosition(l.entrance.x, l.entrance.y - 35);
     }
   }
+  present(receipt: ActionVisualReceipt) {
+    if (!commitVisualAction(this.visualAction, receipt)) return;
+    this.lastReceipt = structuredClone(receipt);
+    const station = nearest(this.position),
+      point =
+        receipt.pose === "craft" &&
+        station &&
+        ["crafting", "blacksmith"].includes(station.kind)
+          ? station.entrance
+          : this.position,
+      color =
+        receipt.effect === "heal"
+          ? 0xb6dfba
+          : receipt.effect === "spark"
+            ? 0xe9bd78
+            : receipt.effect === "rare"
+              ? 0xd7b2f0
+              : 0xb6dce3;
+    this.trainingVfx.emit(
+      {
+        kind: receipt.effect,
+        x: point.x,
+        y: point.y - 14,
+        tx: this.position.x,
+        ty: this.position.y - 18,
+        angle: 0,
+        color,
+        radius: receipt.pose === "craft" ? 32 : 22,
+        important: true,
+      },
+      useSettings.getState(),
+    );
+  }
   publish() {
     this.nearId = nearest(this.position)?.id ?? null;
     this.bridge.emit("haven", {
@@ -379,7 +459,7 @@ export class HavenScene extends Phaser.Scene {
     this.lastFrameAt = time;
     const prefs = useSettings.getState(),
       targetFps =
-        this.locked && !this.trainingGame
+        this.locked && !this.trainingGame && !this.visualAction.active
           ? 15
           : prefs.quality === "low"
             ? 30
@@ -395,10 +475,19 @@ export class HavenScene extends Phaser.Scene {
         for (const entry of this.animated) {
           if (entry.kind === "portal")
             entry.image.setAlpha(0.78 + 0.16 * Math.sin(time / 700));
-          else entry.image.setFrame(Math.floor(time / 700) % 2);
+          else
+            entry.image.setFrame(
+              assetAnimationFrame(entry.image.texture.key, "idle", time),
+            );
         }
       }
     }
+    for (const loop of this.stationLoops)
+      loop.image.setFrame(
+        prefs.reducedEffects
+          ? 0
+          : assetAnimationFrame(loop.image.texture.key, "idle", time),
+      );
     if (targetFps !== this.fpsLimit) {
       this.game.loop.setFPSLimit(targetFps);
       this.fpsLimit = targetFps;
@@ -460,6 +549,11 @@ export class HavenScene extends Phaser.Scene {
         this.trainingShots[i].setVisible(false);
     }
     this.trainingVfx.draw(Math.min(0.1, delta / 1000), prefs);
+    advanceVisualAction(
+      this.visualAction,
+      Math.min(120, delta),
+      document.hidden,
+    );
     const k = this.keys,
       preset = useSettings.getState().keyboard,
       w = preset !== "arrows",
@@ -482,12 +576,16 @@ export class HavenScene extends Phaser.Scene {
       character: this.startData.character,
       outfit: this.startData.outfit,
       weapon: this.startData.weapon,
+      appearance: this.startData.visualAppearance,
+      pose: this.visualAction.active?.pose,
+      poseAge: this.visualAction.active?.ageMs,
       facing: active?.player.facing ?? this.facing,
       time,
       moving: this.moving,
       attack: active
         ? Math.max(0, (active.player.attackUntil ?? 0) - active.time)
         : 0,
+      attackId: active?.player.attackUntil,
       angle: active?.player.attackAngle,
       reduced: prefs.reducedEffects,
     });
@@ -528,6 +626,10 @@ declare global {
       state: () => { position: Point; locked: boolean; session: string };
       place: (p: Point) => void;
       appearance: () => ReturnType<CharacterRig["describe"]>;
+      action: () => {
+        active: ReturnType<typeof createVisualActionState>["active"];
+        lastReceipt: ActionVisualReceipt | null;
+      };
     };
   }
 }

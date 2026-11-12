@@ -10,6 +10,7 @@ on:
         "codex/**",
         feature/character-first-rift-heaven,
         feature/character-weapon-decoupling,
+        feature/pixel-art-animation-architecture,
       ]
 
 jobs:

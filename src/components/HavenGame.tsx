@@ -24,6 +24,13 @@ import {
 } from "@/game/rpg/stats";
 import CharacterPreview from "./CharacterPreview";
 import EquippedWeapon from "./EquippedWeapon";
+import { resolveAppearance } from "@/game/presentation/appearance";
+import {
+  APPEARANCE_CUSTOMIZATION,
+  DEFAULT_CUSTOMIZATION,
+  type AppearanceCustomization,
+} from "@/game/presentation/customization";
+import { committedWorldVisual } from "@/game/presentation/action-feedback";
 import { audio } from "@/game/audio/engine";
 import { storageError } from "@/game/persistence/status";
 import { useI18n } from "@/i18n/useI18n";
@@ -76,6 +83,7 @@ export default function HavenGame({
     sequence = useRef(0),
     busyRef = useRef(false),
     pending = useRef<Promise<unknown>>(Promise.resolve());
+  const profileRef = useRef<SaveData | null>(null);
   const [p, setP] = useState<SaveData | null>(null),
     [initial, setInitial] = useState<HavenStart | null>(null),
     [ready, setReady] = useState(false),
@@ -86,6 +94,9 @@ export default function HavenGame({
     [busy, setBusy] = useState(false),
     [outfit, setOutfit] = useState<Outfit>("moss"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal");
+  const [customization, setCustomization] = useState<AppearanceCustomization>({
+    ...DEFAULT_CUSTOMIZATION,
+  });
   const panel = panels.at(-1) ?? null;
   const setPanel = (next: Panel) => setPanels(next ? [next] : []);
   const [revealed, setRevealed] = useState(false),
@@ -102,6 +113,7 @@ export default function HavenGame({
   current.current = hud;
   const reload = useCallback(async () => {
     const next = await profileRepository.load(slotId);
+    profileRef.current = next;
     setP(next);
     return next;
   }, [slotId]);
@@ -118,14 +130,17 @@ export default function HavenGame({
       .then((next) => {
         if (!alive) return;
         setP(next);
+        profileRef.current = next;
         const w = next.local.world!;
         setOutfit(w.outfit);
+        setCustomization({ ...(w.customization ?? DEFAULT_CUSTOMIZATION) });
         setInitial({
           session: writer.current,
           position: w.position,
           outfit: w.outfit,
           character: next.local.character,
           weapon: resolveEquippedWeapon(next),
+          visualAppearance: resolveAppearance(next),
         });
         if (w.tutorial) setPanel("tutorial");
       })
@@ -160,8 +175,12 @@ export default function HavenGame({
     setError("");
     try {
       await pending.current;
+      const before = profileRef.current;
       const next = await profileRepository.world(slotId, command);
+      profileRef.current = next;
       setP(next);
+      const receipt = committedWorldVisual(before, next, command);
+      if (receipt) bridge.emit("command", { type: "haven-feedback", receipt });
       if (message) setNotice(message);
       return next;
     } catch (e) {
@@ -200,6 +219,9 @@ export default function HavenGame({
           if (next) {
             audio.play(landmark.kind === "portal" ? "magic" : "confirm");
             setOutfit(next.local.world!.outfit);
+            setCustomization({
+              ...(next.local.world!.customization ?? DEFAULT_CUSTOMIZATION),
+            });
             setPanel(landmark.kind);
           } else setPanel("pause");
         });
@@ -219,6 +241,7 @@ export default function HavenGame({
         type: "haven-equipment",
         character: p.local.character,
         weapon: resolveEquippedWeapon(p),
+        visualAppearance: resolveAppearance(p),
       });
   }, [p, ready, bridge]);
   const close = useCallback(() => {
@@ -395,6 +418,7 @@ export default function HavenGame({
             character={p.local.character}
             outfit={w?.outfit ?? "moss"}
             weapon={equipped}
+            profile={p}
             size={56}
             decorative
           />
@@ -599,6 +623,15 @@ export default function HavenGame({
               focusRecipes={panel === "crafting"}
               weapon={p?.local.weapon}
               character={p?.local.character}
+              onCommitted={(receipt, progress) => {
+                if (progress.local?.id === slotId) {
+                  const saved = progress as SaveData;
+                  profileRef.current = saved;
+                  setP(saved);
+                  onChanged(saved);
+                }
+                bridge.emit("command", { type: "haven-feedback", receipt });
+              }}
               onBack={close}
             />
           </DialogSurface>
@@ -888,6 +921,13 @@ export default function HavenGame({
                     character={p.local.character}
                     outfit={outfit}
                     weapon={equipped}
+                    profile={p}
+                    appearance={resolveAppearance(
+                      p,
+                      p.local.character,
+                      outfit,
+                      customization,
+                    )}
                     size={144}
                   />
                 )}
@@ -909,6 +949,74 @@ export default function HavenGame({
                     </button>
                   ))}
                 </div>
+                {(
+                  Object.keys(
+                    APPEARANCE_CUSTOMIZATION,
+                  ) as (keyof AppearanceCustomization)[]
+                ).map((category) => (
+                  <label className="setting-row" key={category}>
+                    {t(
+                      "visual",
+                      category === "skin"
+                        ? "Skin tone"
+                        : category === "hair"
+                          ? "Hair style"
+                          : "Face detail",
+                    )}
+                    <select
+                      value={customization[category]}
+                      aria-label={t(
+                        "visual",
+                        category === "skin"
+                          ? "Skin tone"
+                          : category === "hair"
+                            ? "Hair style"
+                            : "Face detail",
+                      )}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (
+                          (
+                            APPEARANCE_CUSTOMIZATION[
+                              category
+                            ] as readonly string[]
+                          ).includes(value)
+                        )
+                          setCustomization((previous) => ({
+                            ...previous,
+                            [category]: value,
+                          }));
+                      }}
+                    >
+                      {APPEARANCE_CUSTOMIZATION[category].map((value) => (
+                        <option key={value} value={value}>
+                          {t(
+                            "visual",
+                            (
+                              {
+                                warm: "Warm",
+                                umber: "Umber",
+                                pale: "Pale",
+                                short: "Short",
+                                braid: "Braid",
+                                crest: "Crest",
+                                calm: "Calm",
+                                scar: "Scar",
+                                vigil: "Vigil",
+                              } as const
+                            )[value],
+                          )}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+                <p className="muted">
+                  {t(
+                    "visual",
+                    "Headwear may cover your hair; remove the equipped helmet to see the full style.",
+                  )}
+                </p>
                 <p>
                   {h(
                     "Cosmetic only. Your class, equipment and combat stats stay the same.",
@@ -919,7 +1027,12 @@ export default function HavenGame({
                   disabled={busy}
                   onClick={() =>
                     void action(
-                      { type: "outfit", writer: writer.current, outfit },
+                      {
+                        type: "appearance",
+                        writer: writer.current,
+                        outfit,
+                        customization,
+                      },
                       h("Appearance saved."),
                     ).then((next) => {
                       if (next) {
@@ -933,7 +1046,12 @@ export default function HavenGame({
                 </button>
                 <button
                   className="quiet-button"
-                  onClick={() => setOutfit(w?.outfit ?? "moss")}
+                  onClick={() => {
+                    setOutfit(w?.outfit ?? "moss");
+                    setCustomization({
+                      ...(w?.customization ?? DEFAULT_CUSTOMIZATION),
+                    });
+                  }}
                 >
                   {h("Revert")}
                 </button>

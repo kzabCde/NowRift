@@ -5,6 +5,7 @@ import { seededEquipment } from "../src/game/rpg/items";
 import { ITEMS } from "../src/game/rpg/content";
 import { CHARACTERS, type CharacterId } from "../src/game/loadout";
 import { STAGES } from "../src/game/campaign/content";
+import { weaponVisualFrame } from "../src/game/presentation/appearance";
 import { resolveEquippedWeapon } from "../src/game/rpg/stats";
 import { LANDMARKS } from "../src/game/world/content";
 import type { SaveData } from "../src/game/persistence/model";
@@ -152,9 +153,9 @@ for (const character of Object.keys(CHARACTERS) as CharacterId[]) {
         const rendered = await page.evaluate(() =>
           window.__NOWRIFT_TEST__!.appearance!(),
         );
-        expect(rendered.body).toBe(`character-${character}-moss`);
+        expect(rendered.body).toBe(`character-layer-${character}-body`);
         expect(rendered.weaponAsset).toBe("equipment-weapons");
-        expect(rendered.weaponFrame).toBe(i);
+        expect(rendered.weaponFrame).toBe(weaponVisualFrame(expected));
         expect(rendered.weaponVisible).toBe(true);
         const actual = await page.evaluate(() => {
           const g = window.__NOWRIFT_TEST__!.state();
@@ -257,7 +258,9 @@ test("mobile equipment previews remain layered, change with owned gear, and surv
   await equip(page, "desert-weapon");
   const layer = page.locator(".wanderer-card .actor-weapon");
   await expect(layer).toHaveCSS("background-image", /characters\/weapons.png/);
-  await expect(layer).toHaveCSS("background-position", "-64px 0px");
+  await expect(
+    page.locator(".wanderer-card .character-preview"),
+  ).toHaveAttribute("data-weapon-frame", "7");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 2,
@@ -359,7 +362,7 @@ test.describe("equipment checkpoint and live town rendering", () => {
     expect(restored.combat).toEqual(checkpoint.state.weapon);
     expect(restored.character).toBe(checkpoint.state.character);
     expect(restored.time).toBe(checkpoint.state.time);
-    expect(restored.appearance.weaponFrame).toBe(1);
+    expect(restored.appearance.weaponFrame).toBe(7);
     expect(restored.appearance.instanceId).toBe("owned-desert-weapon");
     expect((await saved(page)).rpg!.equipped.weapon).toBe(
       "owned-forest-weapon",
@@ -430,7 +433,7 @@ test.describe("equipment checkpoint and live town rendering", () => {
       .poll(() =>
         page.evaluate(() => window.__NOWRIFT_HAVEN__?.appearance().weaponFrame),
       )
-      .toBe(2);
+      .toBe(8);
     const training = LANDMARKS.find((l) => l.id === "training")!;
     await page.evaluate(
       (position) => window.__NOWRIFT_HAVEN__!.place(position),
