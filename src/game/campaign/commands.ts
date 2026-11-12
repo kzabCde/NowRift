@@ -38,8 +38,9 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   if (run.activity !== undefined && run.activity !== "farming")
     throw new Error("Invalid expedition.");
   if (run.activity === "farming") {
-    const { eligible, reward } = farmingRewards(run),
-      settled = settleRpg(progress, eligible, reward);
+    const { eligible, reward } = farmingRewards(run);
+    reward.xp += Math.max(0, Math.floor(run.earnedXp ?? 0));
+    const settled = settleRpg(progress, eligible, reward);
     settled.progress.receipts.push(run.id);
     reward.equipmentCount = settled.equipmentCount;
     reward.overflow = settled.overflow;
@@ -47,6 +48,7 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   }
   const key = clearKey(run.stageId, run.difficulty),
     reward = resolveRewards(run, run.mode !== "free" && !progress.clears.includes(key));
+  reward.xp += Math.max(0, Math.floor(run.earnedXp ?? 0));
   const settled = settleRpg(progress, run, reward),
     next = settled.progress;
   next.receipts.push(run.id);
