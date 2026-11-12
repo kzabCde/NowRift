@@ -44,6 +44,14 @@ async function reveal(page: Page) {
   });
   if (await begin.isVisible()) await begin.click();
   await expect(page.locator("canvas")).toHaveCount(1);
+  // The finished visual transition can precede the unlock command reaching
+  // Phaser. Assert gameplay readiness rather than racing the H shortcut.
+  await expect
+    .poll(
+      () => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked),
+      { message: "Rift Heaven must be interactive after the reveal" },
+    )
+    .toBe(false);
 }
 async function create(page: Page, name = "Rowan") {
   await creation(page, name);
