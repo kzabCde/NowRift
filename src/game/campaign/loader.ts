@@ -30,11 +30,7 @@ export function loadStage(
   const reason =
     selection.mode === "free"
       ? null
-      : lockedReason(
-          selection.stageId,
-          selection.difficulty,
-          selection.clears,
-        );
+      : lockedReason(selection.stageId, selection.difficulty, selection.clears);
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
     g = makeGame(
