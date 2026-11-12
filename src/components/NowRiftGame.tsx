@@ -594,9 +594,18 @@ export default function NowRiftGame({
                       "haven",
                       expedition.target === "extract"
                         ? "Extract to Rift Heaven"
-                        : "Gather supplies",
+                        : expedition.target === "fallen-wood"
+                          ? "Gather fallen wood"
+                          : expedition.target === "slime-nest"
+                            ? "Gather slime residue"
+                            : expedition.target === "copper-vein"
+                              ? "Mine copper"
+                              : "Gather supplies",
                     )}{" "}
                     {expedition.target !== "extract" &&
+                      !["fallen-wood", "slime-nest", "copper-vein"].includes(
+                        expedition.target,
+                      ) &&
                       text(
                         ITEMS[
                           supplyNodes.find((n) => n.id === expedition.target)!
