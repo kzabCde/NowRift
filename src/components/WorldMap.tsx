@@ -218,9 +218,9 @@ export default function WorldMap({
                           ? t("haven", "Gather supplies and extract")
                           : progress.clears.includes(clearKey(s.id, difficulty))
                             ? t("world", "CLEARED · REPLAY AVAILABLE")
-                          : s.clear.kind === "boss"
-                            ? t("world", "BOSS ENCOUNTER")
-                            : t("world", "SURVIVAL"))}
+                            : s.clear.kind === "boss"
+                              ? t("world", "BOSS ENCOUNTER")
+                              : t("world", "SURVIVAL"))}
                     </small>
                   </span>
                 </button>
