@@ -170,8 +170,7 @@ export function travelReason(
     destination.seed < 0 ||
     destination.seed > 4294967295 ||
     (destination.activity !== undefined &&
-      destination.activity !== "farming") ||
-    (destination.activity === "farming" && destination.stageId !== FARM.stageId)
+      destination.activity !== "farming")
   )
     return "Invalid expedition.";
   return destination.mode === "free"
