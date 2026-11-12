@@ -1,5 +1,5 @@
 /** Authored hub geometry. Coordinates are world units; original art uses a 2× pixel scale. */
-import { STAGES, DIFFICULTIES } from "../campaign/content";
+import { STAGES, DIFFICULTIES, WORLDS } from "../campaign/content";
 import { lockedReason } from "../campaign/progression";
 import type { StageSelection } from "../campaign/loader";
 export type Point = { x: number; y: number };
@@ -156,6 +156,18 @@ export const FARM = {
     { id: "copper-vein", item: "copper-ore", amount: 2, x: 900, y: 540 },
   ],
 } as const;
+/** Every playable campaign area may also be visited as a repeatable free expedition. */
+export function farmingNodes(stageId: string = FARM.stageId) {
+  if (stageId === FARM.stageId) return FARM.nodes;
+  const stage = STAGES.find((s) => s.id === stageId);
+  if (!stage) return [];
+  const world = WORLDS.find((w) => w.id === stage.worldId)!;
+  return FARM.nodes.map((node, index) => ({
+    ...node,
+    id: `${stageId}-node-${index + 1}`,
+    item: world.materials[index],
+  }));
+}
 export function near(a: Point, b: Point, r = HAVEN.range) {
   return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= r * r;
 }

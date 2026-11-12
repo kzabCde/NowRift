@@ -12,7 +12,7 @@ import { applyLoadout, CHARACTERS, type Loadout } from "../loadout";
 import { CombatVfx } from "./combat-vfx";
 import { audio } from "../audio/engine";
 import type { SoundId } from "../audio/palette";
-import { FARM } from "../world/content";
+import { FARM, farmingNodes } from "../world/content";
 import { onSceneEnd } from "./lifecycle";
 import { CharacterRig } from "./character-rig";
 import { bodyKey, facingFromAngle } from "../presentation/character";
@@ -761,7 +761,7 @@ export class GameScene extends Phaser.Scene {
         .setScale(1.1)
         .setOrigin(0.5, 0.8)
         .setDepth(FARM.portal.y - 10);
-      for (const node of FARM.nodes)
+      for (const node of farmingNodes(this.stage.stageId))
         this.farmNodes.push(
           this.add
             .image(node.x, node.y, "items", ITEMS[node.item].icon)
@@ -1047,6 +1047,7 @@ export class GameScene extends Phaser.Scene {
         g.time,
         g.kills,
         g.campaign?.harvested ?? [],
+        this.stage.stageId,
       );
       if (prompt.target === "extract" && prompt.ready) {
         g.phase = "victory";
@@ -1143,11 +1144,19 @@ export class GameScene extends Phaser.Scene {
       const g = this.simulation;
       this.bridge.emit(
         "expedition",
-        farmPrompt(g.player, g.time, g.kills, g.campaign?.harvested ?? []),
+        farmPrompt(
+          g.player,
+          g.time,
+          g.kills,
+          g.campaign?.harvested ?? [],
+          this.stage.stageId,
+        ),
       );
       for (let i = 0; i < this.farmNodes.length; i++)
         this.farmNodes[i].setVisible(
-          !g.campaign?.harvested?.includes(FARM.nodes[i].id),
+          !g.campaign?.harvested?.includes(
+            farmingNodes(this.stage.stageId)[i].id,
+          ),
         );
     }
   }

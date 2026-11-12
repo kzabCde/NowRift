@@ -6,7 +6,7 @@ import { profileRepository } from "@/game/persistence/repository";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import type { ExpeditionPrompt } from "@/game/world/farming";
-import { FARM, travelReason } from "@/game/world/content";
+import { FARM, farmingNodes, travelReason } from "@/game/world/content";
 import { ITEMS } from "@/game/rpg/content";
 import { practiceLoadout } from "@/game/rpg/stats";
 import { RARITIES } from "@/game/rpg/content";
@@ -919,7 +919,7 @@ export default function NowRiftGame({
               {t("haven", "UNBANKED EXPEDITION")} ·{" "}
               {expedition.gathered
                 .map((id) => {
-                  const n = FARM.nodes.find((n) => n.id === id)!;
+                  const n = farmingNodes(stage?.stageId).find((n) => n.id === id)!;
                   return `${text(ITEMS[n.item].name)} ×${n.amount}`;
                 })
                 .join(" · ")}

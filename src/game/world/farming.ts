@@ -1,6 +1,7 @@
 import type { CampaignResult } from "../campaign/rewards";
 import { resolveRewards } from "../campaign/rewards";
-import { FARM, near, type Point } from "./content";
+import { FARM, farmingNodes, near, type Point } from "./content";
+import { STAGES } from "../campaign/content";
 export type ExpeditionPrompt = {
   target: string | null;
   ready: boolean;
@@ -13,10 +14,11 @@ export function farmPrompt(
   seconds: number,
   kills: number,
   gathered: readonly string[],
+  stageId: string = FARM.stageId,
 ): ExpeditionPrompt {
   const target = near(p, FARM.portal, FARM.range)
     ? "extract"
-    : (FARM.nodes.find(
+    : (farmingNodes(stageId).find(
         (n) => !gathered.includes(n.id) && near(p, n, FARM.range),
       )?.id ?? null);
   return {
@@ -27,16 +29,17 @@ export function farmPrompt(
     kills,
   };
 }
-export function validHarvest(v: unknown): v is string[] {
+export function validHarvest(v: unknown, stageId: string = FARM.stageId): v is string[] {
+  const nodes = farmingNodes(stageId);
   return (
     Array.isArray(v) &&
-    v.length <= FARM.nodes.length &&
+    v.length <= nodes.length &&
     new Set(v).size === v.length &&
-    v.every((id) => FARM.nodes.some((n) => n.id === id))
+    v.every((id) => nodes.some((n) => n.id === id))
   );
 }
 export function farmingRewards(run: CampaignResult) {
-  if (run.stageId !== FARM.stageId || !validHarvest(run.harvested))
+  if (!STAGES.some((s) => s.id === run.stageId) || !validHarvest(run.harvested, run.stageId))
     throw new Error("Invalid expedition.");
   if (
     run.victory &&
@@ -54,7 +57,7 @@ export function farmingRewards(run: CampaignResult) {
   );
   if (run.victory)
     for (const id of run.harvested ?? []) {
-      const node = FARM.nodes.find((n) => n.id === id)!;
+      const node = farmingNodes(run.stageId).find((n) => n.id === id)!;
       reward.materials[node.item] =
         (reward.materials[node.item] ?? 0) + node.amount;
     }
