@@ -72,8 +72,18 @@ export default function WorldMap({
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
     playerLevel = characterLevel(progress.xp).level,
-    enemyMinimum = enemyScale(playerLevel, stage.worldId, stage.number, "slime").level,
-    enemyMaximum = enemyScale(playerLevel, stage.worldId, stage.number, "boss").level,
+    enemyMinimum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "slime",
+    ).level,
+    enemyMaximum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "boss",
+    ).level,
     reason =
       mode === "free"
         ? null
