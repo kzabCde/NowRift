@@ -24,7 +24,10 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   )
     throw new Error("Invalid result");
   const stage = stageById(run.stageId),
-    reason = run.mode === "free" ? null : lockedReason(stage.id, run.difficulty, progress.clears);
+    reason =
+      run.mode === "free"
+        ? null
+        : lockedReason(stage.id, run.difficulty, progress.clears);
   if (reason) throw new Error(reason);
   if (
     run.victory &&
@@ -47,12 +50,16 @@ export function applyResult(progress: Progress, run: CampaignResult) {
     return { progress: settled.progress, reward };
   }
   const key = clearKey(run.stageId, run.difficulty),
-    reward = resolveRewards(run, run.mode !== "free" && !progress.clears.includes(key));
+    reward = resolveRewards(
+      run,
+      run.mode !== "free" && !progress.clears.includes(key),
+    );
   reward.xp += Math.max(0, Math.floor(run.earnedXp ?? 0));
   const settled = settleRpg(progress, run, reward),
     next = settled.progress;
   next.receipts.push(run.id);
-  if (run.mode !== "free" && run.victory && !next.clears.includes(key)) next.clears.push(key);
+  if (run.mode !== "free" && run.victory && !next.clears.includes(key))
+    next.clears.push(key);
   reward.equipmentCount = settled.equipmentCount;
   reward.overflow = settled.overflow;
   return { progress: next, reward };
