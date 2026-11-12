@@ -72,18 +72,8 @@ export default function WorldMap({
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
     playerLevel = characterLevel(progress.xp).level,
-    enemyMinimum = enemyScale(
-      playerLevel,
-      stage.worldId,
-      stage.number,
-      "slime",
-    ).level,
-    enemyMaximum = enemyScale(
-      playerLevel,
-      stage.worldId,
-      stage.number,
-      "boss",
-    ).level,
+    enemyMinimum = enemyScale(playerLevel, stage.worldId, stage.number, "slime").level,
+    enemyMaximum = enemyScale(playerLevel, stage.worldId, stage.number, "boss").level,
     reason =
       mode === "free"
         ? null
@@ -146,7 +136,8 @@ export default function WorldMap({
               <Atmosphere world={w.id} />
               <span>
                 {t("world", "WORLD")} 0{i + 1} ·{" "}
-                {mode !== "free" && lockedReason(`${w.id}-1`, difficulty, progress.clears)
+                {mode !== "free" &&
+                lockedReason(`${w.id}-1`, difficulty, progress.clears)
                   ? t("world", "LOCKED")
                   : t("world", "OPEN")}
               </span>
