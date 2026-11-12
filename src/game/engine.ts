@@ -1062,8 +1062,7 @@ export function updateGame(
           ? Math.round(
               (g.campaign.world.enemies.find((d) => d.kind === e.kind)
                 ?.damage ?? 25) * g.campaign.difficulty.damage,
-            ) *
-              (e.damageScale ?? 1)
+            ) * (e.damageScale ?? 1)
           : ENEMIES[e.kind].damage,
         e,
       );
