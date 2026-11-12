@@ -156,4 +156,16 @@ export const havenTh = {
   "Saving world…": "กำลังบันทึกโลก…",
   "The portal is unavailable from here.": "ใช้ประตูมิติจากตำแหน่งนี้ไม่ได้",
   "Mara’s request": "คำขอของมารา",
+  "Gather supplies and extract": "เก็บเสบียงและถอนตัวกลับ",
+  "Gather supplies": "เก็บเสบียง",
+  "BEGIN SUPPLY EXPEDITION →": "เริ่มออกหาเสบียง →",
+  "Choose any world for supplies": "เลือกโลกเพื่อออกหาเสบียง",
+  "Supply Expeditions are available in every world. Choose a map to gather resources and extract back to Rift Heaven.":
+    "ออกหาเสบียงได้ทุกโลก เลือกแผนที่เพื่อเก็บทรัพยากรแล้วกลับริฟต์เฮเวนผ่านประตูถอนตัว",
+  "Gather supplies, survive 20 seconds and defeat 5 enemies, then return through the extraction portal.":
+    "เก็บเสบียง เอาชีวิตรอดอย่างน้อย 20 วินาที และกำจัดศัตรู 5 ตัว จากนั้นกลับผ่านประตูถอนตัว",
+  "Only extracted supplies and enemy loot are stored. Defeat or abandonment loses unbanked supplies.":
+    "เฉพาะเสบียงและของจากศัตรูที่นำกลับสำเร็จเท่านั้นที่จะถูกบันทึก หากพ่ายแพ้หรือละทิ้งจะสูญเสียของที่ยังไม่ได้นำกลับ",
+  "Choose any stage to gather biome supplies and extract back to Rift Heaven. Story progression is not changed.":
+    "เลือกด่านใดก็ได้เพื่อเก็บวัสดุเฉพาะพื้นที่ แล้วถอนตัวกลับริฟต์เฮเวน โดยไม่เปลี่ยนความคืบหน้าของเนื้อเรื่อง",
 } as const;
