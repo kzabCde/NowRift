@@ -9,6 +9,7 @@ export type StageSelection = {
   character?: CharacterId;
   weaponSnapshot?: WeaponSnapshot;
   activity?: "farming";
+  mode?: "story" | "free";
   returnTo?: "haven";
   startingHp?: number;
   outfit?: import("../world/save").Outfit;
@@ -23,7 +24,7 @@ export function loadStage(
   selection: StageSelection,
   weapon: WeaponId = "arcane",
 ) {
-  const reason = lockedReason(
+  const reason = selection.mode === "free" ? null : lockedReason(
     selection.stageId,
     selection.difficulty,
     selection.clears,
@@ -40,6 +41,7 @@ export function loadStage(
   if (selection.weaponSnapshot)
     g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
+  g.campaign.mode = selection.mode ?? "story";
   if (selection.activity === "farming") {
     if (selection.stageId !== "forest-1")
       throw new Error("Invalid expedition.");
@@ -50,6 +52,9 @@ export function loadStage(
   if (selection.weaponSnapshot)
     applyBuild(g, selection.weaponSnapshot.stats, true);
   else if (selection.build) applyBuild(g, selection.build, true);
+  // The permanent character level is derived from saved profile XP, not a new run.
+  if (selection.build) g.level = selection.build.level;
+  if (selection.weaponSnapshot) g.level = selection.weaponSnapshot.stats.level;
   g.appearance = selection.appearance;
   beginGame(g);
   if (selection.startingHp !== undefined)
