@@ -1,4 +1,5 @@
 import { temporaryStats, incomingDamage } from "./rpg/stats";
+import { enemyScale } from "./campaign/scaling";
 import type { CharacterStats, Rarity, WeaponSnapshot } from "./rpg/model";
 import { facingFromAngle, type Facing } from "./presentation/character";
 import type { CharacterId } from "./loadout";
@@ -30,6 +31,8 @@ export type GamePhase =
   | "gameover"
   | "victory";
 export type Enemy = {
+  damageScale?: number;
+  level?: number;
   enraged?: boolean;
   pattern?: number;
   charge?: { delay: number; left: number; vx: number; vy: number };
@@ -420,7 +423,7 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
   return true;
 }
 function checkLevel(g: Game) {
-  if (g.xp < g.xpToNext) return;
+  if (g.xp < g.xpToNext || (g.campaign && g.level >= 60)) return;
   const available = UPGRADES.filter(
     (u) =>
       (g.stacks[u.id] ?? 0) < u.max &&
@@ -436,10 +439,20 @@ function checkLevel(g: Game) {
       !(u.id === "regen" && g.regen >= 20) &&
       !(u.id === "area" && g.weapon.area >= 4),
   );
-  if (!available.length) return;
+  if (!available.length) {
+    // Permanent XP must still advance when every temporary upgrade is capped.
+    if (!g.campaign) return;
+    g.xp -= g.xpToNext;
+    g.level++;
+    g.xpToNext = 100 + (g.level - 1) * 50;
+    checkLevel(g);
+    return;
+  }
   g.xp -= g.xpToNext;
   g.level++;
-  g.xpToNext = Math.floor(g.xpToNext * 1.19 + 6);
+  g.xpToNext = g.campaign
+    ? 100 + (g.level - 1) * 50
+    : Math.floor(g.xpToNext * 1.19 + 6);
   for (let i = available.length - 1; i > 0; i--) {
     const j = Math.floor(g.rng() * (i + 1));
     [available[i], available[j]] = [available[j], available[i]];
@@ -493,11 +506,15 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
   if (g.campaign) {
     const c = g.campaign,
       def = c.world.enemies.find((d) => d.kind === kind);
+    const scaling = enemyScale(g.level, c.world.id, c.definition.number, kind);
+    e.level = scaling.level;
+    e.damageScale = scaling.damage;
     e.hp = e.maxHp =
       (kind === "boss" ? c.world.boss.hp : def!.hp) *
       c.definition.modifiers.health *
-      c.difficulty.hp;
-    e.speed = (def?.speed ?? d.speed) * c.difficulty.speed;
+      c.difficulty.hp *
+      scaling.hp;
+    e.speed = (def?.speed ?? d.speed) * c.difficulty.speed * scaling.speed;
     e.pattern = 0;
     e.charge = undefined;
   }
@@ -1045,7 +1062,7 @@ export function updateGame(
           ? Math.round(
               (g.campaign.world.enemies.find((d) => d.kind === e.kind)
                 ?.damage ?? 25) * g.campaign.difficulty.damage,
-            )
+            ) * (e.damageScale ?? 1)
           : ENEMIES[e.kind].damage,
         e,
       );

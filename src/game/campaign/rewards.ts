@@ -15,6 +15,9 @@ export type Rewards = {
   firstClear: boolean;
 };
 export type CampaignResult = {
+  /** XP collected in combat since the stage began, credited once on settlement. */
+  earnedXp?: number;
+  mode?: "story" | "free";
   activity?: "farming";
   harvested?: string[];
   hp?: number;

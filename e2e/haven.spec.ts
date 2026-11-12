@@ -49,6 +49,13 @@ async function haven(page: Page) {
   });
   if (await tutorial.isVisible()) await tutorial.click();
   await expect(page.locator(".haven-loading")).toHaveCount(0);
+  // The scene's keyboard input remains locked until the reveal/overlay transition
+  // has completed. A visible canvas alone does not mean it accepts movement.
+  await expect
+    .poll(() => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked), {
+      message: "Rift Heaven must be ready for keyboard movement",
+    })
+    .toBe(false);
 }
 async function place(page: Page, id: string) {
   await expect(page.locator(".haven-title h1")).toBeVisible();

@@ -174,7 +174,9 @@ export function travelReason(
     (destination.activity === "farming" && destination.stageId !== FARM.stageId)
   )
     return "Invalid expedition.";
-  return lockedReason(destination.stageId, destination.difficulty, clears);
+  return destination.mode === "free"
+    ? null
+    : lockedReason(destination.stageId, destination.difficulty, clears);
 }
 export function nearest(p: Point): Landmark | null {
   let found: Landmark | null = null,
