@@ -21,8 +21,13 @@ export function enemyScale(
 ) {
   const effectiveLevel = Math.max(
     1,
-    Math.min(60, Math.floor(playerLevel) + WORLD_OFFSET[world] +
-      Math.max(0, stageNumber - 1) + (ENEMY_OFFSET[kind] ?? 0)),
+    Math.min(
+      60,
+      Math.floor(playerLevel) +
+        WORLD_OFFSET[world] +
+        Math.max(0, stageNumber - 1) +
+        (ENEMY_OFFSET[kind] ?? 0),
+    ),
   );
   return {
     level: effectiveLevel,
