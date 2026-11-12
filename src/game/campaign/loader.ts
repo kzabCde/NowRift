@@ -45,8 +45,6 @@ export function loadStage(
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
   g.campaign.mode = selection.mode ?? "story";
   if (selection.activity === "farming") {
-    if (selection.stageId !== "forest-1")
-      throw new Error("Invalid expedition.");
     g.campaign.activity = "farming";
     g.campaign.harvested = [];
   }
