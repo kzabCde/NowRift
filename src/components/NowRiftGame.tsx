@@ -8,7 +8,7 @@ import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import type { ExpeditionPrompt } from "@/game/world/farming";
 import { FARM, farmingNodes, travelReason } from "@/game/world/content";
 import { ITEMS } from "@/game/rpg/content";
-import { practiceLoadout } from "@/game/rpg/stats";
+import { practiceLoadout, characterLevel } from "@/game/rpg/stats";
 import { RARITIES } from "@/game/rpg/content";
 import ItemIcon from "./ItemIcon";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -82,6 +82,7 @@ export default function NowRiftGame({
   const [expedition, setExpedition] = useState<ExpeditionPrompt | null>(null);
   const farming = stage?.activity === "farming";
   const [reward, setReward] = useState<Rewards | null>(null);
+  const [bankedXp, setBankedXp] = useState(0);
   const [tonics, setTonics] = useState<Record<string, number>>({}),
     [tonicBusy, setTonicBusy] = useState(false);
   const tonicGuard = useRef(false);
@@ -143,7 +144,10 @@ export default function NowRiftGame({
             try {
               const settled = await campaignRepository.settle(run.campaign);
               recordedGold = settled.reward?.gold ?? 0;
-              if (resultRun.current === run.id) setReward(settled.reward);
+              if (resultRun.current === run.id) {
+                setReward(settled.reward);
+                setBankedXp(settled.progress.xp);
+              }
             } catch (e) {
               recordedGold = 0;
               if (resultRun.current === run.id)
@@ -262,6 +266,7 @@ export default function NowRiftGame({
       didRecover.current = true;
       const c = prepared.checkpoint;
       const canonical = prepared.save;
+      setBankedXp(canonical.xp);
       const selection =
         c?.stage ??
         (stage
@@ -554,12 +559,23 @@ export default function NowRiftGame({
                 <div
                   className="bar-fill xp-fill"
                   style={{
-                    width: `${Math.min(100, (hud.xp / hud.xpToNext) * 100)}%`,
+                    width: `${
+                      stage
+                        ? Math.min(
+                            100,
+                            (characterLevel(bankedXp).xp /
+                              Math.max(1, characterLevel(bankedXp).next)) *
+                              100,
+                          )
+                        : Math.min(100, (hud.xp / hud.xpToNext) * 100)
+                    }%`,
                   }}
                 />
               </div>
               <span className="xp-label">
-                {hud.xp} / {hud.xpToNext} XP
+                {stage
+                  ? `${characterLevel(bankedXp).xp} / ${characterLevel(bankedXp).next} PROFILE XP · ${hud.xp} / ${hud.xpToNext} RUN XP`
+                  : `${hud.xp} / ${hud.xpToNext} XP`}
               </span>
             </div>
             <div className="hud-stats">

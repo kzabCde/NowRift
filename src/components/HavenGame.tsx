@@ -4,7 +4,6 @@ import { GameBridge } from "@/game/bridge";
 import {
   HAVEN,
   LANDMARKS,
-  FARM,
   travelReason,
   type Point,
   type InteractionKind,
@@ -15,7 +14,6 @@ import { profileRepository, uid } from "@/game/persistence/repository";
 import type { SaveData } from "@/game/persistence/model";
 import type { StageSelection } from "@/game/campaign/loader";
 import { WORLDS, STAGES, type DifficultyId } from "@/game/campaign/content";
-import { lockedReason } from "@/game/campaign/progression";
 import { enemyLevelRange } from "@/game/campaign/scaling";
 import {
   calculateStats,

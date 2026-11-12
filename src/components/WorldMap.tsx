@@ -2,6 +2,7 @@
 import type { CharacterId } from "@/game/loadout";
 import {
   calculateStats,
+  characterLevel,
   campaignLoadout,
   resolveEquippedWeapon,
 } from "@/game/rpg/stats";
@@ -27,6 +28,7 @@ import {
 } from "@/game/campaign/progression";
 import { campaignRepository } from "@/game/campaign/persistence";
 import type { StageSelection } from "@/game/campaign/loader";
+import { enemyLevelRange } from "@/game/campaign/scaling";
 export default function WorldMap({
   onStart,
   onBack,
@@ -68,7 +70,9 @@ export default function WorldMap({
   const w = worldById(world),
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
-    reason = lockedReason(selected, difficulty, progress.clears);
+    reason = lockedReason(selected, difficulty, progress.clears),
+    level = characterLevel(progress.xp).level,
+    range = enemyLevelRange(level, stage);
   return (
     <section className="world-map">
       <div className="hub-heading">
@@ -213,6 +217,8 @@ export default function WorldMap({
             )}{" "}
             {t("world", "minutes")}
             <br />
+            {text("Enemy LV")} {range.min}–{range.max} · {text("Your LV")}{" "}{level}
+            <br />
             {stage.clear.kind === "boss"
               ? t("world", "Survive, then defeat the world guardian.")
               : t("world", "Survive until the stage timer completes.")}
@@ -238,7 +244,7 @@ export default function WorldMap({
             <span data-testid="campaign-gold">
               {progress.gold} {t("world", "GOLD")}
             </span>{" "}
-            · {progress.xp} {t("world", "PROFILE XP")}
+            · LV {level} · {progress.xp} {t("world", "PROFILE XP")}
             <br />
             {Object.entries(progress.materials).map(([id, n]) => (
               <small key={id}>
