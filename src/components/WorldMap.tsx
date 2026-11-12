@@ -71,6 +71,19 @@ export default function WorldMap({
   const w = worldById(world),
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
+    playerLevel = characterLevel(progress.xp).level,
+    enemyMinimum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "slime",
+    ).level,
+    enemyMaximum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "boss",
+    ).level,
     reason =
       mode === "free"
         ? null
@@ -236,11 +249,8 @@ export default function WorldMap({
           <hr />
           <h3>{text(stage.name)}</h3>
           <p>
-            {text("Player Level")} {characterLevel(progress.xp).level} ·{" "}
-            {text("Enemy Level")}{" "}
-            {enemyScale(characterLevel(progress.xp).level, stage.worldId, stage.number, "slime").level}
-            {" – "}
-            {enemyScale(characterLevel(progress.xp).level, stage.worldId, stage.number, "boss").level}
+            {text("Player Level")} {playerLevel} · {text("Enemy Level")}{" "}
+            {enemyMinimum} – {enemyMaximum}
           </p>
           <p>
             {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
