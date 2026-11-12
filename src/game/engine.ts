@@ -423,7 +423,7 @@ export function chooseUpgrade(g: Game, id: UpgradeId) {
   return true;
 }
 function checkLevel(g: Game) {
-  if (g.xp < g.xpToNext) return;
+  if (g.xp < g.xpToNext || (g.campaign && g.level >= 60)) return;
   const available = UPGRADES.filter(
     (u) =>
       (g.stacks[u.id] ?? 0) < u.max &&
@@ -439,7 +439,15 @@ function checkLevel(g: Game) {
       !(u.id === "regen" && g.regen >= 20) &&
       !(u.id === "area" && g.weapon.area >= 4),
   );
-  if (!available.length) return;
+  if (!available.length) {
+    // Permanent XP must still advance when every temporary upgrade is capped.
+    if (!g.campaign) return;
+    g.xp -= g.xpToNext;
+    g.level++;
+    g.xpToNext = 100 + (g.level - 1) * 50;
+    checkLevel(g);
+    return;
+  }
   g.xp -= g.xpToNext;
   g.level++;
   g.xpToNext = g.campaign
