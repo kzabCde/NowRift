@@ -338,13 +338,45 @@
   gap: 10px;
   margin: 20px 0;
 }
-.haven-destinations article {
+.haven-destinations article,
+.haven-destinations .haven-free-world {
   min-width: 0;
   border: 1px solid #9cae7a55;
   padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.haven-destinations .haven-free-world {
+  color: inherit;
+  text-align: left;
+  background: #141c18;
+  cursor: pointer;
+}
+.haven-destinations .haven-free-world[aria-pressed="true"],
+.haven-free-stages button[aria-pressed="true"] {
+  border-color: #ddcc83;
+  background: #202b23;
+}
+.haven-free-stages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+.haven-free-stages button {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+  text-align: left;
+  color: inherit;
+  border: 1px solid #9cae7a55;
+  background: #141c18;
+}
+.haven-free-stages small {
+  color: #a8bda7;
 }
 .haven-destinations img {
   width: 100%;

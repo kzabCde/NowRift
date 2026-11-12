@@ -16,6 +16,7 @@ import type { SaveData } from "@/game/persistence/model";
 import type { StageSelection } from "@/game/campaign/loader";
 import { WORLDS, STAGES, type DifficultyId } from "@/game/campaign/content";
 import { lockedReason } from "@/game/campaign/progression";
+import { enemyLevelRange } from "@/game/campaign/scaling";
 import {
   calculateStats,
   campaignLoadout,
@@ -85,7 +86,8 @@ export default function HavenGame({
     [panels, setPanels] = useState<Exclude<Panel, null>[]>([]),
     [busy, setBusy] = useState(false),
     [outfit, setOutfit] = useState<Outfit>("moss"),
-    [difficulty, setDifficulty] = useState<DifficultyId>("normal");
+    [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
+    [freeStage, setFreeStage] = useState("forest-1");
   const panel = panels.at(-1) ?? null;
   const setPanel = (next: Panel) => setPanels(next ? [next] : []);
   const [revealed, setRevealed] = useState(false),
@@ -767,97 +769,78 @@ export default function HavenGame({
                     onInventory={() => setPanels(["portal", "storage"])}
                   />
                 )}
-                <p>
-                  {h(
-                    "The first forest expedition is ready. Other biomes retain their campaign challenges.",
-                  )}
-                </p>
+                <p>{text("Free Mode: all worlds and stages are accessible, regardless of Story progress.")}</p>
                 <div className="haven-destinations">
-                  {WORLDS.map((world) => (
-                    <article key={world.id}>
-                      <Image
-                        unoptimized
-                        width={180}
-                        height={75}
-                        src={`/assets/worlds/${world.id}/preview.png`}
-                        alt=""
-                      />
-                      <strong>{text(world.name)}</strong>
-                      <small>
-                        {h("Recommended power")}:{" "}
-                        {
-                          STAGES.find((s) => s.id === world.id + "-1")!
-                            .recommendedPower
-                        }
-                      </small>
-                      {p &&
-                        lockedReason(world.id + "-1", "normal", p.clears) && (
-                          <small>
-                            {text(
-                              lockedReason(
-                                world.id + "-1",
-                                "normal",
-                                p.clears,
-                              )!,
-                            )}
-                          </small>
-                        )}
-                      <small>
-                        {world.materials
-                          .map((id) => text(ITEMS[id].name))
-                          .join(" · ")}
-                      </small>
-                    </article>
-                  ))}
+                  {WORLDS.map((world) => {
+                    const selected = freeStage.startsWith(world.id + "-");
+                    const first = STAGES.find((s) => s.id === world.id + "-1")!;
+                    const range = enemyLevelRange(characterLevel(p?.xp ?? 0).level, first);
+                    return (
+                      <button
+                        type="button"
+                        key={world.id}
+                        className="haven-free-world"
+                        aria-pressed={selected}
+                        onClick={() => setFreeStage(world.id + "-1")}
+                      >
+                        <Image
+                          unoptimized
+                          width={180}
+                          height={75}
+                          src={`/assets/worlds/${world.id}/preview.png`}
+                          alt=""
+                        />
+                        <strong>{text(world.name)}</strong>
+                        <small>{text("Enemy LV")} {range.min}–{range.max}</small>
+                        <small>{world.materials.map((id) => text(ITEMS[id].name)).join(" · ")}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p>{text("Choose a Free Mode stage")}</p>
+                <div className="haven-free-stages">
+                  {STAGES.filter((stage) => stage.worldId === freeStage.split("-")[0]).map((stage) => {
+                    const range = enemyLevelRange(characterLevel(p?.xp ?? 0).level, stage);
+                    return (
+                      <button
+                        key={stage.id}
+                        type="button"
+                        aria-pressed={stage.id === freeStage}
+                        onClick={() => setFreeStage(stage.id)}
+                      >
+                        <strong>{text(stage.name)}</strong>
+                        <small>{text("Enemy LV")} {range.min}–{range.max}</small>
+                      </button>
+                    );
+                  })}
                 </div>
                 <label className="setting-row">
                   {h("Farming Expedition")}
                   <select
                     value={difficulty}
-                    onChange={(e) =>
-                      setDifficulty(e.target.value as DifficultyId)
-                    }
+                    onChange={(e) => setDifficulty(e.target.value as DifficultyId)}
                     aria-label={h("Farming Expedition")}
                   >
                     {(["normal", "hard", "nightmare"] as const).map((d) => (
                       <option key={d} value={d}>
-                        {h(
-                          d === "normal"
-                            ? "Normal"
-                            : d === "hard"
-                              ? "Hard"
-                              : "Nightmare",
-                        )}
+                        {h(d === "normal" ? "Normal" : d === "hard" ? "Hard" : "Nightmare")}
                       </option>
                     ))}
                   </select>
                 </label>
                 <p>
-                  {h(
-                    "Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.",
-                  )}
+                  {h("Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.")}
                 </p>
                 <p className="muted">
-                  {h(
-                    "Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.",
-                  )}
+                  {h("Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.")}
                 </p>
-                {p && lockedReason(FARM.stageId, difficulty, p.clears) && (
-                  <p role="status">
-                    {text(lockedReason(FARM.stageId, difficulty, p.clears)!)}
-                  </p>
-                )}
                 <button
                   className="primary-button"
-                  disabled={
-                    busy ||
-                    !equipped ||
-                    !!(p && lockedReason(FARM.stageId, difficulty, p.clears))
-                  }
+                  disabled={busy || !equipped}
                   onClick={() =>
                     p &&
                     void travel({
-                      stageId: FARM.stageId,
+                      stageId: freeStage,
                       activity: "farming",
                       difficulty,
                       seed: crypto.getRandomValues(new Uint32Array(1))[0],
@@ -867,17 +850,9 @@ export default function HavenGame({
                 >
                   {h(busy ? "Preparing travel…" : "Confirm travel")}
                 </button>
-                <button
-                  className="quiet-button"
-                  onClick={() => setPanel("campaign")}
-                >
+                <button className="quiet-button" onClick={() => setPanel("campaign")}>
                   {h("Campaign challenges")} →
                 </button>
-                <p className="muted">
-                  {h(
-                    "World exploration and dungeons are planned for later slices.",
-                  )}
-                </p>
               </>
             )}
             {panel === "wardrobe" && (
