@@ -53,8 +53,8 @@ async function haven(page: Page) {
   // has completed. A visible canvas alone does not mean it accepts movement.
   await expect
     .poll(() => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked), {
-      message: "Rift Heaven must be ready for keyboard movement" },
-    )
+      message: "Rift Heaven must be ready for keyboard movement",
+    })
     .toBe(false);
 }
 async function place(page: Page, id: string) {
