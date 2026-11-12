@@ -1240,9 +1240,14 @@ export class GameScene extends Phaser.Scene {
                 id: this.runId,
                 run: this.run ? { ...this.run } : undefined,
                 mode: g.campaign.mode ?? "story",
-                earnedXp: Math.max(0, Math.floor(
-                  totalXpForLevel(g.level) + g.xp - (this.stage?.startingXp ?? 0),
-                )),
+                earnedXp: Math.max(
+                  0,
+                  Math.floor(
+                    totalXpForLevel(g.level) +
+                      g.xp -
+                      (this.stage?.startingXp ?? 0),
+                  ),
+                ),
                 stageId: g.campaign.definition.id,
                 difficulty: g.campaign.difficulty.id,
                 seed: g.campaign.seed,
