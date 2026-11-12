@@ -393,7 +393,12 @@ describe("expedition, extraction and a path home", () => {
       expect(layout.nodes.map((n) => n.item)).toEqual(
         g.campaign!.world.materials,
       );
-      expect(validHarvest(layout.nodes.map((n) => n.id), stage.id)).toBe(true);
+      expect(
+        validHarvest(
+          layout.nodes.map((n) => n.id),
+          stage.id,
+        ),
+      ).toBe(true);
     }
   });
   test("each biome banks only its own gathered supplies after extraction", () => {
