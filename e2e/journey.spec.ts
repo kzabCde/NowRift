@@ -48,8 +48,8 @@ async function reveal(page: Page) {
   // Phaser. Assert gameplay readiness rather than racing the H shortcut.
   await expect
     .poll(() => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked), {
-      message: "Rift Heaven must be interactive after the reveal" },
-    )
+      message: "Rift Heaven must be interactive after the reveal",
+    })
     .toBe(false);
 }
 async function create(page: Page, name = "Rowan") {
