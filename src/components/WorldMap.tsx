@@ -3,6 +3,7 @@ import type { CharacterId } from "@/game/loadout";
 import {
   calculateStats,
   campaignLoadout,
+  characterLevel,
   resolveEquippedWeapon,
 } from "@/game/rpg/stats";
 import EquippedWeapon from "./EquippedWeapon";
@@ -27,6 +28,7 @@ import {
 } from "@/game/campaign/progression";
 import { campaignRepository } from "@/game/campaign/persistence";
 import type { StageSelection } from "@/game/campaign/loader";
+import { enemyScale } from "@/game/campaign/scaling";
 export default function WorldMap({
   onStart,
   onBack,
@@ -131,7 +133,7 @@ export default function WorldMap({
               <Atmosphere world={w.id} />
               <span>
                 {t("world", "WORLD")} 0{i + 1} ·{" "}
-                {lockedReason(`${w.id}-1`, difficulty, progress.clears)
+                {mode !== "free" && lockedReason(`${w.id}-1`, difficulty, progress.clears)
                   ? t("world", "LOCKED")
                   : t("world", "OPEN")}
               </span>
@@ -234,6 +236,13 @@ export default function WorldMap({
           <hr />
           <h3>{text(stage.name)}</h3>
           <p>
+            {text("Player Level")} {characterLevel(progress.xp).level} ·{" "}
+            {text("Enemy Level")}{" "}
+            {enemyScale(characterLevel(progress.xp).level, stage.worldId, stage.number, "slime").level}
+            {" – "}
+            {enemyScale(characterLevel(progress.xp).level, stage.worldId, stage.number, "boss").level}
+          </p>
+          <p>
             {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
             {Math.round(
               (stage.clear.seconds * DIFFICULTIES[difficulty].duration) / 60,
@@ -307,7 +316,9 @@ export default function WorldMap({
                 });
             }}
           >
-            {mode === "free" ? "ENTER FREE MODE →" : t("world", "START STAGE →")}{" "}
+            {mode === "free"
+              ? "ENTER FREE MODE →"
+              : t("world", "START STAGE →")}{" "}
           </button>
         </aside>
       </div>
