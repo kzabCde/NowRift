@@ -1,0 +1,52 @@
+name: Temporary formatter for unified progression PR
+on:
+  push:
+    branches:
+      - codex/unified-progression-free-mode-20261112
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/unified-progression-free-mode-20261112
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Format gameplay changes
+        run: >-
+          npx prettier --write
+          src/game/campaign/commands.ts
+          src/game/campaign/loader.ts
+          src/game/campaign/scaling.ts
+          src/game/campaign/unified-progression.test.ts
+          src/game/engine.ts
+          src/game/persistence/checkpoint.ts
+          src/game/world/content.ts
+          src/game/world/farming.ts
+          src/game/world/world.test.ts
+          src/game/rpg/rpg.test.ts
+          src/components/NowRiftGame.tsx
+          src/components/WorldMap.tsx
+          src/components/HavenGame.tsx
+          src/app/haven.css
+          src/game/phaser/scenes.ts
+          src/game/rpg/settlement.ts
+          src/game/campaign/runtime.ts
+          src/game/persistence/repository.ts
+      - name: Push formatting to this PR branch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game src/components/HavenGame.tsx src/components/WorldMap.tsx src/components/NowRiftGame.tsx src/app/haven.css
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format unified progression refactor"
+            git push origin HEAD:codex/unified-progression-free-mode-20261112
+          fi
