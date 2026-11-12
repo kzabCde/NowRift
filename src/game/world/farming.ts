@@ -1,6 +1,6 @@
 import type { CampaignResult } from "../campaign/rewards";
 import { resolveRewards } from "../campaign/rewards";
-import { stageById, worldById } from "../campaign/content";
+import { STAGES, stageById, worldById } from "../campaign/content";
 import type { MapLayout } from "../campaign/maps";
 import { FARM, near, type Point } from "./content";
 
@@ -96,6 +96,7 @@ export function validHarvest(
   v: unknown,
   stageId = FARM.stageId,
 ): v is string[] {
+  if (!STAGES.some((stage) => stage.id === stageId)) return false;
   const nodes = expeditionLayout(stageId).nodes;
   return (
     Array.isArray(v) &&
