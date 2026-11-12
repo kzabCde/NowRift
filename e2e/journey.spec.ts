@@ -47,9 +47,8 @@ async function reveal(page: Page) {
   // The finished visual transition can precede the unlock command reaching
   // Phaser. Assert gameplay readiness rather than racing the H shortcut.
   await expect
-    .poll(
-      () => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked),
-      { message: "Rift Heaven must be interactive after the reveal" },
+    .poll(() => page.evaluate(() => window.__NOWRIFT_HAVEN__?.state().locked), {
+      message: "Rift Heaven must be interactive after the reveal" },
     )
     .toBe(false);
 }
