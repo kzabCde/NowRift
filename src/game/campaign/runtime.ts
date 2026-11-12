@@ -7,6 +7,7 @@ import {
   type WorldDefinition,
 } from "./content";
 import { constructMap, type MapLayout } from "./maps";
+import { enemyScaling } from "./scaling";
 export type StageRuntime = {
   activity?: "farming";
   harvested?: string[];
@@ -85,7 +86,11 @@ export function environmentStep(g: Game, dt: number, h: Hooks) {
         ...z,
         age: 0,
         delay: def.delay,
-        damage: Math.round(def.damage * c.difficulty.damage),
+        damage: Math.round(
+          def.damage *
+            c.difficulty.damage *
+            enemyScaling(g.level, c.definition, c.world.id, "elite").damage,
+        ),
         slow: def.slow,
         burn: def.burn,
         color: def.color,
@@ -110,7 +115,9 @@ export function campaignBossAttack(g: Game, e: Enemy, h: Hooks) {
         r: w.hazard.radius,
         age: 0,
         delay: w.hazard.delay,
-        damage: 25,
+        damage: Math.round(
+          25 * enemyScaling(g.level, c.definition, w.id, "boss").damage,
+        ),
         slow: w.hazard.slow,
         burn: w.hazard.burn,
         color: w.hazard.color,

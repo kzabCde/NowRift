@@ -24,7 +24,9 @@ export function applyResult(progress: Progress, run: CampaignResult) {
   )
     throw new Error("Invalid result");
   const stage = stageById(run.stageId),
-    reason = lockedReason(stage.id, run.difficulty, progress.clears);
+    reason = run.activity === "farming"
+       ? null
+       : lockedReason(stage.id, run.difficulty, progress.clears);
   if (reason) throw new Error(reason);
   if (
     run.victory &&

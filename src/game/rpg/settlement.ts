@@ -5,6 +5,7 @@ import { initializeRpg } from "./profile";
 import { gold } from "./economy";
 import { addEquipment, grantStack } from "./inventory";
 import { equipmentLoot } from "./loot";
+import { characterLevel } from "./stats";
 export function settleRpg(
   profile: Progress,
   run: CampaignResult,
@@ -15,6 +16,10 @@ export function settleRpg(
     equipment = equipmentLoot(run, reward),
     before = r.overflow.length;
   gold(p, reward.gold);
+  // Bank XP once with the atomic run receipt; level is derived from total XP.
+  reward.xp = Math.floor(
+    reward.xp * (1 + Math.min(1.5, (characterLevel(p.xp).level - 1) * 0.025)),
+  );
   p.xp += reward.xp;
   for (const [id, n] of Object.entries(reward.materials))
     if (n > 0) grantStack(p, id, n, run.id + ":material:" + id);

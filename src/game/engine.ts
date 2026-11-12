@@ -1,4 +1,5 @@
 import { temporaryStats, incomingDamage } from "./rpg/stats";
+import { enemyScaling } from "./campaign/scaling";
 import type { CharacterStats, Rarity, WeaponSnapshot } from "./rpg/model";
 import { facingFromAngle, type Facing } from "./presentation/character";
 import type { CharacterId } from "./loadout";
@@ -30,6 +31,7 @@ export type GamePhase =
   | "gameover"
   | "victory";
 export type Enemy = {
+  level?: number;
   enraged?: boolean;
   pattern?: number;
   charge?: { delay: number; left: number; vx: number; vy: number };
@@ -115,6 +117,8 @@ export type Game = FeedbackQueue & {
   kills: number;
   gold: number;
   level: number;
+  /** Temporary combat upgrade tier; not a permanent character level. */
+  runLevel: number;
   xp: number;
   xpToNext: number;
   weaponId: WeaponId;
@@ -216,6 +220,7 @@ export function makeGame(
     kills: 0,
     gold: 0,
     level: 1,
+    runLevel: 1,
     xp: 0,
     xpToNext: 25,
     weaponId,
@@ -438,7 +443,8 @@ function checkLevel(g: Game) {
   );
   if (!available.length) return;
   g.xp -= g.xpToNext;
-  g.level++;
+  if (g.campaign) g.runLevel++;
+  else g.level++;
   g.xpToNext = Math.floor(g.xpToNext * 1.19 + 6);
   for (let i = available.length - 1; i > 0; i--) {
     const j = Math.floor(g.rng() * (i + 1));
@@ -482,6 +488,7 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
     speed: d.speed,
     contact: 0,
     kind,
+    level: 1,
     attack: kind === "boss" ? 2 : 1 + g.rng() * 2,
     slow: 0,
     hit: 0,
@@ -493,11 +500,15 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
   if (g.campaign) {
     const c = g.campaign,
       def = c.world.enemies.find((d) => d.kind === kind);
+    const scaling = enemyScaling(g.level, c.definition, c.world.id, kind);
+    e.level = scaling.level;
     e.hp = e.maxHp =
       (kind === "boss" ? c.world.boss.hp : def!.hp) *
       c.definition.modifiers.health *
-      c.difficulty.hp;
-    e.speed = (def?.speed ?? d.speed) * c.difficulty.speed;
+      c.difficulty.hp *
+      scaling.hp;
+    e.speed =
+      (def?.speed ?? d.speed) * c.difficulty.speed * scaling.speed;
     e.pattern = 0;
     e.charge = undefined;
   }
@@ -604,7 +615,12 @@ function addBullet(g: Game, b: Bullet) {
     { hostile: false, blast: 0, critical: false, sprite: 0 },
     b,
   );
-  if (b.hostile && g.campaign) pooled.damage *= g.campaign.difficulty.damage;
+  if (b.hostile && g.campaign) {
+    const c = g.campaign;
+    pooled.damage *=
+      c.difficulty.damage *
+      enemyScaling(g.level, c.definition, c.world.id, "caster").damage;
+  }
   g.bullets.push(pooled);
 }
 function shoot(g: Game) {
@@ -1044,7 +1060,14 @@ export function updateGame(
         g.campaign
           ? Math.round(
               (g.campaign.world.enemies.find((d) => d.kind === e.kind)
-                ?.damage ?? 25) * g.campaign.difficulty.damage,
+                ?.damage ?? 25) *
+                g.campaign.difficulty.damage *
+                enemyScaling(
+                  g.level,
+                  g.campaign.definition,
+                  g.campaign.world.id,
+                  e.kind,
+                ).damage,
             )
           : ENEMIES[e.kind].damage,
         e,

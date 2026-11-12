@@ -171,10 +171,12 @@ export function travelReason(
     destination.seed > 4294967295 ||
     (destination.activity !== undefined &&
       destination.activity !== "farming") ||
-    (destination.activity === "farming" && destination.stageId !== FARM.stageId)
+    (destination.activity === "farming" && !STAGES.some((s) => s.id === destination.stageId))
   )
     return "Invalid expedition.";
-  return lockedReason(destination.stageId, destination.difficulty, clears);
+  return destination.activity === "farming"
+    ? null
+    : lockedReason(destination.stageId, destination.difficulty, clears);
 }
 export function nearest(p: Point): Landmark | null {
   let found: Landmark | null = null,

@@ -23,11 +23,10 @@ export function loadStage(
   selection: StageSelection,
   weapon: WeaponId = "arcane",
 ) {
-  const reason = lockedReason(
-    selection.stageId,
-    selection.difficulty,
-    selection.clears,
-  );
+  const reason =
+    selection.activity === "farming"
+      ? null
+      : lockedReason(selection.stageId, selection.difficulty, selection.clears);
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
     g = makeGame(
@@ -41,8 +40,6 @@ export function loadStage(
     g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
   if (selection.activity === "farming") {
-    if (selection.stageId !== "forest-1")
-      throw new Error("Invalid expedition.");
     g.campaign.activity = "farming";
     g.campaign.harvested = [];
   }
@@ -50,6 +47,8 @@ export function loadStage(
   if (selection.weaponSnapshot)
     applyBuild(g, selection.weaponSnapshot.stats, true);
   else if (selection.build) applyBuild(g, selection.build, true);
+  // The hero level comes from the latest persistent RPG build.
+  g.level = selection.weaponSnapshot?.stats.level ?? selection.build?.level ?? 1;
   g.appearance = selection.appearance;
   beginGame(g);
   if (selection.startingHp !== undefined)

@@ -25,6 +25,7 @@ type State = Pick<
   | "kills"
   | "gold"
   | "level"
+  | "runLevel"
   | "xp"
   | "xpToNext"
   | "regen"
@@ -78,6 +79,7 @@ const fields = [
   "kills",
   "gold",
   "level",
+  "runLevel",
   "xp",
   "xpToNext",
   "regen",
@@ -185,7 +187,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
     s = c.state;
   if (
     c.stage?.activity !== undefined &&
-    (c.stage.activity !== "farming" || c.stage.stageId !== "forest-1")
+    c.stage.activity !== "farming"
   )
     return false;
   if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
@@ -196,12 +198,12 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
     return false;
   if (
     c.environment?.harvested !== undefined &&
-    !validHarvest(c.environment.harvested)
+    !validHarvest(c.environment.harvested, c.stage?.stageId)
   )
     return false;
   if (
     c.stage?.activity === "farming" &&
-    !validHarvest(c.environment?.harvested)
+    !validHarvest(c.environment?.harvested, c.stage.stageId)
   )
     return false;
   if (
@@ -235,6 +237,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
       "pickupRadius",
       "nextId",
     ]) ||
+    (s.runLevel !== undefined && !integer(s.runLevel, 1, 10000)) ||
     !finite(s.spawnCooldown, -1e12) ||
     typeof s.bossSpawned !== "boolean"
   )
@@ -460,6 +463,11 @@ export function restoreCheckpoint(checkpoint: RunCheckpoint): Game {
       ? loadStage(c.stage, c.weapon)
       : makeGame(FOREST.width, FOREST.height, c.weapon, rng);
   Object.assign(g, c.state);
+  // Legacy checkpoints encoded temporary run tier in the level field.
+  if (g.campaign && c.state.runLevel === undefined) {
+    g.runLevel = c.state.level;
+    g.level = c.stage?.weaponSnapshot?.stats.level ?? c.stage?.build?.level ?? 1;
+  }
   g.id = c.run.id;
   if (g.campaign && c.environment) Object.assign(g.campaign, c.environment);
   rng.setState(c.random);
