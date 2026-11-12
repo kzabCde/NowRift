@@ -28,7 +28,10 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Formatting
-        run: npm run format:check
+        run: |
+          npx prettier --write src/game/campaign/loader.ts src/game/engine.ts src/components/WorldMap.tsx
+          git diff -- src/game/campaign/loader.ts src/game/engine.ts src/components/WorldMap.tsx
+          exit 1
       - name: Unit tests
         run: npm test
       - name: Seeded full survival and boss playthrough
