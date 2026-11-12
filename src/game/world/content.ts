@@ -156,7 +156,7 @@ export const FARM = {
     { id: "copper-vein", item: "copper-ore", amount: 2, x: 900, y: 540 },
   ],
 } as const;
-export function near(a: Point, b: Point, r = HAVEN.range) {
+export function near(a: Point, b: Point, r: number = HAVEN.range) {
   return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= r * r;
 }
 export function travelReason(
