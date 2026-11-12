@@ -10,7 +10,13 @@ import {
   validPosition,
 } from "./content";
 import { defaultWorld, validWorld } from "./save";
-import { farmPrompt, farmingRewards, validHarvest } from "./farming";
+import {
+  expeditionLayout,
+  farmPrompt,
+  farmingRewards,
+  validHarvest,
+} from "./farming";
+import { STAGES } from "../campaign/content";
 import {
   profileRepository as repo,
   resetClientSelectionForTests,
@@ -370,16 +376,58 @@ describe("expedition, extraction and a path home", () => {
     expect(validHarvest(["fallen-wood", "fallen-wood"])).toBe(false);
     expect(validHarvest(["invented-node"])).toBe(false);
   });
-  test("forest runs retain canonical world IDs and reject unavailable farming maps", () => {
-    expect(() =>
-      loadStage({
+  test("Free Mode supply expeditions can enter all 20 maps without Story unlocks", () => {
+    for (const stage of STAGES) {
+      const g = loadStage({
         activity: "farming",
-        stageId: "desert-1",
+        mode: "free",
+        stageId: stage.id,
         difficulty: "normal",
         seed: 3,
-        clears: ["forest-5:normal"],
-      }),
-    ).toThrow("Invalid expedition");
+        clears: [],
+      });
+      expect(g.campaign!.activity).toBe("farming");
+      expect(g.campaign!.mode).toBe("free");
+      const layout = expeditionLayout(stage.id, g.campaign!.map);
+      expect(layout.nodes).toHaveLength(3);
+      expect(layout.nodes.map((n) => n.item)).toEqual(
+        g.campaign!.world.materials,
+      );
+      expect(validHarvest(layout.nodes.map((n) => n.id), stage.id)).toBe(true);
+    }
+  });
+  test("each biome banks only its own gathered supplies after extraction", () => {
+    for (const stage of STAGES.filter((s) => s.number === 1)) {
+      const nodes = expeditionLayout(stage.id).nodes;
+      const run = {
+        id: "supply:" + stage.id,
+        mode: "free" as const,
+        activity: "farming" as const,
+        stageId: stage.id,
+        difficulty: "normal" as const,
+        seed: 44,
+        victory: true,
+        enemies: 5,
+        elites: 0,
+        bosses: 0,
+        seconds: 30,
+        harvested: [nodes[0].id, nodes[1].id],
+      };
+      const earned = farmingRewards(run);
+      expect(earned.reward.materials[nodes[0].item]).toBeGreaterThanOrEqual(
+        nodes[0].amount,
+      );
+      expect(earned.reward.materials[nodes[1].item]).toBeGreaterThanOrEqual(
+        nodes[1].amount,
+      );
+      expect(earned.reward.firstClear).toBe(false);
+      expect(() =>
+        farmingRewards({ ...run, harvested: [nodes[0].id, nodes[0].id] }),
+      ).toThrow("Invalid expedition");
+      expect(() =>
+        farmingRewards({ ...run, harvested: ["forest-1-supply-0"] }),
+      ).toThrow("Invalid expedition");
+    }
   });
   test("farming checkpoints restore the harvest, RNG, appearance and activity", async () => {
     const { c } = await expedition();
