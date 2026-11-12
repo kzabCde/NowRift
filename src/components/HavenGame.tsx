@@ -85,7 +85,8 @@ export default function HavenGame({
     [panels, setPanels] = useState<Exclude<Panel, null>[]>([]),
     [busy, setBusy] = useState(false),
     [outfit, setOutfit] = useState<Outfit>("moss"),
-    [difficulty, setDifficulty] = useState<DifficultyId>("normal");
+    [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
+    [atlasMode, setAtlasMode] = useState<"story" | "free">("story");
   const panel = panels.at(-1) ?? null;
   const setPanel = (next: Panel) => setPanels(next ? [next] : []);
   const [revealed, setRevealed] = useState(false),
@@ -610,6 +611,7 @@ export default function HavenGame({
           onClose={close}
         >
           <WorldMap
+            initialMode={atlasMode}
             character={p!.local.character}
             onInventory={() => setPanels(["portal", "campaign", "storage"])}
             onBack={() => setPanel("portal")}
@@ -769,7 +771,7 @@ export default function HavenGame({
                 )}
                 <p>
                   {h(
-                    "The first forest expedition is ready. Other biomes retain their campaign challenges.",
+                    "Supply Expeditions are available in every world. Choose a map to gather resources and extract back to Rift Heaven.",
                   )}
                 </p>
                 <div className="haven-destinations">
@@ -868,8 +870,20 @@ export default function HavenGame({
                   {h(busy ? "Preparing travel…" : "Confirm travel")}
                 </button>
                 <button
+                  className="primary-button"
+                  onClick={() => {
+                    setAtlasMode("free");
+                    setPanel("campaign");
+                  }}
+                >
+                  {h("Choose any world for supplies")} →
+                </button>
+                <button
                   className="quiet-button"
-                  onClick={() => setPanel("campaign")}
+                  onClick={() => {
+                    setAtlasMode("story");
+                    setPanel("campaign");
+                  }}
                 >
                   {h("Campaign challenges")} →
                 </button>

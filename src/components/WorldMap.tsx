@@ -34,14 +34,16 @@ export default function WorldMap({
   onBack,
   character = "wanderer",
   onInventory,
+  initialMode = "story",
 }: {
+  initialMode?: "story" | "free";
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
   character?: CharacterId;
   onInventory: () => void;
 }) {
   const { t, text } = useI18n();
-  const [mode, setMode] = useState<"story" | "free">("story");
+  const [mode, setMode] = useState<"story" | "free">(initialMode);
   const [world, setWorld] = useState<WorldId>("forest"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
     [selected, setSelected] = useState("forest-1");
@@ -120,7 +122,7 @@ export default function WorldMap({
           aria-pressed={mode === "free"}
           onClick={() => setMode("free")}
         >
-          Free Mode · All Maps
+          Free Mode · Supply Expeditions
         </button>
       </div>
       <div className="world-cards">
@@ -212,11 +214,13 @@ export default function WorldMap({
                     <strong>{text(s.name)}</strong>
                     <small>
                       {(lock ? text(lock) : null) ??
-                        (progress.clears.includes(clearKey(s.id, difficulty))
-                          ? t("world", "CLEARED · REPLAY AVAILABLE")
-                          : s.clear.kind === "boss"
-                            ? t("world", "BOSS ENCOUNTER")
-                            : t("world", "SURVIVAL"))}
+                        (mode === "free"
+                          ? t("haven", "Gather supplies and extract")
+                          : progress.clears.includes(clearKey(s.id, difficulty))
+                            ? t("world", "CLEARED · REPLAY AVAILABLE")
+                            : s.clear.kind === "boss"
+                              ? t("world", "BOSS ENCOUNTER")
+                              : t("world", "SURVIVAL"))}
                     </small>
                   </span>
                 </button>
@@ -260,9 +264,14 @@ export default function WorldMap({
             )}{" "}
             {t("world", "minutes")}
             <br />
-            {stage.clear.kind === "boss"
-              ? t("world", "Survive, then defeat the world guardian.")
-              : t("world", "Survive until the stage timer completes.")}
+            {mode === "free"
+              ? t(
+                  "haven",
+                  "Gather supplies, survive 20 seconds and defeat 5 enemies, then return through the extraction portal.",
+                )
+              : stage.clear.kind === "boss"
+                ? t("world", "Survive, then defeat the world guardian.")
+                : t("world", "Survive until the stage timer completes.")}
           </p>
           <span className="eyebrow">
             {t("world", "POSSIBLE FARMING REWARDS")}
@@ -273,10 +282,15 @@ export default function WorldMap({
             {t("world", "Guardian relic:")} {text(w.boss.reward)}
           </p>
           <p className="muted">
-            {t(
-              "world",
-              "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
-            )}{" "}
+            {mode === "free"
+              ? t(
+                  "haven",
+                  "Only extracted supplies and enemy loot are stored. Defeat or abandonment loses unbanked supplies.",
+                )
+              : t(
+                  "world",
+                  "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
+                )}{" "}
           </p>
           <div className="campaign-wallet">
             {text("YOUR POWER")}{" "}
@@ -295,8 +309,10 @@ export default function WorldMap({
           </div>
           {mode === "free" && (
             <p className="notice" role="status">
-              All worlds and stages are available for repeatable farming. Free
-              Mode does not advance Story completion.
+              {t(
+                "haven",
+                "Choose any stage to gather biome supplies and extract back to Rift Heaven. Story progression is not changed.",
+              )}
             </p>
           )}
           {reason && (
@@ -320,6 +336,7 @@ export default function WorldMap({
                 onStart({
                   stageId: stage.id,
                   mode,
+                  ...(mode === "free" ? { activity: "farming" as const } : {}),
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
@@ -328,7 +345,7 @@ export default function WorldMap({
             }}
           >
             {mode === "free"
-              ? "ENTER FREE MODE →"
+              ? t("haven", "BEGIN SUPPLY EXPEDITION →")
               : t("world", "START STAGE →")}{" "}
           </button>
         </aside>

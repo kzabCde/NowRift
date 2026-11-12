@@ -156,7 +156,7 @@ export const FARM = {
     { id: "copper-vein", item: "copper-ore", amount: 2, x: 900, y: 540 },
   ],
 } as const;
-export function near(a: Point, b: Point, r = HAVEN.range) {
+export function near(a: Point, b: Point, r: number = HAVEN.range) {
   return (a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= r * r;
 }
 export function travelReason(
@@ -169,9 +169,7 @@ export function travelReason(
     !Number.isSafeInteger(destination.seed) ||
     destination.seed < 0 ||
     destination.seed > 4294967295 ||
-    (destination.activity !== undefined &&
-      destination.activity !== "farming") ||
-    (destination.activity === "farming" && destination.stageId !== FARM.stageId)
+    (destination.activity !== undefined && destination.activity !== "farming")
   )
     return "Invalid expedition.";
   return destination.mode === "free"

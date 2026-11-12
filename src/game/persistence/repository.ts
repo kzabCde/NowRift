@@ -817,7 +817,8 @@ export const profileRepository = {
         w.hp = Math.max(1, Math.min(5000, result.hp ?? 1));
         if (result.victory) {
           w.extractions++;
-          if (w.quest === "active") w.quest = "completed";
+          if (w.quest === "active" && result.stageId === "forest-1")
+            w.quest = "completed";
         }
       }
       put(store, root, next, at);
