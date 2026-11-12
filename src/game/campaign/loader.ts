@@ -27,11 +27,14 @@ export function loadStage(
   selection: StageSelection,
   weapon: WeaponId = "arcane",
 ) {
-  const reason = selection.mode === "free" ? null : lockedReason(
-    selection.stageId,
-    selection.difficulty,
-    selection.clears,
-  );
+  const reason =
+    selection.mode === "free"
+      ? null
+      : lockedReason(
+          selection.stageId,
+          selection.difficulty,
+          selection.clears,
+        );
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
     g = makeGame(
@@ -57,9 +60,10 @@ export function loadStage(
   else if (selection.build) applyBuild(g, selection.build, true);
   // The same permanent XP curve drives Story and Free Mode HUD progression.
   const xp = characterLevel(selection.startingXp ?? 0);
-  g.level = selection.startingXp === undefined
-    ? (selection.weaponSnapshot?.stats.level ?? selection.build?.level ?? 1)
-    : xp.level;
+  g.level =
+    selection.startingXp === undefined
+      ? (selection.weaponSnapshot?.stats.level ?? selection.build?.level ?? 1)
+      : xp.level;
   g.xp = selection.startingXp === undefined ? 0 : xp.xp;
   g.xpToNext = 100 + (g.level - 1) * 50;
   g.appearance = selection.appearance;
