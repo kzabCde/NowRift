@@ -183,10 +183,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
-  if (
-    c.stage?.activity !== undefined &&
-    c.stage.activity !== "farming"
-  )
+  if (c.stage?.activity !== undefined && c.stage.activity !== "farming")
     return false;
   if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
     return false;
