@@ -407,7 +407,9 @@
   border-radius: 0;
   background: #11272c;
   accent-color: #c2ce9d;
-  box-shadow: 0 0 0 2px #233b3a, inset 0 0 0 1px #07151e;
+  box-shadow:
+    0 0 0 2px #233b3a,
+    inset 0 0 0 1px #07151e;
 }
 .rift-copy progress::-webkit-progress-bar {
   background: #11272c;
