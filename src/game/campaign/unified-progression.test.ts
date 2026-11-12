@@ -22,13 +22,15 @@ describe("shared Story / Free Mode RPG progression", () => {
   });
 
   test("Story progression remains locked independently of Free Mode", () => {
-    expect(() => loadStage({
-      mode: "story",
-      stageId: "infernal-5",
-      difficulty: "normal",
-      seed: 42,
-      clears: [],
-    })).toThrow();
+    expect(() =>
+      loadStage({
+        mode: "story",
+        stageId: "infernal-5",
+        difficulty: "normal",
+        seed: 42,
+        clears: [],
+      }),
+    ).toThrow();
   });
 
   test("level and XP persist across Story -> Free -> Story", () => {
@@ -96,7 +98,8 @@ describe("shared Story / Free Mode RPG progression", () => {
       enemies: 0,
       elites: 0,
       bosses: 1,
-      seconds: STAGES.find((s) => s.id === "desert-5")!.clear.seconds *
+      seconds:
+        STAGES.find((s) => s.id === "desert-5")!.clear.seconds *
         DIFFICULTIES.normal.duration,
       earnedXp: 250,
     };
