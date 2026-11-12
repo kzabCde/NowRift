@@ -1238,6 +1238,7 @@ export class GameScene extends Phaser.Scene {
                   : {}),
                 id: this.runId,
                 run: this.run ? { ...this.run } : undefined,
+                mode: g.campaign.mode ?? "story",
                 stageId: g.campaign.definition.id,
                 difficulty: g.campaign.difficulty.id,
                 seed: g.campaign.seed,
