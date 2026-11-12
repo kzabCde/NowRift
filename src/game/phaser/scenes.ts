@@ -17,7 +17,11 @@ import { totalXpForLevel } from "../rpg/stats";
 import { onSceneEnd } from "./lifecycle";
 import { CharacterRig } from "./character-rig";
 import { bodyKey, facingFromAngle } from "../presentation/character";
-import { farmPrompt } from "../world/farming";
+import {
+  expeditionLayout,
+  farmPrompt,
+  type ExpeditionLayout,
+} from "../world/farming";
 import { ITEMS } from "../rpg/content";
 import { drainFeedback, type Feedback } from "../feedback";
 import { WORLDS } from "../campaign/content";
@@ -702,6 +706,7 @@ export class GameScene extends Phaser.Scene {
   lastCheckpoint = 0;
   storageBlocked = false;
   farmNodes: Phaser.GameObjects.Image[] = [];
+  farmLayout: ExpeditionLayout | null = null;
   tonicPending = false;
   transitionLocked = false;
   tonicReceipts = new Set<string>();
@@ -756,13 +761,17 @@ export class GameScene extends Phaser.Scene {
     const g = this.simulation;
     this.visuals = new ForestRenderer(this, g);
     this.farmNodes = [];
-    if (this.stage?.activity === "farming") {
+    this.farmLayout =
+      this.stage?.activity === "farming" && g.campaign
+        ? expeditionLayout(g.campaign.definition.id, g.campaign.map)
+        : null;
+    if (this.farmLayout) {
       this.add
-        .image(FARM.portal.x, FARM.portal.y, "haven-rift")
+        .image(this.farmLayout.portal.x, this.farmLayout.portal.y, "haven-rift")
         .setScale(1.1)
         .setOrigin(0.5, 0.8)
-        .setDepth(FARM.portal.y - 10);
-      for (const node of FARM.nodes)
+        .setDepth(this.farmLayout.portal.y - 10);
+      for (const node of this.farmLayout.nodes)
         this.farmNodes.push(
           this.add
             .image(node.x, node.y, "items", ITEMS[node.item].icon)
@@ -1048,6 +1057,7 @@ export class GameScene extends Phaser.Scene {
         g.time,
         g.kills,
         g.campaign?.harvested ?? [],
+        this.farmLayout ?? FARM,
       );
       if (prompt.target === "extract" && prompt.ready) {
         g.phase = "victory";
@@ -1144,11 +1154,17 @@ export class GameScene extends Phaser.Scene {
       const g = this.simulation;
       this.bridge.emit(
         "expedition",
-        farmPrompt(g.player, g.time, g.kills, g.campaign?.harvested ?? []),
+        farmPrompt(
+          g.player,
+          g.time,
+          g.kills,
+          g.campaign?.harvested ?? [],
+          this.farmLayout ?? FARM,
+        ),
       );
       for (let i = 0; i < this.farmNodes.length; i++)
         this.farmNodes[i].setVisible(
-          !g.campaign?.harvested?.includes(FARM.nodes[i].id),
+          !g.campaign?.harvested?.includes(this.farmLayout!.nodes[i].id),
         );
     }
   }
