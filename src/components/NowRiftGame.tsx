@@ -274,6 +274,7 @@ export default function NowRiftGame({
                   }
                 : {}),
               outfit: canonical.local.world!.outfit,
+              startingXp: canonical.xp,
               clears: canonical.clears,
               ...campaignLoadout(canonical),
             }
