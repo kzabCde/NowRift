@@ -236,9 +236,7 @@ export default function NowRiftMainMenu() {
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
             setReturnHaven(s.mode === "free");
-            setSelection(
-              s.mode === "free" ? { ...s, returnTo: "haven" } : s,
-            );
+            setSelection(s.mode === "free" ? { ...s, returnTo: "haven" } : s);
             setScreen("game");
           }}
         />
