@@ -169,8 +169,7 @@ export function travelReason(
     !Number.isSafeInteger(destination.seed) ||
     destination.seed < 0 ||
     destination.seed > 4294967295 ||
-    (destination.activity !== undefined &&
-      destination.activity !== "farming")
+    (destination.activity !== undefined && destination.activity !== "farming")
   )
     return "Invalid expedition.";
   return destination.mode === "free"
