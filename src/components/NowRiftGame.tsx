@@ -935,7 +935,9 @@ export default function NowRiftGame({
               {t("haven", "UNBANKED EXPEDITION")} ·{" "}
               {expedition.gathered
                 .map((id) => {
-                  const n = farmingNodes(stage?.stageId).find((n) => n.id === id)!;
+                  const n = farmingNodes(stage?.stageId).find(
+                    (n) => n.id === id,
+                  )!;
                   return `${text(ITEMS[n.item].name)} ×${n.amount}`;
                 })
                 .join(" · ")}

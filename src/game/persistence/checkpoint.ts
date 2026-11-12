@@ -185,10 +185,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
-  if (
-    c.stage?.activity !== undefined &&
-    c.stage.activity !== "farming"
-  )
+  if (c.stage?.activity !== undefined && c.stage.activity !== "farming")
     return false;
   if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
     return false;
@@ -466,7 +463,8 @@ export function restoreCheckpoint(checkpoint: RunCheckpoint): Game {
   // Legacy checkpoints encoded temporary run tier in the level field.
   if (g.campaign && c.state.runLevel === undefined) {
     g.runLevel = c.state.level;
-    g.level = c.stage?.weaponSnapshot?.stats.level ?? c.stage?.build?.level ?? 1;
+    g.level =
+      c.stage?.weaponSnapshot?.stats.level ?? c.stage?.build?.level ?? 1;
   }
   g.id = c.run.id;
   if (g.campaign && c.environment) Object.assign(g.campaign, c.environment);

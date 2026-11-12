@@ -217,7 +217,8 @@ export default function WorldMap({
             )}{" "}
             {t("world", "minutes")}
             <br />
-            {text("Enemy LV")} {range.min}–{range.max} · {text("Your LV")}{" "}{level}
+            {text("Enemy LV")} {range.min}–{range.max} · {text("Your LV")}{" "}
+            {level}
             <br />
             {stage.clear.kind === "boss"
               ? t("world", "Survive, then defeat the world guardian.")

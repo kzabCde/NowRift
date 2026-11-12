@@ -8,9 +8,20 @@ export function enemyScaling(
   worldId: WorldId,
   kind: EnemyKind,
 ) {
-  const tier = Math.max(0, WORLDS.findIndex((w) => w.id === worldId));
-  const archetype = kind === "boss" ? 4 : kind === "elite" ? 2 : kind === "caster" ? 1 : 0;
-  const level = Math.max(1, Math.floor(Math.max(1, playerLevel)) + tier * 2 + stage.number - 1 + archetype);
+  const tier = Math.max(
+    0,
+    WORLDS.findIndex((w) => w.id === worldId),
+  );
+  const archetype =
+    kind === "boss" ? 4 : kind === "elite" ? 2 : kind === "caster" ? 1 : 0;
+  const level = Math.max(
+    1,
+    Math.floor(Math.max(1, playerLevel)) +
+      tier * 2 +
+      stage.number -
+      1 +
+      archetype,
+  );
   return {
     level,
     hp: 1 + 0.08 * (level - 1),

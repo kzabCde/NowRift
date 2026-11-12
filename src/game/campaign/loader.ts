@@ -48,7 +48,8 @@ export function loadStage(
     applyBuild(g, selection.weaponSnapshot.stats, true);
   else if (selection.build) applyBuild(g, selection.build, true);
   // The hero level comes from the latest persistent RPG build.
-  g.level = selection.weaponSnapshot?.stats.level ?? selection.build?.level ?? 1;
+  g.level =
+    selection.weaponSnapshot?.stats.level ?? selection.build?.level ?? 1;
   g.appearance = selection.appearance;
   beginGame(g);
   if (selection.startingHp !== undefined)

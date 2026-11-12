@@ -767,12 +767,19 @@ export default function HavenGame({
                     onInventory={() => setPanels(["portal", "storage"])}
                   />
                 )}
-                <p>{text("Free Mode: all worlds and stages are accessible, regardless of Story progress.")}</p>
+                <p>
+                  {text(
+                    "Free Mode: all worlds and stages are accessible, regardless of Story progress.",
+                  )}
+                </p>
                 <div className="haven-destinations">
                   {WORLDS.map((world) => {
                     const selected = freeStage.startsWith(world.id + "-");
                     const first = STAGES.find((s) => s.id === world.id + "-1")!;
-                    const range = enemyLevelRange(characterLevel(p?.xp ?? 0).level, first);
+                    const range = enemyLevelRange(
+                      characterLevel(p?.xp ?? 0).level,
+                      first,
+                    );
                     return (
                       <button
                         type="button"
@@ -789,16 +796,27 @@ export default function HavenGame({
                           alt=""
                         />
                         <strong>{text(world.name)}</strong>
-                        <small>{text("Enemy LV")} {range.min}–{range.max}</small>
-                        <small>{world.materials.map((id) => text(ITEMS[id].name)).join(" · ")}</small>
+                        <small>
+                          {text("Enemy LV")} {range.min}–{range.max}
+                        </small>
+                        <small>
+                          {world.materials
+                            .map((id) => text(ITEMS[id].name))
+                            .join(" · ")}
+                        </small>
                       </button>
                     );
                   })}
                 </div>
                 <p>{text("Choose a Free Mode stage")}</p>
                 <div className="haven-free-stages">
-                  {STAGES.filter((stage) => stage.worldId === freeStage.split("-")[0]).map((stage) => {
-                    const range = enemyLevelRange(characterLevel(p?.xp ?? 0).level, stage);
+                  {STAGES.filter(
+                    (stage) => stage.worldId === freeStage.split("-")[0],
+                  ).map((stage) => {
+                    const range = enemyLevelRange(
+                      characterLevel(p?.xp ?? 0).level,
+                      stage,
+                    );
                     return (
                       <button
                         key={stage.id}
@@ -807,7 +825,9 @@ export default function HavenGame({
                         onClick={() => setFreeStage(stage.id)}
                       >
                         <strong>{text(stage.name)}</strong>
-                        <small>{text("Enemy LV")} {range.min}–{range.max}</small>
+                        <small>
+                          {text("Enemy LV")} {range.min}–{range.max}
+                        </small>
                       </button>
                     );
                   })}
@@ -816,21 +836,33 @@ export default function HavenGame({
                   {h("Farming Expedition")}
                   <select
                     value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as DifficultyId)}
+                    onChange={(e) =>
+                      setDifficulty(e.target.value as DifficultyId)
+                    }
                     aria-label={h("Farming Expedition")}
                   >
                     {(["normal", "hard", "nightmare"] as const).map((d) => (
                       <option key={d} value={d}>
-                        {h(d === "normal" ? "Normal" : d === "hard" ? "Hard" : "Nightmare")}
+                        {h(
+                          d === "normal"
+                            ? "Normal"
+                            : d === "hard"
+                              ? "Hard"
+                              : "Nightmare",
+                        )}
                       </option>
                     ))}
                   </select>
                 </label>
                 <p>
-                  {h("Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.")}
+                  {h(
+                    "Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.",
+                  )}
                 </p>
                 <p className="muted">
-                  {h("Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.")}
+                  {h(
+                    "Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.",
+                  )}
                 </p>
                 <button
                   className="primary-button"
@@ -848,7 +880,10 @@ export default function HavenGame({
                 >
                   {h(busy ? "Preparing travel…" : "Confirm travel")}
                 </button>
-                <button className="quiet-button" onClick={() => setPanel("campaign")}>
+                <button
+                  className="quiet-button"
+                  onClick={() => setPanel("campaign")}
+                >
                   {h("Campaign challenges")} →
                 </button>
               </>

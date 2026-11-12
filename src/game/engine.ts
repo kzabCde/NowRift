@@ -507,8 +507,7 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
       c.definition.modifiers.health *
       c.difficulty.hp *
       scaling.hp;
-    e.speed =
-      (def?.speed ?? d.speed) * c.difficulty.speed * scaling.speed;
+    e.speed = (def?.speed ?? d.speed) * c.difficulty.speed * scaling.speed;
     e.pattern = 0;
     e.charge = undefined;
   }

@@ -29,7 +29,10 @@ export function farmPrompt(
     kills,
   };
 }
-export function validHarvest(v: unknown, stageId: string = FARM.stageId): v is string[] {
+export function validHarvest(
+  v: unknown,
+  stageId: string = FARM.stageId,
+): v is string[] {
   const nodes = farmingNodes(stageId);
   return (
     Array.isArray(v) &&
@@ -39,7 +42,10 @@ export function validHarvest(v: unknown, stageId: string = FARM.stageId): v is s
   );
 }
 export function farmingRewards(run: CampaignResult) {
-  if (!STAGES.some((s) => s.id === run.stageId) || !validHarvest(run.harvested, run.stageId))
+  if (
+    !STAGES.some((s) => s.id === run.stageId) ||
+    !validHarvest(run.harvested, run.stageId)
+  )
     throw new Error("Invalid expedition.");
   if (
     run.victory &&

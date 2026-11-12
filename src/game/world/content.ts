@@ -183,7 +183,8 @@ export function travelReason(
     destination.seed > 4294967295 ||
     (destination.activity !== undefined &&
       destination.activity !== "farming") ||
-    (destination.activity === "farming" && !STAGES.some((s) => s.id === destination.stageId))
+    (destination.activity === "farming" &&
+      !STAGES.some((s) => s.id === destination.stageId))
   )
     return "Invalid expedition.";
   return destination.activity === "farming"
