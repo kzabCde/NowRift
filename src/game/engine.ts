@@ -442,7 +442,9 @@ function checkLevel(g: Game) {
   if (!available.length) return;
   g.xp -= g.xpToNext;
   g.level++;
-  g.xpToNext = Math.floor(g.xpToNext * 1.19 + 6);
+  g.xpToNext = g.campaign
+    ? 100 + (g.level - 1) * 50
+    : Math.floor(g.xpToNext * 1.19 + 6);
   for (let i = available.length - 1; i > 0; i--) {
     const j = Math.floor(g.rng() * (i + 1));
     [available[i], available[j]] = [available[j], available[i]];
