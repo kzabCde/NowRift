@@ -6,7 +6,7 @@ import { profileRepository } from "@/game/persistence/repository";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import type { ExpeditionPrompt } from "@/game/world/farming";
-import { FARM, farmingNodes, travelReason } from "@/game/world/content";
+import { farmingNodes, travelReason } from "@/game/world/content";
 import { ITEMS } from "@/game/rpg/content";
 import { practiceLoadout, characterLevel } from "@/game/rpg/stats";
 import { RARITIES } from "@/game/rpg/content";

@@ -414,7 +414,7 @@ describe("economy, progression and connected combat", () => {
     expect(p.materials["copper-ore"]).toBe(ore + yielded["copper-ore"]);
     expect(p.rpg!.history.at(-1)!.items.length).toBeGreaterThan(0);
   });
-  test("permanent XP and disciplines increase real build stats without altering run levels", () => {
+  test("permanent XP and disciplines increase real stats while retaining the same hero level between runs", () => {
     let p = fixture();
     const base = calculateStats(p);
     p.xp = 650;
@@ -429,7 +429,8 @@ describe("economy, progression and connected combat", () => {
       clears: [],
       build: calculateStats(p),
     });
-    expect(g.level).toBe(1);
+    expect(g.level).toBe(characterLevel(p.xp).level);
+    expect(g.runLevel).toBe(1);
     expect(g.player.maxHp).toBe(calculateStats(p).maxHp);
     expect(g.weapon.damage).toBe(calculateStats(p).damage);
   });

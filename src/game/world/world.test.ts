@@ -157,7 +157,7 @@ describe("authored safe world and movement", () => {
         },
         [],
       ),
-    ).toContain("five NORMAL");
+    ).toBeNull();
   });
   test("every doorway, spawn and return position is collision-safe", () => {
     expect(validPosition(HAVEN.spawn)).toBe(true);
@@ -370,16 +370,18 @@ describe("expedition, extraction and a path home", () => {
     expect(validHarvest(["fallen-wood", "fallen-wood"])).toBe(false);
     expect(validHarvest(["invented-node"])).toBe(false);
   });
-  test("forest runs retain canonical world IDs and reject unavailable farming maps", () => {
-    expect(() =>
-      loadStage({
+  test("all authored worlds support free expeditions without story unlocks", () => {
+    for (const stageId of ["forest-1", "desert-1", "frozen-1", "infernal-1"]) {
+      const g = loadStage({
         activity: "farming",
-        stageId: "desert-1",
+        stageId,
         difficulty: "normal",
         seed: 3,
-        clears: ["forest-5:normal"],
-      }),
-    ).toThrow("Invalid expedition");
+        clears: [],
+      });
+      expect(g.campaign?.activity).toBe("farming");
+      expect(g.campaign?.definition.id).toBe(stageId);
+    }
   });
   test("farming checkpoints restore the harvest, RNG, appearance and activity", async () => {
     const { c } = await expedition();
