@@ -15,6 +15,7 @@ export type Rewards = {
   firstClear: boolean;
 };
 export type CampaignResult = {
+  mode?: "story" | "free";
   activity?: "farming";
   harvested?: string[];
   hp?: number;
