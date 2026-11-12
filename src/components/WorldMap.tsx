@@ -3,6 +3,7 @@ import type { CharacterId } from "@/game/loadout";
 import {
   calculateStats,
   campaignLoadout,
+  characterLevel,
   resolveEquippedWeapon,
 } from "@/game/rpg/stats";
 import EquippedWeapon from "./EquippedWeapon";
@@ -27,18 +28,22 @@ import {
 } from "@/game/campaign/progression";
 import { campaignRepository } from "@/game/campaign/persistence";
 import type { StageSelection } from "@/game/campaign/loader";
+import { enemyScale } from "@/game/campaign/scaling";
 export default function WorldMap({
   onStart,
   onBack,
   character = "wanderer",
   onInventory,
+  initialMode = "story",
 }: {
+  initialMode?: "story" | "free";
   onStart: (selection: StageSelection) => void;
   onBack: () => void;
   character?: CharacterId;
   onInventory: () => void;
 }) {
   const { t, text } = useI18n();
+  const [mode, setMode] = useState<"story" | "free">(initialMode);
   const [world, setWorld] = useState<WorldId>("forest"),
     [difficulty, setDifficulty] = useState<DifficultyId>("normal"),
     [selected, setSelected] = useState("forest-1");
@@ -68,7 +73,23 @@ export default function WorldMap({
   const w = worldById(world),
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
-    reason = lockedReason(selected, difficulty, progress.clears);
+    playerLevel = characterLevel(progress.xp).level,
+    enemyMinimum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "slime",
+    ).level,
+    enemyMaximum = enemyScale(
+      playerLevel,
+      stage.worldId,
+      stage.number,
+      "boss",
+    ).level,
+    reason =
+      mode === "free"
+        ? null
+        : lockedReason(selected, difficulty, progress.clears);
   return (
     <section className="world-map">
       <div className="hub-heading">
@@ -82,6 +103,26 @@ export default function WorldMap({
         </div>
         <button className="quiet-button" onClick={onBack}>
           {t("world", "← HUB")}{" "}
+        </button>
+      </div>
+      <div
+        role="group"
+        aria-label="Game mode"
+        style={{ display: "flex", gap: 12, marginBottom: 16 }}
+      >
+        <button
+          className={mode === "story" ? "primary-button" : "quiet-button"}
+          aria-pressed={mode === "story"}
+          onClick={() => setMode("story")}
+        >
+          Story Mode
+        </button>
+        <button
+          className={mode === "free" ? "primary-button" : "quiet-button"}
+          aria-pressed={mode === "free"}
+          onClick={() => setMode("free")}
+        >
+          Free Mode · Supply Expeditions
         </button>
       </div>
       <div className="world-cards">
@@ -107,7 +148,8 @@ export default function WorldMap({
               <Atmosphere world={w.id} />
               <span>
                 {t("world", "WORLD")} 0{i + 1} ·{" "}
-                {lockedReason(`${w.id}-1`, difficulty, progress.clears)
+                {mode !== "free" &&
+                lockedReason(`${w.id}-1`, difficulty, progress.clears)
                   ? t("world", "LOCKED")
                   : t("world", "OPEN")}
               </span>
@@ -156,7 +198,10 @@ export default function WorldMap({
           <h3>{t("world", "Stage selection")}</h3>
           <div className="stage-list">
             {STAGES.filter((s) => s.worldId === world).map((s) => {
-              const lock = lockedReason(s.id, difficulty, progress.clears);
+              const lock =
+                mode === "free"
+                  ? null
+                  : lockedReason(s.id, difficulty, progress.clears);
               return (
                 <button
                   key={s.id}
@@ -169,11 +214,13 @@ export default function WorldMap({
                     <strong>{text(s.name)}</strong>
                     <small>
                       {(lock ? text(lock) : null) ??
-                        (progress.clears.includes(clearKey(s.id, difficulty))
-                          ? t("world", "CLEARED · REPLAY AVAILABLE")
-                          : s.clear.kind === "boss"
-                            ? t("world", "BOSS ENCOUNTER")
-                            : t("world", "SURVIVAL"))}
+                        (mode === "free"
+                          ? t("haven", "Gather supplies and extract")
+                          : progress.clears.includes(clearKey(s.id, difficulty))
+                            ? t("world", "CLEARED · REPLAY AVAILABLE")
+                            : s.clear.kind === "boss"
+                              ? t("world", "BOSS ENCOUNTER")
+                              : t("world", "SURVIVAL"))}
                     </small>
                   </span>
                 </button>
@@ -208,15 +255,24 @@ export default function WorldMap({
           <hr />
           <h3>{text(stage.name)}</h3>
           <p>
+            {text("Player Level")} {playerLevel} · {text("Enemy Level")}{" "}
+            {enemyMinimum} – {enemyMaximum}
+          </p>
+          <p>
             {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
             {Math.round(
               (stage.clear.seconds * DIFFICULTIES[difficulty].duration) / 60,
             )}{" "}
             {t("world", "minutes")}
             <br />
-            {stage.clear.kind === "boss"
-              ? t("world", "Survive, then defeat the world guardian.")
-              : t("world", "Survive until the stage timer completes.")}
+            {mode === "free"
+              ? t(
+                  "haven",
+                  "Gather supplies, survive 20 seconds and defeat 5 enemies, then return through the extraction portal.",
+                )
+              : stage.clear.kind === "boss"
+                ? t("world", "Survive, then defeat the world guardian.")
+                : t("world", "Survive until the stage timer completes.")}
           </p>
           <span className="eyebrow">
             {t("world", "POSSIBLE FARMING REWARDS")}
@@ -227,10 +283,15 @@ export default function WorldMap({
             {t("world", "Guardian relic:")} {text(w.boss.reward)}
           </p>
           <p className="muted">
-            {t(
-              "world",
-              "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
-            )}{" "}
+            {mode === "free"
+              ? t(
+                  "haven",
+                  "Only extracted supplies and enemy loot are stored. Defeat or abandonment loses unbanked supplies.",
+                )
+              : t(
+                  "world",
+                  "First clears grant additional gold, XP and materials. Equip guardian relics and enhance them in the sanctuary inventory.",
+                )}{" "}
           </p>
           <div className="campaign-wallet">
             {text("YOUR POWER")}{" "}
@@ -247,6 +308,14 @@ export default function WorldMap({
               </small>
             ))}
           </div>
+          {mode === "free" && (
+            <p className="notice" role="status">
+              {t(
+                "haven",
+                "Choose any stage to gather biome supplies and extract back to Rift Heaven. Story progression is not changed.",
+              )}
+            </p>
+          )}
           {reason && (
             <p className="notice" role="status">
               {text(reason)}
@@ -261,9 +330,14 @@ export default function WorldMap({
             className="primary-button"
             disabled={!ready || !!reason || !equipped}
             onClick={() => {
-              if (!lockedReason(stage.id, difficulty, progress.clears))
+              if (
+                mode === "free" ||
+                !lockedReason(stage.id, difficulty, progress.clears)
+              )
                 onStart({
                   stageId: stage.id,
+                  mode,
+                  ...(mode === "free" ? { activity: "farming" as const } : {}),
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],
                   clears: progress.clears,
@@ -271,7 +345,9 @@ export default function WorldMap({
                 });
             }}
           >
-            {t("world", "START STAGE →")}{" "}
+            {mode === "free"
+              ? t("haven", "BEGIN SUPPLY EXPEDITION →")
+              : t("world", "START STAGE →")}{" "}
           </button>
         </aside>
       </div>

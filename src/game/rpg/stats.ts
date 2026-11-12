@@ -35,6 +35,11 @@ export const zero = (): Attributes => ({
   projectiles: 0,
   area: 0,
 });
+/** Minimum lifetime XP required to reach a permanent level. */
+export function totalXpForLevel(level: number) {
+  const completed = Math.max(0, Math.min(59, Math.floor(level) - 1));
+  return completed * 100 + (completed * (completed - 1) * 50) / 2;
+}
 export function characterLevel(xp: number) {
   let level = 1,
     remaining = Math.max(0, xp);

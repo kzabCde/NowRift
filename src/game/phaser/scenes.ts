@@ -13,6 +13,7 @@ import { CombatVfx } from "./combat-vfx";
 import { audio } from "../audio/engine";
 import type { SoundId } from "../audio/palette";
 import { FARM } from "../world/content";
+import { totalXpForLevel } from "../rpg/stats";
 import { onSceneEnd } from "./lifecycle";
 import { CharacterRig } from "./character-rig";
 import {
@@ -29,7 +30,11 @@ import { assetAnimationFrame, type AssetWorld } from "../presentation/assets";
 import { animationDuration } from "../presentation/animation";
 import { feedback } from "../feedback";
 import { facingFromAngle } from "../presentation/character";
-import { farmPrompt } from "../world/farming";
+import {
+  expeditionLayout,
+  farmPrompt,
+  type ExpeditionLayout,
+} from "../world/farming";
 import { ITEMS } from "../rpg/content";
 import { drainFeedback, type Feedback } from "../feedback";
 import { loadStage, type StageSelection } from "../campaign/loader";
@@ -683,6 +688,7 @@ export class GameScene extends Phaser.Scene {
   storageBlocked = false;
   farmNodes: Phaser.GameObjects.Image[] = [];
   pendingGather: { id: string; sequence: number }[] = [];
+  farmLayout: ExpeditionLayout | null = null;
   tonicPending = false;
   transitionLocked = false;
   tonicReceipts = new Set<string>();
@@ -772,13 +778,17 @@ export class GameScene extends Phaser.Scene {
     const g = this.simulation;
     this.visuals = new ForestRenderer(this, g);
     this.farmNodes = [];
-    if (this.stage?.activity === "farming") {
+    this.farmLayout =
+      this.stage?.activity === "farming" && g.campaign
+        ? expeditionLayout(g.campaign.definition.id, g.campaign.map)
+        : null;
+    if (this.farmLayout) {
       this.add
-        .image(FARM.portal.x, FARM.portal.y, "haven-rift")
+        .image(this.farmLayout.portal.x, this.farmLayout.portal.y, "haven-rift")
         .setScale(1.1)
         .setOrigin(0.5, 0.8)
-        .setDepth(FARM.portal.y - 10);
-      for (const node of FARM.nodes)
+        .setDepth(this.farmLayout.portal.y - 10);
+      for (const node of this.farmLayout.nodes)
         this.farmNodes.push(
           this.add
             .image(node.x, node.y, "items", ITEMS[node.item].icon)
@@ -1069,6 +1079,7 @@ export class GameScene extends Phaser.Scene {
         g.time,
         g.kills,
         g.campaign?.harvested ?? [],
+        this.farmLayout ?? FARM,
       );
       if (prompt.target === "extract" && prompt.ready) {
         g.phase = "victory";
@@ -1105,9 +1116,11 @@ export class GameScene extends Phaser.Scene {
           (pending) => pending.sequence > command.sequence!,
         );
         for (const receipt of completed) {
-          const node = FARM.nodes.find((entry) => entry.id === receipt.id)!;
+          const node = (this.farmLayout ?? FARM).nodes.find(
+            (entry) => entry.id === receipt.id,
+          )!;
           const g = this.simulation,
-            pose = receipt.id === "copper-vein" ? "mine" : "gather";
+            pose = node.item.endsWith("-ore") ? "mine" : "gather";
           g.visualAction = {
             pose,
             at: g.time,
@@ -1199,13 +1212,19 @@ export class GameScene extends Phaser.Scene {
       const g = this.simulation;
       this.bridge.emit(
         "expedition",
-        farmPrompt(g.player, g.time, g.kills, g.campaign?.harvested ?? []),
+        farmPrompt(
+          g.player,
+          g.time,
+          g.kills,
+          g.campaign?.harvested ?? [],
+          this.farmLayout ?? FARM,
+        ),
       );
       for (let i = 0; i < this.farmNodes.length; i++)
         this.farmNodes[i].setVisible(
-          !g.campaign?.harvested?.includes(FARM.nodes[i].id) ||
+          !g.campaign?.harvested?.includes(this.farmLayout!.nodes[i].id) ||
             this.pendingGather.some(
-              (pending) => pending.id === FARM.nodes[i].id,
+              (pending) => pending.id === this.farmLayout!.nodes[i].id,
             ),
         );
     }
@@ -1297,6 +1316,15 @@ export class GameScene extends Phaser.Scene {
                   : {}),
                 id: this.runId,
                 run: this.run ? { ...this.run } : undefined,
+                mode: g.campaign.mode ?? "story",
+                earnedXp: Math.max(
+                  0,
+                  Math.floor(
+                    totalXpForLevel(g.level) +
+                      g.xp -
+                      (this.stage?.startingXp ?? 0),
+                  ),
+                ),
                 stageId: g.campaign.definition.id,
                 difficulty: g.campaign.difficulty.id,
                 seed: g.campaign.seed,

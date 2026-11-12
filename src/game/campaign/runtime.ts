@@ -8,6 +8,7 @@ import {
 } from "./content";
 import { constructMap, type MapLayout } from "./maps";
 export type StageRuntime = {
+  mode?: "story" | "free";
   activity?: "farming";
   harvested?: string[];
   definition: StageDefinition;

@@ -5,6 +5,8 @@ import { seededEquipment } from "../src/game/rpg/items";
 import { ITEMS } from "../src/game/rpg/content";
 import type { SaveData } from "../src/game/persistence/model";
 import { LANDMARKS } from "../src/game/world/content";
+import { expeditionLayout } from "../src/game/world/farming";
+import { waitForHavenInput } from "./helpers/haven";
 
 const equippedDefinitions = ["desert-armor", "frozen-helmet", "infernal-boots"];
 function fixture() {
@@ -69,6 +71,7 @@ async function enterHaven(page: Page) {
     exact: true,
   });
   if (await begin.isVisible()) await begin.click();
+  await waitForHavenInput(page);
 }
 async function equippedPreview(page: Page) {
   await page.getByRole("button", { name: /Inventory & equipment/ }).click();
@@ -147,6 +150,65 @@ test.describe("live layered renderer and pixel effects", () => {
     "Requires the explicitly instrumented build to inspect live rendered layers",
   );
 
+  test("Free Mode gathering uses the selected biome and acknowledges its mining feedback without banking unextracted loot", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await seed(page);
+    const before = await saved(page);
+    await page
+      .getByRole("button", { name: "WORLD MAP →", exact: true })
+      .click();
+    await page
+      .getByRole("button", {
+        name: "Free Mode · Supply Expeditions",
+        exact: true,
+      })
+      .click();
+    await page.locator(".world-card").nth(1).click();
+    await page
+      .getByRole("button", { name: "BEGIN SUPPLY EXPEDITION →", exact: true })
+      .click();
+    await expect(page.locator(".game-state")).toContainText("LIVE RUN");
+    const map = await page.evaluate(
+      () => window.__NOWRIFT_TEST__!.state().campaign!.map,
+    );
+    const node = expeditionLayout("desert-1", map).nodes.find(
+      (entry) => entry.item === "gold-ore",
+    )!;
+    await page.evaluate((point) => {
+      const g = window.__NOWRIFT_TEST__!.state();
+      g.obstacles = [];
+      g.enemies.length = 0;
+      g.spawnCooldown = 999;
+      g.player.invincible = 999;
+      g.player.x = point.x;
+      g.player.y = point.y;
+    }, node);
+    await page
+      .getByRole("button", { name: /Gather supplies Gold Ore/ })
+      .click();
+    await expect
+      .poll(async () =>
+        (await saved(page)).local.checkpoint?.environment?.harvested?.includes(
+          node.id,
+        ),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => window.__NOWRIFT_TEST__!.state().visualAction?.pose,
+        ),
+      )
+      .toBe("mine");
+    const after = await saved(page);
+    expect(after.materials).toEqual(before.materials);
+    expect(after.rpg!.equipment).toEqual(before.rpg!.equipment);
+    expect(errors).toEqual([]);
+  });
+
   test("equipped body layers agree between town and combat, with directional frame bounds and a frozen checkpoint", async ({
     page,
   }, info) => {
@@ -175,8 +237,17 @@ test.describe("live layered renderer and pixel effects", () => {
       ).toBe(true);
     const canvas = await page.locator("canvas").elementHandle();
     await page.keyboard.down("ArrowUp");
-    await page.waitForTimeout(200);
-    await page.keyboard.up("ArrowUp");
+    try {
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => window.__NOWRIFT_HAVEN__!.appearance().behindBody,
+          ),
+        )
+        .toBe(true);
+    } finally {
+      await page.keyboard.up("ArrowUp");
+    }
     const back = await page.evaluate(() =>
       window.__NOWRIFT_HAVEN__!.appearance(),
     );
@@ -187,7 +258,10 @@ test.describe("live layered renderer and pixel effects", () => {
         .every((l) => l.frame >= 0 && l.frame < 104),
     ).toBe(true);
     await page.keyboard.press("i");
+    await expect(page.locator(".haven-screen-overlay .rpg-grid")).toBeVisible();
     await page.keyboard.press("Escape");
+    await expect(page.locator(".haven-screen-overlay")).toHaveCount(0);
+    await waitForHavenInput(page);
     expect(
       await canvas!.evaluate(
         (node) => node === document.querySelector("canvas"),

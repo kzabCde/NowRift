@@ -6,7 +6,8 @@ import { profileRepository } from "@/game/persistence/repository";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import type { ExpeditionPrompt } from "@/game/world/farming";
-import { FARM, travelReason } from "@/game/world/content";
+import { travelReason } from "@/game/world/content";
+import { expeditionLayout } from "@/game/world/farming";
 import { ITEMS } from "@/game/rpg/content";
 import { resolveAppearance } from "@/game/presentation/appearance";
 import { practiceLoadout } from "@/game/rpg/stats";
@@ -82,6 +83,7 @@ export default function NowRiftGame({
   const [saveBlocked, setSaveBlocked] = useState(false);
   const [expedition, setExpedition] = useState<ExpeditionPrompt | null>(null);
   const farming = stage?.activity === "farming";
+  const supplyNodes = farming ? expeditionLayout(stage!.stageId).nodes : [];
   const [reward, setReward] = useState<Rewards | null>(null);
   const [tonics, setTonics] = useState<Record<string, number>>({}),
     [tonicBusy, setTonicBusy] = useState(false);
@@ -278,6 +280,7 @@ export default function NowRiftGame({
                   }
                 : {}),
               outfit: canonical.local.world!.outfit,
+              startingXp: canonical.xp,
               clears: canonical.clears,
               ...campaignLoadout(canonical),
             }
@@ -601,8 +604,20 @@ export default function NowRiftGame({
                           ? "Gather fallen wood"
                           : expedition.target === "slime-nest"
                             ? "Gather slime residue"
-                            : "Mine copper",
+                            : expedition.target === "copper-vein"
+                              ? "Mine copper"
+                              : "Gather supplies",
                     )}{" "}
+                    {expedition.target !== "extract" &&
+                      !["fallen-wood", "slime-nest", "copper-vein"].includes(
+                        expedition.target,
+                      ) &&
+                      text(
+                        ITEMS[
+                          supplyNodes.find((n) => n.id === expedition.target)!
+                            .item
+                        ].name,
+                      )}{" "}
                     <kbd>E</kbd>
                   </button>
                 ) : (
@@ -925,7 +940,7 @@ export default function NowRiftGame({
               {t("haven", "UNBANKED EXPEDITION")} ·{" "}
               {expedition.gathered
                 .map((id) => {
-                  const n = FARM.nodes.find((n) => n.id === id)!;
+                  const n = supplyNodes.find((n) => n.id === id)!;
                   return `${text(ITEMS[n.item].name)} ×${n.amount}`;
                 })
                 .join(" · ")}

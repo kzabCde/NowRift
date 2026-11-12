@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { SaveData, PlayerProfile } from "../src/game/persistence/model";
 import { LANDMARKS } from "../src/game/world/content";
+import { waitForHavenInput } from "./helpers/haven";
 async function save(page: Page): Promise<SaveData> {
   return page.evaluate(
     () =>
@@ -49,6 +50,7 @@ async function haven(page: Page) {
   });
   if (await tutorial.isVisible()) await tutorial.click();
   await expect(page.locator(".haven-loading")).toHaveCount(0);
+  await waitForHavenInput(page);
 }
 async function place(page: Page, id: string) {
   await expect(page.locator(".haven-title h1")).toBeVisible();

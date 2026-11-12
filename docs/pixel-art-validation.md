@@ -1,5 +1,7 @@
 # Pixel art and animation migration
 
+This records the initial pixel-art implementation at `9f3000a`. The [PR #18 browser follow-up](pr18-browser-fix.md) describes the input-synchronization fix and integration of newer supply-expedition/progression changes from `main`.
+
 This change extends the existing game rather than adding another combat or inventory implementation. It preserves three playable classes, six real equipment slots, four worlds/twenty campaign stages, the practice encounter, Haven, farming, crafting, progression, English/Thai, guest saves and checkpoint ownership. New art is original, locally generated pixel art with CC0 notices and editable sources. The supplied reference images were used for direction; no reference pixels or third-party sprite packs were copied.
 
 The [pre-change inventory and audit](pixel-asset-audit.md) was written before implementation. The [production specification](pixel-art-specification.md) defines source sizes, pivots, direction rows, tracks and loading contracts. “Ready” in the asset registry means a valid integrated engine asset, not a claim that procedural artwork has received a professional hand-painting pass.

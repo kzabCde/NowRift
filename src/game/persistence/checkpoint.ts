@@ -186,10 +186,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
-  if (
-    c.stage?.activity !== undefined &&
-    (c.stage.activity !== "farming" || c.stage.stageId !== "forest-1")
-  )
+  if (c.stage?.activity !== undefined && c.stage.activity !== "farming")
     return false;
   if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
     return false;
@@ -199,12 +196,12 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
     return false;
   if (
     c.environment?.harvested !== undefined &&
-    !validHarvest(c.environment.harvested)
+    !validHarvest(c.environment.harvested, c.stage?.stageId)
   )
     return false;
   if (
     c.stage?.activity === "farming" &&
-    !validHarvest(c.environment?.harvested)
+    !validHarvest(c.environment?.harvested, c.stage.stageId)
   )
     return false;
   if (

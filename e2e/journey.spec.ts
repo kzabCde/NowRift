@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { PlayerProfile, SaveData } from "../src/game/persistence/model";
 import { LANDMARKS } from "../src/game/world/content";
+import { waitForHavenInput } from "./helpers/haven";
 
 async function data(
   page: Page,
@@ -44,6 +45,7 @@ async function reveal(page: Page) {
   });
   if (await begin.isVisible()) await begin.click();
   await expect(page.locator("canvas")).toHaveCount(1);
+  await waitForHavenInput(page);
 }
 async function create(page: Page, name = "Rowan") {
   await creation(page, name);
