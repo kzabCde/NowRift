@@ -235,8 +235,10 @@ export default function NowRiftMainMenu() {
           onInventory={() => setScreen("rpg")}
           onBack={() => setScreen("lobby")}
           onStart={(s) => {
-            setReturnHaven(false);
-            setSelection(s);
+            setReturnHaven(s.mode === "free");
+            setSelection(
+              s.mode === "free" ? { ...s, returnTo: "haven" } : s,
+            );
             setScreen("game");
           }}
         />
