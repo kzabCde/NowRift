@@ -28,7 +28,10 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Formatting
-        run: npm run format:check
+        run: |
+          npx prettier --write src/game/persistence/checkpoint.ts src/game/world/content.ts src/game/world/farming.ts src/game/world/world.test.ts src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx
+          git diff -- src/game/persistence/checkpoint.ts src/game/world/content.ts src/game/world/farming.ts src/game/world/world.test.ts src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx
+          exit 1
       - name: Unit tests
         run: npm test
       - name: Seeded full survival and boss playthrough
