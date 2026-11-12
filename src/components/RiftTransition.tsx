@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useSettings } from "@/state/settings";
 import { useI18n } from "@/i18n/useI18n";
 import { DialogSurface } from "./GameUi";
@@ -49,14 +50,18 @@ export default function RiftTransition({
     const id = setTimeout(() => reveal.current(), reduced ? 80 : 480);
     return () => clearTimeout(id);
   }, [phase, error, ready, reduced]);
+  const displayedProgress = ready
+    ? 1
+    : Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
   return (
     <DialogSurface
       title={t("journey", "Crossing the Rift…")}
       className={`rift-transition haven-loading ${reduced ? "rift-reduced" : ""} rift-${phase} rift-${quality}`}
     >
       <div data-testid="rift-transition" aria-busy={!ready}>
-        <div className="rift-art" aria-hidden="true">
-          <span className="rift-island island-one" />
+        <div className="rift-art">
+          <div className="rift-scene" aria-hidden="true">
+            <span className="rift-island island-one" />
           <span className="rift-island island-two" />
           <div className="rift-portal">
             <span />
@@ -77,10 +82,28 @@ export default function RiftTransition({
                 />
               ),
             )}
+            </div>
           </div>
+          <Image
+            src="/branding/nowrift-logo-transparent.png"
+            width={384}
+            height={384}
+            className="rift-loading-logo"
+            alt="NowRift"
+            priority
+            unoptimized
+          />
         </div>
         <div className="rift-copy" role={error ? "alert" : "status"}>
-          <span className="eyebrow">NOWRIFT</span>
+          <progress
+            max={1}
+            value={displayedProgress}
+            aria-label={t("journey", "Loading world assets")}
+          />
+          <div className="rift-loading-meter">
+            <span>{t("journey", "Loading world assets")}</span>
+            <strong>{Math.round(displayedProgress * 100)}%</strong>
+          </div>
           <h2>
             {t(
               "journey",
@@ -105,22 +128,11 @@ export default function RiftTransition({
                       : "Preparing your destination…",
                 )}
           </p>
-          <progress
-            max={1}
-            value={ready ? 1 : Math.max(0, Math.min(1, progress))}
-            aria-label={t("journey", "Loading world assets")}
-          />
-          <small>
-            {Math.round((ready ? 1 : progress) * 100)}% ·{" "}
-            {t(
-              "journey",
-              error
-                ? "Your character and saved progress are safe."
-                : ready
-                  ? "World ready"
-                  : "Waiting for the world…",
-            )}
-          </small>
+          {error && (
+            <small>
+              {t("journey", "Your character and saved progress are safe.")}
+            </small>
+          )}
           {error && (
             <div className="rift-error-actions">
               <button className="primary-button" onClick={onRetry}>
