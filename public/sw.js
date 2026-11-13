@@ -1,8 +1,11 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v15-pixel";
+const VERSION = "nowrift-pwa-v16-cinematic";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
+  "/assets/landing/forest.webp",
+  "/assets/landing/foreground.webp",
+  "/assets/pixel/interactions/portal.png",
   "/assets/characters/weapons.png",
   "/assets/haven/terrain.png",
   "/assets/haven/fountain.png",
@@ -34,6 +37,7 @@ const CORE_URLS = [
   "/assets/worlds/forest/boss.png",
   "/assets/worlds/forest/preview.png",
   "/assets/worlds/desert/preview.png",
+  "/assets/worlds/desert/tree.png",
   "/assets/worlds/frozen/preview.png",
   "/assets/worlds/infernal/preview.png",
   "/assets/forest/particles.png",

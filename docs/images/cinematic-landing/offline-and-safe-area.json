@@ -1,0 +1,59 @@
+{
+  "errors": [],
+  "cached": [
+    "/assets/landing/forest.webp",
+    "/assets/landing/foreground.webp",
+    "/assets/pixel/interactions/portal.png",
+    "/assets/worlds/desert/tree.png",
+    "/assets/worlds/forest/tree.png",
+    "/branding/nowrift-logo-transparent.png"
+  ],
+  "offlineHero": true,
+  "characterEntry": true,
+  "safeAreas": [
+    {
+      "side": "left",
+      "padding": 59,
+      "play": {
+        "x": 443.359375,
+        "y": 228.796875,
+        "width": 270,
+        "height": 51
+      },
+      "settings": {
+        "x": 695.234375,
+        "y": 11,
+        "width": 115.015625,
+        "height": 44
+      },
+      "logo": {
+        "x": 59,
+        "y": 11,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "side": "right",
+      "padding": 59,
+      "play": {
+        "x": 443.359375,
+        "y": 228.796875,
+        "width": 270,
+        "height": 51
+      },
+      "settings": {
+        "x": 669.984375,
+        "y": 11,
+        "width": 115.015625,
+        "height": 44
+      },
+      "logo": {
+        "x": 33.75,
+        "y": 11,
+        "width": 44,
+        "height": 44
+      }
+    }
+  ]
+}

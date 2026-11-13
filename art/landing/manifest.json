@@ -1,0 +1,50 @@
+[
+  {
+    "path": "/assets/landing/forest.webp",
+    "source": "art/landing/forest-source.png",
+    "width": 960,
+    "height": 540,
+    "bytes": 303220,
+    "sha256": "05ce9490a100506f14c22c4cae2fbaa1c89d364a8a5d9bf6aa9b0d611d894ed8"
+  },
+  {
+    "path": "/assets/landing/foreground.webp",
+    "source": "art/landing/foreground-source.png",
+    "width": 960,
+    "height": 540,
+    "bytes": 138596,
+    "sha256": "27c58062eaa9090151683b71ae801fb983b5fc80eab6f5389134b1b2c6261db4"
+  },
+  {
+    "path": "/assets/landing/haven.webp",
+    "source": "docs/images/pixel-art/after-haven.png",
+    "width": 900,
+    "height": 478,
+    "bytes": 59748,
+    "sha256": "684d1704bb7708cf970a3cb17ba579ddb53496b8d96576f3c1d22a03a98cd08e"
+  },
+  {
+    "path": "/assets/landing/story.webp",
+    "source": "docs/images/pixel-art/boss.png",
+    "width": 900,
+    "height": 480,
+    "bytes": 181770,
+    "sha256": "d067ee9b6115260f9c05c6a7792e75ad23fc9d74a3170d3aa0592bb86dde5993"
+  },
+  {
+    "path": "/assets/landing/exploration.webp",
+    "source": "public/assets/worlds/desert/preview.png",
+    "width": 720,
+    "height": 405,
+    "bytes": 6204,
+    "sha256": "e65df958920ead453abe06cf5414da12a215d08a5de0990747523ff8160b5687"
+  },
+  {
+    "path": "/assets/landing/progression.webp",
+    "source": "docs/images/pixel-art/layered-inventory.png",
+    "width": 900,
+    "height": 486,
+    "bytes": 183296,
+    "sha256": "ff7d0ebc1b3227aa21b1b1ea947f5d7b67f33d255f178de8aea437475d95534b"
+  }
+]

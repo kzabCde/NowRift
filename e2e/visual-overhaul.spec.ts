@@ -295,7 +295,7 @@ test.describe("live layered renderer and pixel effects", () => {
       .poll(async () => Boolean((await saved(page)).local.checkpoint))
       .toBe(true);
     await page.reload();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page
       .getByRole("button", { name: "Resume checkpoint", exact: true })
       .click();

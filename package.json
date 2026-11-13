@@ -13,13 +13,14 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "test:stress": "tsx scripts/stress.ts",
-    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css src/components/CharacterEntry.tsx src/components/RiftTransition.tsx src/components/SanctuaryPanel.tsx src/app/journey.css src/components/CharacterPreview.tsx src/components/EquippedWeapon.tsx src/components/ItemIcon.tsx src/components/Sanctuary.tsx src/app/equipment.css src/components/ActionReceipt.tsx src/components/ActionReceipt.module.css src/app/pixel.css",
+    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css src/components/CharacterEntry.tsx src/components/RiftTransition.tsx src/components/SanctuaryPanel.tsx src/app/journey.css src/components/CharacterPreview.tsx src/components/EquippedWeapon.tsx src/components/ItemIcon.tsx src/components/Sanctuary.tsx src/app/equipment.css src/components/ActionReceipt.tsx src/components/ActionReceipt.module.css src/app/pixel.css src/components/CinematicLanding.tsx src/components/CinematicLanding.module.css",
     "test:playthrough": "tsx scripts/playthrough.ts",
     "predev": "node scripts/generate-branding.mjs",
     "pretest": "node scripts/generate-branding.mjs",
     "assets:index": "node scripts/generate-asset-index.mjs",
     "assets:check": "node scripts/generate-asset-index.mjs --check && tsx scripts/validate-assets.ts",
-    "assets:generate": "python3 scripts/generate-pixel-art.py && npm run assets:index"
+    "assets:generate": "python3 scripts/generate-pixel-art.py && npm run assets:index",
+    "assets:landing": "node scripts/prepare-landing-assets.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.3.5",

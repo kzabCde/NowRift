@@ -17,7 +17,7 @@ import CharacterPreview from "./CharacterPreview";
 import EquippedWeapon from "./EquippedWeapon";
 import RpgScreen from "./RpgScreen";
 import LanguageSwitcher from "./LanguageSwitcher";
-import Image from "next/image";
+import CinematicLanding from "./CinematicLanding";
 import { useI18n } from "@/i18n/useI18n";
 import Atmosphere from "./Atmosphere";
 import { CharacterSelection } from "./Sanctuary";
@@ -264,84 +264,41 @@ export default function NowRiftMainMenu() {
     );
   return (
     <main className="nr-main">
-      <header className="topbar">
-        <Brand />
-        <div className="header-right">
-          <span className="build-tag">
-            {t("main", "GUEST EDITION")} <span>·</span>{" "}
-            {t("main", "LOCAL ADVENTURE")}{" "}
-          </span>
-          <SaveIndicator />
-          <LanguageSwitcher compact />
-          <PwaControls />
-          <button
-            className="quiet-button"
-            aria-label={t("main", "Settings")}
-            onClick={() => setSettings(true)}
-            type="button"
-          >
-            {t("main", "SETTINGS")}{" "}
-          </button>
-        </div>
-      </header>
-      {screen === "gateway" ? (
-        <div className="gateway">
-          <div className="gateway-art" aria-hidden="true" />
-          <Atmosphere />
-          <div className="gateway-content">
-            <Image
-              src="/branding/nowrift-logo-transparent.png"
-              width={384}
-              height={384}
-              className="gateway-official-logo"
-              alt="NowRift official fantasy pixel-art logo"
-              priority
-              unoptimized
-            />
-            <span className="eyebrow">
-              <span className="eyebrow-rule" />{" "}
-              {t("main", "A LIGHT IN THE FORGOTTEN WOODS")}{" "}
+      {screen !== "gateway" && (
+        <header className="topbar">
+          <Brand />
+          <div className="header-right">
+            <span className="build-tag">
+              {t("main", "GUEST EDITION")} <span>·</span>{" "}
+              {t("main", "LOCAL ADVENTURE")}{" "}
             </span>
-            <h1>
-              {t("main", "Beyond the breach.")} <br />
-              <em>{t("main", "Into the unknown.")}</em>
-            </h1>
-            <p>
-              {t("main", "An ancient forest. A thousand restless souls.")}{" "}
-              <br />
-              {t("main", "One wanderer standing between worlds.")}{" "}
-            </p>
+            <SaveIndicator />
+            <LanguageSwitcher compact />
+            <PwaControls />
             <button
-              className="primary-button gateway-enter"
-              onClick={() => {
-                profileReturn.current = "characters";
-                setScreen("characters");
-              }}
+              className="quiet-button"
+              aria-label={t("main", "Settings")}
+              onClick={() => setSettings(true)}
               type="button"
             >
-              {t("journey", "PLAY")} <span aria-hidden="true">→</span>
+              {t("main", "SETTINGS")}{" "}
             </button>
-            <button
-              className="quiet-button gateway-legacy"
-              onClick={() => {
-                profileReturn.current = "lobby";
-                setScreen("lobby");
-              }}
-              type="button"
-            >
-              {t("journey", "Practice & legacy tools")}
-            </button>
-            <small className="gateway-note">
-              {t("main", "No account. No connection required after caching.")}{" "}
-              <br />
-              {t("main", "Your run records stay on this device.")}{" "}
-            </small>
           </div>
-          <div className="gateway-bottom">
-            <span>{t("main", "01 — WHISPERING FOREST")}</span>
-            <span>{t("main", "AN ORIGINAL PIXEL-ART ADVENTURE")}</span>
-          </div>
-        </div>
+        </header>
+      )}
+      {screen === "gateway" ? (
+        <CinematicLanding
+          onPlay={() => {
+            profileReturn.current = "characters";
+            setScreen("characters");
+          }}
+          onPractice={() => {
+            profileReturn.current = "lobby";
+            setScreen("lobby");
+          }}
+          onSettings={() => setSettings(true)}
+          onManual={() => setControls(true)}
+        />
       ) : (
         <div className="hub-layout">
           <aside className="hub-sidebar">
@@ -642,13 +599,15 @@ export default function NowRiftMainMenu() {
           </section>
         </div>
       )}
-      <footer className="site-footer">
-        <span>
-          NOWRIFT <span className="gold">/</span>{" "}
-          {t("main", "A WORLD BETWEEN WORLDS")}{" "}
-        </span>
-        <span>{t("main", "FOUR WORLDS · GUEST ONLY · NO CLOUD SAVE")}</span>
-      </footer>
+      {screen !== "gateway" && (
+        <footer className="site-footer">
+          <span>
+            NOWRIFT <span className="gold">/</span>{" "}
+            {t("main", "A WORLD BETWEEN WORLDS")}{" "}
+          </span>
+          <span>{t("main", "FOUR WORLDS · GUEST ONLY · NO CLOUD SAVE")}</span>
+        </footer>
+      )}
       {characterOpen && (
         <CharacterSelection
           selected={character}

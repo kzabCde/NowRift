@@ -1,0 +1,122 @@
+[
+  {
+    "name": "desktop-local",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "cpu": 1,
+    "metrics": {
+      "shifts": 0,
+      "shiftsEntries": [],
+      "longTasks": [
+        69
+      ],
+      "lcp": {
+        "ms": 116,
+        "element": "H1",
+        "source": ""
+      },
+      "dcl": 28.399999999906868,
+      "resources": [
+        {
+          "path": "/assets/landing/forest.webp",
+          "bytes": 303520,
+          "endMs": 25.600000000093132
+        },
+        {
+          "path": "/assets/landing/haven.webp",
+          "bytes": 60048,
+          "endMs": 96.10000000009313
+        },
+        {
+          "path": "/assets/landing/foreground.webp",
+          "bytes": 138896,
+          "endMs": 98.29999999981374
+        },
+        {
+          "path": "/assets/landing/exploration.webp",
+          "bytes": 6504,
+          "endMs": 96.29999999981374
+        },
+        {
+          "path": "/assets/landing/story.webp",
+          "bytes": 182070,
+          "endMs": 98.6999999997206
+        },
+        {
+          "path": "/assets/landing/progression.webp",
+          "bytes": 183596,
+          "endMs": 99
+        }
+      ],
+      "frameSample": {
+        "durationMs": 4008.5000000000928,
+        "samples": 240,
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.799999999999955,
+        "over33ms": 0,
+        "over50ms": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "name": "mobile-simulated",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "cpu": 4,
+    "metrics": {
+      "shifts": 0,
+      "shiftsEntries": [],
+      "longTasks": [
+        120,
+        231
+      ],
+      "lcp": {
+        "ms": 368,
+        "element": "H1",
+        "source": ""
+      },
+      "dcl": 362,
+      "resources": [
+        {
+          "path": "/assets/landing/forest.webp",
+          "bytes": 303520,
+          "endMs": 2461.2999999998137
+        },
+        {
+          "path": "/assets/landing/foreground.webp",
+          "bytes": 138896,
+          "endMs": 1848.6999999997206
+        },
+        {
+          "path": "/assets/landing/haven.webp",
+          "bytes": 60048,
+          "endMs": 1264
+        },
+        {
+          "path": "/assets/landing/exploration.webp",
+          "bytes": 6504,
+          "endMs": 909.6999999997206
+        },
+        {
+          "path": "/assets/landing/story.webp",
+          "bytes": 182070,
+          "endMs": 2233.100000000093
+        }
+      ],
+      "frameSample": {
+        "durationMs": 4010.699999999907,
+        "samples": 240,
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.800000000000182,
+        "over33ms": 0,
+        "over50ms": 0
+      }
+    },
+    "errors": []
+  }
+]
