@@ -30,7 +30,7 @@ async function data(
 }
 async function creation(page: Page, name = "Rowan") {
   await page.goto("/");
-  await page.getByRole("button", { name: "PLAY", exact: true }).click();
+  await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
   await expect(
     page.getByLabel("Character name", { exact: true }),
   ).toBeVisible();
@@ -145,7 +145,7 @@ test("returning players continue, select among three slots and never overwrite a
   const original = await data(page);
   for (const name of ["Willow", "Ash"]) {
     await page.getByRole("button", { name: "Menu", exact: true }).click();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page
       .getByRole("button", { name: "New character", exact: true })
       .click();
@@ -159,7 +159,7 @@ test("returning players continue, select among three slots and never overwrite a
     await reveal(page);
   }
   await page.reload();
-  await page.getByRole("button", { name: "PLAY", exact: true }).click();
+  await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
   await expect(page.locator(".journey-slot")).toHaveCount(3);
   await expect(
     page.getByRole("button", { name: "New character", exact: true }),
@@ -305,8 +305,8 @@ test("Thai creation, reduced motion, portrait and landscape remain usable", asyn
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/");
-  await page.locator(".header-right .language-switcher button").nth(1).click();
-  await page.getByRole("button", { name: "เล่น", exact: true }).click();
+  await page.getByRole("button", { name: "TH", exact: true }).click();
+  await page.getByRole("button", { name: "เล่นเลย", exact: true }).click();
   await page.getByLabel("ชื่อตัวละคร", { exact: true }).fill("W".repeat(24));
   expect(
     await page.evaluate(
@@ -359,7 +359,7 @@ test("storage failure offers recovery without silently creating a replacement ch
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "PLAY", exact: true }).click();
+  await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
   await expect(page.locator(".journey-error")).toContainText("preserved");
   await expect(
     page.getByRole("button", { name: "Manage saves & backups", exact: false }),
@@ -398,7 +398,7 @@ test("older campaign-only saves enter through selection and retain their progres
         };
       }),
   );
-  await page.getByRole("button", { name: "PLAY", exact: true }).click();
+  await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
   await expect(page.locator(".journey-slot")).toHaveCount(1);
   await expect(page.getByLabel("Character name", { exact: true })).toHaveCount(
     0,
@@ -485,7 +485,7 @@ test("the character-first journey and Sanctuary continue after an offline PWA re
     .toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await page.getByRole("button", { name: "PLAY", exact: true }).click();
+  await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
   await page
     .getByRole("button", { name: /^Continue as Offline Willow/ })
     .click();
@@ -530,7 +530,7 @@ test.describe("instrumented journey boundaries", () => {
       (await page.evaluate(() => window.__NOWRIFT_HAVEN__!.state())).session,
     ).toBe(before.session);
     await page.getByRole("button", { name: "Menu", exact: true }).click();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page.getByRole("button", { name: /^Continue as Rowan/ }).click();
     await reveal(page);
     expect(
@@ -604,7 +604,7 @@ test.describe("instrumented journey boundaries", () => {
       .toBe(1);
     const runId = (await data(page)).save.local.checkpoint!.run.id;
     await page.reload();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page
       .getByRole("button", { name: "Resume checkpoint", exact: true })
       .click();
@@ -649,7 +649,7 @@ test.describe("instrumented journey boundaries", () => {
       .click();
     await reveal(page);
     await page.reload();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page.getByRole("button", { name: /^Continue as Rowan/ }).click();
     await reveal(page);
     const restored = await data(page);
@@ -675,7 +675,7 @@ test.describe("instrumented journey boundaries", () => {
       .toBe("upgrade");
     const checkpoint = (await data(page)).save.local.checkpoint!;
     await page.reload();
-    await page.getByRole("button", { name: "PLAY", exact: true }).click();
+    await page.getByRole("button", { name: "PLAY NOW", exact: true }).click();
     await page
       .getByRole("button", { name: "Resume checkpoint", exact: true })
       .click();

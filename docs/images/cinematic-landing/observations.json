@@ -1,0 +1,113 @@
+{
+  "layouts": [
+    {
+      "name": "desktop-1920",
+      "width": 1920,
+      "height": 1080,
+      "play": {
+        "x": 474,
+        "y": 751.71875,
+        "width": 310,
+        "height": 64
+      },
+      "overflow": false
+    },
+    {
+      "name": "desktop-1366",
+      "width": 1366,
+      "height": 768,
+      "play": {
+        "x": 197,
+        "y": 541,
+        "width": 310,
+        "height": 64
+      },
+      "overflow": false
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "play": {
+        "x": 229,
+        "y": 681.6875,
+        "width": 310,
+        "height": 64
+      },
+      "overflow": false
+    },
+    {
+      "name": "small-laptop",
+      "width": 1024,
+      "height": 600,
+      "play": {
+        "x": 533.359375,
+        "y": 333.796875,
+        "width": 270,
+        "height": 51
+      },
+      "overflow": false
+    },
+    {
+      "name": "portrait",
+      "width": 390,
+      "height": 844,
+      "play": {
+        "x": 40,
+        "y": 580.171875,
+        "width": 310,
+        "height": 60
+      },
+      "overflow": false
+    },
+    {
+      "name": "small-phone",
+      "width": 320,
+      "height": 568,
+      "play": {
+        "x": 22,
+        "y": 407.640625,
+        "width": 276,
+        "height": 56
+      },
+      "overflow": false
+    },
+    {
+      "name": "landscape",
+      "width": 844,
+      "height": 390,
+      "play": {
+        "x": 443.359375,
+        "y": 228.796875,
+        "width": 270,
+        "height": 51
+      },
+      "overflow": false
+    },
+    {
+      "name": "short-landscape",
+      "width": 667,
+      "height": 375,
+      "play": {
+        "x": 323.9375,
+        "y": 221.296875,
+        "width": 270,
+        "height": 51
+      },
+      "overflow": false
+    },
+    {
+      "name": "very-short-landscape",
+      "width": 568,
+      "height": 320,
+      "play": {
+        "x": 254.9375,
+        "y": 167.796875,
+        "width": 270,
+        "height": 51
+      },
+      "overflow": false
+    }
+  ],
+  "errors": []
+}
