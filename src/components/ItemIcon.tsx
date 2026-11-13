@@ -1,11 +1,17 @@
 import { ITEMS } from "@/game/rpg/content";
+import type { VisualWeapon } from "@/game/presentation/weapon-visual";
+import WeaponSprite from "./WeaponSprite";
 export default function ItemIcon({
   id,
   size = 40,
+  weapon,
 }: {
   id: string;
   size?: number;
+  weapon?: VisualWeapon;
 }) {
+  if (weapon && ITEMS[weapon.definitionId]?.weapon)
+    return <WeaponSprite weapon={weapon} size={size} className="rpg-icon" />;
   const icon = ITEMS[id]?.icon ?? 42;
   return (
     <span

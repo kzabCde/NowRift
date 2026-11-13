@@ -4,6 +4,10 @@ import type { WeaponId } from "../content/forest";
 import { animationFrame, type AnimationPose } from "./animation";
 export type Facing = "down" | "right" | "up" | "left";
 export type Pose = AnimationPose | "attack";
+/** The source grip stays fixed; crowns lean away from the face. */
+export function weaponRestAngle(facing: Facing) {
+  return ((facing === "left" || facing === "up" ? -1 : 1) * Math.PI) / 8;
+}
 export const CHARACTER_ART = {
   size: 48,
   columns: 26,

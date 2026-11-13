@@ -1,0 +1,632 @@
+{
+  "schema": 1,
+  "assetKey": "weapon-evolution",
+  "size": [
+    192,
+    128
+  ],
+  "cell": [
+    32,
+    32
+  ],
+  "columns": 6,
+  "rows": 4,
+  "palette": {
+    "staff": [
+      "#15272c",
+      "#393932",
+      "#725b43",
+      "#a38958",
+      "#d1bd7e",
+      "#73cba6",
+      "#d3ffe1"
+    ],
+    "sword": [
+      "#1b2634",
+      "#455260",
+      "#7f9294",
+      "#bbc6b8",
+      "#d6ab59",
+      "#f8d47a",
+      "#fff5cb",
+      "#d7dccc"
+    ],
+    "scepter": [
+      "#192a40",
+      "#354d6a",
+      "#5c8599",
+      "#9ec5d1",
+      "#c8e8ed",
+      "#6cd1ed",
+      "#ecffff"
+    ],
+    "glaive": [
+      "#252536",
+      "#4d3846",
+      "#805047",
+      "#bb7960",
+      "#e4aa6c",
+      "#ed784c",
+      "#ffe0a0",
+      "#c5c7b5"
+    ]
+  },
+  "frames": [
+    {
+      "family": "staff",
+      "tier": 0,
+      "name": "Forged",
+      "enhancement": 0,
+      "frame": 0,
+      "rect": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        12,
+        3,
+        21,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "d1d2c78cdc9ebd39427755880d17dd7bd8b87b470f2ff44c9ae5fe60837cc5c6"
+    },
+    {
+      "family": "staff",
+      "tier": 1,
+      "name": "Reinforced",
+      "enhancement": 3,
+      "frame": 1,
+      "rect": [
+        32,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        10,
+        5,
+        23,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "d27f3019577e00aec0c479221ac802d835b5c150e85c25f25c5dbcc54839ac58"
+    },
+    {
+      "family": "staff",
+      "tier": 2,
+      "name": "Awakened",
+      "enhancement": 6,
+      "frame": 2,
+      "rect": [
+        64,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        10,
+        2,
+        23,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "781d12109d07924b3048a9125ae79887dc33f9593406d67d067e254c161bd207"
+    },
+    {
+      "family": "staff",
+      "tier": 3,
+      "name": "Ascendant",
+      "enhancement": 9,
+      "frame": 3,
+      "rect": [
+        96,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        8,
+        2,
+        25,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "8f1814e1a383f882a7377e26edc49b3f006bf293509614d1db1a5cbfd52281c9"
+    },
+    {
+      "family": "staff",
+      "tier": 4,
+      "name": "Mythic",
+      "enhancement": 12,
+      "frame": 4,
+      "rect": [
+        128,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        5,
+        2,
+        28,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "b79a89c8ab68c85ce6bdd3b72e66c8953682f7233485e163de22c4c7441e4e8d"
+    },
+    {
+      "family": "staff",
+      "tier": 5,
+      "name": "Transcendent",
+      "enhancement": 15,
+      "frame": 5,
+      "rect": [
+        160,
+        0,
+        32,
+        32
+      ],
+      "bounds": [
+        4,
+        1,
+        29,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "0c811a1249199a5f3df89a6116104241b4a7c49692d7bdd96b1e7359653cf166"
+    },
+    {
+      "family": "sword",
+      "tier": 0,
+      "name": "Forged",
+      "enhancement": 0,
+      "frame": 6,
+      "rect": [
+        0,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        12,
+        7,
+        21,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "e7d6c2150560c2706ea64d46f17253b3afc57c4a6c6aee122801b22d2660ba30"
+    },
+    {
+      "family": "sword",
+      "tier": 1,
+      "name": "Reinforced",
+      "enhancement": 3,
+      "frame": 7,
+      "rect": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        5,
+        22,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "9268add3741b12bec33845944f159e16676450de59e085657e635e47faca87ef"
+    },
+    {
+      "family": "sword",
+      "tier": 2,
+      "name": "Awakened",
+      "enhancement": 6,
+      "frame": 8,
+      "rect": [
+        64,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        3,
+        22,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "0968e3319afc44e38680a82858df80a714329ce1b632c3be15fecafa5ae67693"
+    },
+    {
+      "family": "sword",
+      "tier": 3,
+      "name": "Ascendant",
+      "enhancement": 9,
+      "frame": 9,
+      "rect": [
+        96,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        10,
+        2,
+        23,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "d5304a056705afe3dae8f92f3c9eadcd05b8ff2d6c736b119cd76ff5b3dc763b"
+    },
+    {
+      "family": "sword",
+      "tier": 4,
+      "name": "Mythic",
+      "enhancement": 12,
+      "frame": 10,
+      "rect": [
+        128,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        8,
+        1,
+        25,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "0fc7dc3c25f42487c846e1bee5a3df7e91f9c13bfe6c6418398a07690decd6ff"
+    },
+    {
+      "family": "sword",
+      "tier": 5,
+      "name": "Transcendent",
+      "enhancement": 15,
+      "frame": 11,
+      "rect": [
+        160,
+        32,
+        32,
+        32
+      ],
+      "bounds": [
+        7,
+        1,
+        26,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "46ee56e1e9463c626f7106a47b549afb72a1d2a465f4548c45cdb07e44bdd49c"
+    },
+    {
+      "family": "scepter",
+      "tier": 0,
+      "name": "Forged",
+      "enhancement": 0,
+      "frame": 12,
+      "rect": [
+        0,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        12,
+        7,
+        21,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "fe983b9edf280e4c1a1413e750d6d6cf187ee1cfb7568e7e4622dad9aaf02606"
+    },
+    {
+      "family": "scepter",
+      "tier": 1,
+      "name": "Reinforced",
+      "enhancement": 3,
+      "frame": 13,
+      "rect": [
+        32,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        4,
+        22,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "a7735bebcad2c418e1291272b9f2944ee05eec427245d42ff35d0836647e9bce"
+    },
+    {
+      "family": "scepter",
+      "tier": 2,
+      "name": "Awakened",
+      "enhancement": 6,
+      "frame": 14,
+      "rect": [
+        64,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        2,
+        22,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "c4ada78576b133f567e5e46a95d057b58c239bd2c32eb4f4ecce27f88c765e41"
+    },
+    {
+      "family": "scepter",
+      "tier": 3,
+      "name": "Ascendant",
+      "enhancement": 9,
+      "frame": 15,
+      "rect": [
+        96,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        6,
+        1,
+        27,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "3f18091735dff673bfb5891f6cbe494acf81a0d97e0a599a40a1c796cad1b331"
+    },
+    {
+      "family": "scepter",
+      "tier": 4,
+      "name": "Mythic",
+      "enhancement": 12,
+      "frame": 16,
+      "rect": [
+        128,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        4,
+        1,
+        29,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "ae3794aea07e722f0172a8cb261839b0e119f773fed690994e0b5d6b06aff03c"
+    },
+    {
+      "family": "scepter",
+      "tier": 5,
+      "name": "Transcendent",
+      "enhancement": 15,
+      "frame": 17,
+      "rect": [
+        160,
+        64,
+        32,
+        32
+      ],
+      "bounds": [
+        3,
+        1,
+        30,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "3370bde4a01ec5c02b29d43896b5eefc2eea528b962d1f2b512e8b70a5f60924"
+    },
+    {
+      "family": "glaive",
+      "tier": 0,
+      "name": "Forged",
+      "enhancement": 0,
+      "frame": 18,
+      "rect": [
+        0,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        14,
+        3,
+        25,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "634710b23d17f247bad686dc7db79a52a89538d829a9a263c1393c4287686c43"
+    },
+    {
+      "family": "glaive",
+      "tier": 1,
+      "name": "Reinforced",
+      "enhancement": 3,
+      "frame": 19,
+      "rect": [
+        32,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        14,
+        1,
+        25,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "b7ab00c4700b68a138aa254eb63394aa369fd36af5febc2133c8c6d002ffc2aa"
+    },
+    {
+      "family": "glaive",
+      "tier": 2,
+      "name": "Awakened",
+      "enhancement": 6,
+      "frame": 20,
+      "rect": [
+        64,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        14,
+        1,
+        29,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "46f1ac7f01bc3ac43a340bffda0bea374f701b33116b6f74598ab942f5c7bd10"
+    },
+    {
+      "family": "glaive",
+      "tier": 3,
+      "name": "Ascendant",
+      "enhancement": 9,
+      "frame": 21,
+      "rect": [
+        96,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        1,
+        29,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "1cdab99d1bacc2fc742dbf2b1c1ff52235c1575453d1e96b56ad219a1b985ad7"
+    },
+    {
+      "family": "glaive",
+      "tier": 4,
+      "name": "Mythic",
+      "enhancement": 12,
+      "frame": 22,
+      "rect": [
+        128,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        11,
+        1,
+        29,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "6dc860d6191301ac35cba55f1c01387c2ce0fb9302b97746c8ad4c3bf3981a4d"
+    },
+    {
+      "family": "glaive",
+      "tier": 5,
+      "name": "Transcendent",
+      "enhancement": 15,
+      "frame": 23,
+      "rect": [
+        160,
+        96,
+        32,
+        32
+      ],
+      "bounds": [
+        8,
+        1,
+        31,
+        31
+      ],
+      "grip": [
+        16,
+        24
+      ],
+      "sha256": "5677c3a420753bee9d3cbb245a79ac16e5e5608d9d0e30cb4fd811cdef26a9d2"
+    }
+  ]
+}

@@ -6,9 +6,13 @@ import type { WeaponSnapshot } from "../rpg/model";
 import type { WeaponId } from "../content/forest";
 import { RARITIES } from "../rpg/content";
 import {
+  resolveWeaponVisual,
+  weaponTexture,
+  weaponEffects,
+} from "../presentation/weapon-visual";
+import {
   defaultAppearance,
   layerDepth,
-  weaponVisualFrame,
   type AppearanceLayer,
   type CharacterAppearance,
 } from "../presentation/appearance";
@@ -23,6 +27,7 @@ import {
 import {
   handPoint,
   practiceFrame,
+  weaponRestAngle,
   type Facing,
 } from "../presentation/character";
 export type RigPose = {
@@ -46,6 +51,7 @@ export type RigPose = {
   dead?: boolean;
   invincible?: boolean;
   reduced?: boolean;
+  lowQuality?: boolean;
   deathComplete?: boolean;
 };
 /** A single scene-clock controls independent anatomy, appearance, owned gear and tools. */
@@ -61,6 +67,10 @@ export class CharacterRig {
   >();
   private look: CharacterAppearance | null = null;
   private selected: WeaponSnapshot | null = null;
+  private readonly reducedMotion =
+    typeof matchMedia === "function"
+      ? matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
   private state = createAnimationState();
   private previousTime: number | null = null;
   private previousAttack = 0;
@@ -216,18 +226,33 @@ export class CharacterRig {
             ? 17
             : null;
     const hand = handPoint(p.character, p.facing, !!p.attack, column);
-    const weaponFrame =
-      tool ??
-      (p.weapon
-        ? weaponVisualFrame(p.weapon)
-        : practiceFrame[p.practice ?? "arcane"]);
+    const visual = resolveWeaponVisual(p.weapon);
+    const hasFrame = (key: string, frame: number) =>
+      this.scene.textures.exists(key) &&
+      this.scene.textures.get(key).has(String(frame));
+    const source =
+      tool !== null
+        ? { key: "equipment-weapons", frame: tool }
+        : visual
+          ? weaponTexture(visual, hasFrame)
+          : {
+              key: "equipment-weapons",
+              frame: practiceFrame[p.practice ?? "arcane"],
+            };
+    if (
+      source &&
+      hasFrame(source.key, source.frame) &&
+      (this.weapon.texture.key !== source.key ||
+        Number(this.weapon.frame.name) !== source.frame)
+    )
+      this.weapon.setTexture(source.key, source.frame);
     this.weapon
       .setVisible(
         !p.dead &&
           (tool !== null || !!p.weapon || !!p.practice) &&
-          this.scene.textures.exists("equipment-weapons"),
+          !!source &&
+          hasFrame(source.key, source.frame),
       )
-      .setTexture("equipment-weapons", weaponFrame)
       .setPosition(hand.x, hand.y)
       .setFlipX(p.facing === "left")
       .setDepth(p.facing === "up" ? -2 : 13);
@@ -243,11 +268,13 @@ export class CharacterRig {
               ? ((0.22 - (p.attack ?? 0)) / 0.22 - 0.5) *
                 (p.weapon?.attack.arc ?? 1.8)
               : 0)
-          : p.facing === "right"
-            ? 0.25
-            : p.facing === "left"
-              ? -0.25
-              : 0,
+          : visual
+            ? weaponRestAngle(p.facing)
+            : p.facing === "right"
+              ? 0.25
+              : p.facing === "left"
+                ? -0.25
+                : 0,
     );
     this.root.sort("depth");
     this.equipmentEffects.clear();
@@ -257,15 +284,44 @@ export class CharacterRig {
       this.equipmentEffects
         .lineStyle(1, color, 0.45)
         .strokeEllipse(0, 11, 29, 8);
-      if (p.weapon.enhancement > 0 && !p.reduced)
-        this.equipmentEffects
-          .fillStyle(color, 0.8)
-          .fillRect(
-            Math.round(hand.x + Math.sin(p.time / 500) * 5),
-            Math.round(hand.y - 12 + Math.cos(p.time / 500) * 3),
-            1,
-            1,
-          );
+      if (tool === null && visual && source?.key === visual.key) {
+        const effects = weaponEffects(
+          visual.tier,
+          p.reduced || this.reducedMotion?.matches,
+          p.lowQuality,
+        );
+        const energy = Number.parseInt(visual.effectColor.slice(1), 16);
+        const n = p.time / 600;
+        const tip = {
+          x: hand.x + Math.sin(this.weapon.rotation) * 17,
+          y: hand.y - Math.cos(this.weapon.rotation) * 17,
+        };
+        if (effects.glow)
+          this.equipmentEffects
+            .fillStyle(energy, effects.pulse ? 0.3 + Math.sin(n) * 0.15 : 0.3)
+            .fillRect(Math.round(tip.x), Math.round(tip.y), 2, 2);
+        for (let i = 0; i < effects.particles; i++)
+          this.equipmentEffects
+            .fillStyle(energy, 0.65)
+            .fillRect(
+              Math.round(tip.x + Math.sin(n + i * 2) * 5),
+              Math.round(tip.y + Math.cos(n * 0.8 + i * 2) * 4),
+              1,
+              1,
+            );
+        if (attacking && effects.trail)
+          this.equipmentEffects
+            .lineStyle(1, energy, 0.35)
+            .beginPath()
+            .arc(
+              hand.x,
+              hand.y,
+              19,
+              this.weapon.rotation - Math.PI / 2 - 0.45,
+              this.weapon.rotation - Math.PI / 2,
+            )
+            .strokePath();
+      }
     }
     if (p.hit)
       this.hitEffects.lineStyle(1, 0xffd5ad, 0.7).strokeEllipse(0, -8, 23, 32);
@@ -308,6 +364,11 @@ export class CharacterRig {
       weaponFrame: Number(this.weapon.frame.name),
       weaponVisible: this.weapon.visible,
       instanceId: this.selected?.instanceId ?? null,
+      evolutionTier: resolveWeaponVisual(this.selected)?.tier ?? null,
+      weaponFallback:
+        !!this.selected &&
+        this.weapon.texture.key !== "weapon-evolution" &&
+        !["mine", "craft", "gather"].includes(this.state.pose),
       behindBody: this.weapon.depth < 0,
       appearanceKey: this.look?.appearanceKey ?? null,
       pose: this.state.pose,

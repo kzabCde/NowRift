@@ -3,6 +3,11 @@ import ItemIcon from "./ItemIcon";
 export { default as ItemIcon } from "./ItemIcon";
 import CharacterPreview from "./CharacterPreview";
 import EquippedWeapon from "./EquippedWeapon";
+import {
+  WeaponEvolutionPreview,
+  WeaponEvolutionReveal,
+} from "./WeaponEvolution";
+import { evolutionTier } from "@/game/presentation/weapon-visual";
 import ActionReceipt from "./ActionReceipt";
 import {
   committedRpgVisual,
@@ -160,7 +165,12 @@ export default function RpgScreen({
     [confirm, setConfirm] = useState<Confirm | null>(null),
     [busy, setBusy] = useState(false),
     [sound, setSound] = useState(true),
-    [flash, setFlash] = useState("");
+    [flash, setFlash] = useState(""),
+    [evolution, setEvolution] = useState<{
+      before: EquipmentInstance;
+      after: EquipmentInstance;
+    } | null>(null);
+  const closeEvolution = useCallback(() => setEvolution(null), []);
   const [visualReceipt, setVisualReceipt] =
     useState<ActionVisualReceipt | null>(null);
   const details = useRef<HTMLElement | null>(null),
@@ -230,6 +240,24 @@ export default function RpgScreen({
         }
         if (result.entry?.enhancement) {
           const success = result.entry.enhancement.success;
+          const before = profile.rpg!.equipment.find(
+            (e) => e.id === result.entry?.itemId,
+          );
+          const after = result.progress.rpg!.equipment.find(
+            (e) => e.id === result.entry?.itemId,
+          );
+          if (
+            receipt &&
+            success &&
+            before &&
+            after &&
+            ITEMS[after.definitionId]?.weapon &&
+            evolutionTier(after.enhancement) > evolutionTier(before.enhancement)
+          )
+            setEvolution({
+              before: structuredClone(before),
+              after: structuredClone(after),
+            });
           setFlash(success ? "success" : "failure");
           if (sound) audio.play(success ? "upgrade" : "error");
         }
@@ -314,7 +342,7 @@ export default function RpgScreen({
         title={itemDescription(e, text)}
         aria-pressed={selection === e.id}
       >
-        <ItemIcon id={e.definitionId} size={40} />
+        <ItemIcon id={e.definitionId} weapon={e.equipment} size={40} />
         {e.quantity > 1 && <span className="rpg-quantity">{e.quantity}</span>}
         {e.equipment && e.equipment.enhancement > 0 && (
           <span className="rpg-enhance-tag">+{e.equipment.enhancement}</span>
@@ -475,6 +503,7 @@ export default function RpgScreen({
                 >
                   <ItemIcon
                     id={o.equipment?.definitionId ?? o.definitionId!}
+                    weapon={o.equipment}
                     size={28}
                   />
                   <span>
@@ -571,7 +600,11 @@ export default function RpgScreen({
                         } as React.CSSProperties
                       }
                     >
-                      <ItemIcon id={offer.item} size={56} />
+                      <ItemIcon
+                        id={offer.item}
+                        weapon={preview ?? undefined}
+                        size={56}
+                      />
                       <div>
                         <span className="rpg-caption">
                           {offer.rarity
@@ -757,7 +790,11 @@ export default function RpgScreen({
                       >
                         <span>{text(slot.toUpperCase())}</span>
                         {e ? (
-                          <ItemIcon id={e.definitionId} size={44} />
+                          <ItemIcon
+                            id={e.definitionId}
+                            weapon={e.equipment}
+                            size={44}
+                          />
                         ) : (
                           <span className="empty-slot">—</span>
                         )}
@@ -994,7 +1031,11 @@ export default function RpgScreen({
                       } as React.CSSProperties
                     }
                   >
-                    <ItemIcon id={chosen.definitionId} size={80} />
+                    <ItemIcon
+                      id={chosen.definitionId}
+                      weapon={item}
+                      size={80}
+                    />
                     <span>
                       {item
                         ? RARITIES[item.rarity].name.toUpperCase()
@@ -1015,6 +1056,7 @@ export default function RpgScreen({
                   <p className="rpg-item-description">
                     {ITEMS[chosen.definitionId].description}
                   </p>
+                  {item && <WeaponEvolutionPreview item={item} />}
                   <div className="rpg-protection">
                     <button
                       className="rpg-button"
@@ -1338,6 +1380,9 @@ export default function RpgScreen({
           )}
         </footer>
       </div>
+      {evolution && (
+        <WeaponEvolutionReveal {...evolution} onClose={closeEvolution} />
+      )}
       {confirm && (
         <Modal title={text(confirm.title)} onClose={closeConfirm}>
           <span className="eyebrow">{text("REVIEW BEFORE YOU COMMIT")}</span>

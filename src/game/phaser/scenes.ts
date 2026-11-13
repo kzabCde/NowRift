@@ -354,6 +354,7 @@ class ForestRenderer {
       dead: g.player.hp <= 0,
       deathComplete: g.phase === "gameover" && delta === 0,
       reduced,
+      lowQuality: prefs.quality === "low",
     });
     this.light.setAlpha(0.7 + prefs.glow * 0.3);
     const accent = this.accents.clear();

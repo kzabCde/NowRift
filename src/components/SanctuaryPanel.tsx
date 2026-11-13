@@ -94,7 +94,7 @@ export default function SanctuaryPanel({
           );
           return (
             <div key={slot}>
-              {item && <ItemIcon id={item.definitionId} />}
+              {item && <ItemIcon id={item.definitionId} weapon={item} />}
               <small>{text(slot)}</small>
               <strong>
                 {item

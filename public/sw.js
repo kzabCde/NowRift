@@ -1,5 +1,5 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v16-cinematic";
+const VERSION = "nowrift-pwa-v17-weapon-evolution";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -7,6 +7,7 @@ const CORE_URLS = [
   "/assets/landing/foreground.webp",
   "/assets/pixel/interactions/portal.png",
   "/assets/characters/weapons.png",
+  "/assets/characters/weapon-evolution.png",
   "/assets/haven/terrain.png",
   "/assets/haven/fountain.png",
   "/assets/haven/forge.png",

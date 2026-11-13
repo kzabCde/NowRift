@@ -150,3 +150,5 @@ Without the flags, the ordinary guest/input/responsive/settings/PWA smoke tests 
 Tests produce screenshots and traces in ignored `test-results/`. Stress measurements distinguish Node simulation time from rendered browser frame rates; neither is a physical mobile-device benchmark. See [Rift Haven validation](docs/open-world-foundation.md) for current tests and browser results, and [Phase IV validation](docs/phase-4-validation.md) for the preceding persistence release; [Phase III validation](docs/phase-3-validation.md) records the preceding RPG implementation, and [Phase I validation](docs/phase-1-validation.md) records the original slice.
 
 Production target: `https://nowrift-one.vercel.app/`. Deployment requires Vercel project access; see the Phase III release notes. Application deployment is separate from publishing this development environment.
+
+Weapons physically evolve at +3, +6, +9, +12 and +15. See [weapon evolution, editable design boards, generation and validation](docs/weapon-evolution.md).

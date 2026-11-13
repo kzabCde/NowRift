@@ -1,4 +1,27 @@
 export const equipmentTh = {
+  "Weapon art unavailable.": "โหลดภาพอาวุธไม่ได้",
+  "Weapon evolution": "วิวัฒนาการอาวุธ",
+  Forged: "ก่อรูป",
+  Reinforced: "เสริมแกร่ง",
+  Awakened: "ตื่นพลัง",
+  Ascendant: "ทะยานพลัง",
+  Mythic: "เทพนิยาย",
+  Transcendent: "เหนือสรรพสิ่ง",
+  "Current appearance": "รูปลักษณ์ปัจจุบัน",
+  "Next evolution": "วิวัฒนาการถัดไป",
+  "Final evolution": "วิวัฒนาการขั้นสูงสุด",
+  "{count} successful enhancements until the next evolution.":
+    "ตีบวกสำเร็จอีก {count} ระดับเพื่อวิวัฒนาการขั้นถัดไป",
+  "Your next success transforms this weapon.":
+    "ตีบวกสำเร็จครั้งถัดไปจะเปลี่ยนรูปลักษณ์อาวุธนี้",
+  "Appearance collection": "ชุดรูปลักษณ์อาวุธ",
+  "Locked preview": "ตัวอย่างที่ยังไม่ปลดล็อก",
+  "Weapon evolved": "อาวุธวิวัฒนาการแล้ว",
+  "A new form, forged by your progress.":
+    "รูปลักษณ์ใหม่ที่หลอมขึ้นจากความก้าวหน้าของคุณ",
+  Continue: "ดำเนินการต่อ",
+  "Original appearance unavailable; showing base weapon.":
+    "โหลดรูปลักษณ์ปัจจุบันไม่ได้ กำลังแสดงอาวุธพื้นฐาน",
   "ACTIVE PRACTICE SKILL": "ทักษะฝึกฝนที่เลือก",
   "CHOOSE PRACTICE SKILL": "เลือกทักษะฝึกฝน",
   "Equipped weapon": "อาวุธที่สวมใส่",

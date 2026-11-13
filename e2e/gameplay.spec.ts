@@ -220,6 +220,9 @@ test("PWA assets and game chunks launch offline after initial online load", asyn
           ).flat();
           return {
             art: urls.filter((u) => u.includes("/assets/forest/")).length,
+            evolution: urls.some((u) =>
+              u.endsWith("/assets/characters/weapon-evolution.png"),
+            ),
             chunks: urls.filter(
               (u) => u.includes("/_next/static/") && u.endsWith(".js"),
             ).length,
@@ -227,7 +230,7 @@ test("PWA assets and game chunks launch offline after initial online load", asyn
         }),
       { timeout: 20000 },
     )
-    .toMatchObject({ art: 14 });
+    .toMatchObject({ art: 14, evolution: true });
   await page.waitForTimeout(1000);
   await context.setOffline(true);
   await page.reload({ waitUntil: "domcontentloaded" });

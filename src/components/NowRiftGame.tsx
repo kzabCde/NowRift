@@ -954,7 +954,10 @@ export default function NowRiftGame({
           <div className="arena-footer">
             <div className="active-weapon">
               {hud.equippedWeapon ? (
-                <ItemIcon id={hud.equippedWeapon.definitionId} />
+                <ItemIcon
+                  id={hud.equippedWeapon.definitionId}
+                  weapon={hud.equippedWeapon}
+                />
               ) : (
                 <PixelIcon index={WEAPONS[hud.weaponId].icon} />
               )}

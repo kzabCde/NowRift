@@ -8,6 +8,7 @@ import {
   type WeaponSnapshot,
 } from "../rpg/model";
 import { validEquipmentInstance } from "../rpg/profile";
+import { resolveWeaponVisual } from "./weapon-visual";
 import { OUTFITS, type Outfit } from "../world/save";
 import {
   DEFAULT_CUSTOMIZATION,
@@ -55,16 +56,9 @@ export type CharacterAppearance = {
 };
 export const rarityShape = (rarity: Rarity) =>
   rarity === "epic" || rarity === "legendary" ? 2 : rarity === "rare" ? 1 : 0;
-/** Ownership stays in the RPG inventory; these frames are purely visual rarity variants. */
+/** Compatibility accessor; renderers also consume the canonical texture key. */
 export function weaponVisualFrame(weapon: WeaponSnapshot) {
-  return (
-    weapon.frame +
-    (rarityShape(weapon.rarity) === 2
-      ? 10
-      : rarityShape(weapon.rarity) === 1
-        ? 6
-        : 0)
-  );
+  return resolveWeaponVisual(weapon)?.frame ?? weapon.frame;
 }
 const worldOf = (id?: string) =>
   ["forest", "desert", "frozen", "infernal"].find((world) =>
