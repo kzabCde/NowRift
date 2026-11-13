@@ -7,6 +7,7 @@ const play = (page: Page) =>
 async function ready(page: Page) {
   await page.goto("/");
   await expect(play(page)).toBeVisible();
+  await expect(play(page)).toBeEnabled();
   await expect
     .poll(() =>
       hero(page).evaluate((element) => {
@@ -267,6 +268,56 @@ test("cold mobile framing is stable before hydration and artwork loading", async
     });
     await expect(play(page)).toBeEnabled();
   } finally {
+    await context.close();
+  }
+});
+
+test("landing actions wait for handlers with deferred JavaScript and 4x CPU throttling", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    serviceWorkers: "block",
+  });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  let releaseScripts!: () => void;
+  const scripts = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await page.route("**/_next/static/**/*.js", async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    const practice = page.getByRole("button", {
+      name: "Practice & legacy tools",
+      exact: true,
+    });
+    await expect(play(page)).toBeDisabled();
+    await expect(practice).toBeDisabled();
+    await expect(page.locator("[data-landing]")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    releaseScripts();
+    await expect(play(page)).toBeEnabled();
+    await expect(practice).toBeEnabled();
+    await expect(page.locator("[data-landing]")).toHaveAttribute(
+      "aria-busy",
+      "false",
+    );
+    await practice.click();
+    await expect(
+      page.getByRole("heading", { name: "The forest is calling." }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "START NEW RUN" }).click();
+    await expect(page.locator(".game-state")).toContainText("LIVE RUN");
+  } finally {
+    releaseScripts();
+    await page.unrouteAll({ behavior: "wait" });
     await context.close();
   }
 });

@@ -209,6 +209,31 @@ local browser/emulation measurements, not physical-phone or GPU-allocation
 measurements. Phaser's separate loop diagnostic is retained in the raw report;
 the performance assertion uses actual browser animation-frame cadence.
 
+### CI follow-up
+
+GitHub's pull-request and push checks for `e7f30b5` exposed three timing/fixture
+issues after the initial local validation above:
+
+- A 450ms walk can leave the player 81 units from the new Plaza beacon, inside
+  the legitimate 85-unit interaction range. The range test now uses its own
+  validated empty-street fixture before asserting that E opens no dialog. Its
+  original movement, collision and retained-canvas assertions remain intact.
+- The night HUD can update before the throttled canvas paint. The visual test
+  now polls actual pixel brightness at each corner, retaining the same 5%
+  darkening requirement instead of sampling immediately after the HUD changes.
+- The mobile stress check failed before measuring combat because a visible SSR
+  landing button could be clicked before its JavaScript handler was attached.
+  Landing buttons now stay disabled until mounted, with an accessible busy state.
+  A new regression holds JavaScript responses during 4× CPU startup, then verifies
+  that the first enabled Practice click reaches the launcher and starts a run.
+
+The deferred-JavaScript regression failed on the previous implementation. The
+existing 150-enemy / 4× CPU stress setup and performance requirements are unchanged.
+After the correction, each of the three CI-failing scenarios passed twice (six
+checks), and the new delayed-JavaScript startup regression passed twice. The
+instrumented production build, all 476 unit/integration tests, lint, formatting
+and TypeScript checks passed locally. GitHub checks run again on the updated head.
+
 | District | Desktop | Mobile |
 | --- | --- | --- |
 | Plaza | [View](images/haven-city/desktop-plaza.png) | [View](images/haven-city/mobile-plaza.png) |
