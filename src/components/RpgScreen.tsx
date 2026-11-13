@@ -353,7 +353,9 @@ export default function RpgScreen({
       if (event.key !== "Escape") return;
       if (contextMenu) {
         setContextMenu(null);
-        document.querySelector<HTMLButtonElement>(".rpg-cell.selected")?.focus();
+        document
+          .querySelector<HTMLButtonElement>(".rpg-cell.selected")
+          ?.focus();
       } else {
         setSelectedIds([]);
         setMultiMode(false);
