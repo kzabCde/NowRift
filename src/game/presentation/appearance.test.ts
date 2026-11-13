@@ -180,7 +180,7 @@ test("new checkpoints freeze all equipment appearance independently of later inv
   p.rpg!.equipment[0].enhancement = 12;
   const restored = restoreCheckpoint(cp);
   expect(restored.visualAppearance).toEqual(selection.visualAppearance);
-  expect(restored.visualAppearance!.equipment).toHaveLength(6);
+  expect(restored.visualAppearance!.equipment).toHaveLength(7);
   expect(restored.visualAppearance!.appearanceKey).not.toBe(
     resolveAppearance(p, "strider", "ember").appearanceKey,
   );

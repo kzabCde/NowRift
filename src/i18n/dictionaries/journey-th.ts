@@ -80,6 +80,7 @@ export const journeyTh = {
   "Crafting workshop": "โรงงานประดิษฐ์",
   Blacksmith: "ช่างตีเหล็ก",
   Merchant: "พ่อค้า",
+  "Rift Outfitters": "ริฟต์ เอาต์ฟิตเตอร์ส",
   "Inventory & equipment": "คลังไอเทมและอุปกรณ์",
   "Character appearance": "รูปลักษณ์ตัวละคร",
   "Training grounds": "ลานฝึกฝน",

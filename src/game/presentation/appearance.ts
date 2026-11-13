@@ -3,6 +3,7 @@ import { CHARACTERS, type CharacterId } from "../loadout";
 import { ITEMS, RARITIES } from "../rpg/content";
 import {
   SLOTS,
+  LEGACY_SLOTS,
   type Rarity,
   type Slot,
   type WeaponSnapshot,
@@ -46,7 +47,7 @@ export type AppearanceEquipment = {
   enhancement: number;
 };
 export type CharacterAppearance = {
-  schema: 1;
+  schema: 1 | 2;
   character: CharacterId;
   outfit: Outfit;
   customization: AppearanceCustomization;
@@ -72,9 +73,11 @@ function buildAppearance(
   outfit: Outfit,
   customization: AppearanceCustomization,
   equipment: AppearanceEquipment[],
+  schema: 1 | 2 = 2,
 ): CharacterAppearance {
   const owned = (slot: Slot) => equipment.find((entry) => entry.slot === slot);
   const armor = owned("armor"),
+    pants = owned("pants"),
     helmet = owned("helmet"),
     boots = owned("boots"),
     ring = owned("ring"),
@@ -97,7 +100,17 @@ function buildAppearance(
     });
   add("body", "body", 0);
   add("skin", `skin-${customization.skin}`, 1);
-  add("pants", `pants-${worldOf(armor?.definitionId)}`, 2, armor);
+  if (schema === 1)
+    add("pants", `pants-${worldOf(armor?.definitionId)}`, 2, armor);
+  else
+    add(
+      "pants",
+      pants
+        ? `legwear-${worldOf(pants.definitionId)}-${rarityShape(pants.rarity)}`
+        : "pants-base",
+      2,
+      pants,
+    );
   add("inner", `inner-${outfit}`, 3);
   add("back", `back-${outfit}`, -4);
   add("face", `face-${customization.face}`, 7);
@@ -121,7 +134,7 @@ function buildAppearance(
   if (boots)
     add(
       "boots",
-      `boots-${worldOf(boots.definitionId)}-${rarityShape(boots.rarity)}`,
+      `${schema === 1 ? "boots" : "outfit-boots"}-${worldOf(boots.definitionId)}-${rarityShape(boots.rarity)}`,
       4,
       boots,
     );
@@ -140,13 +153,14 @@ function buildAppearance(
       necklace,
     );
   return {
-    schema: 1,
+    schema,
     character,
     outfit,
     customization: { ...customization },
     equipment: equipment.map((entry) => ({ ...entry })),
     layers,
     appearanceKey: [
+      ...(schema === 2 ? ["v2"] : []),
       character,
       outfit,
       customization.skin,
@@ -202,12 +216,13 @@ export function validAppearance(value: unknown): value is CharacterAppearance {
   if (!object(value)) return false;
   const v = value as unknown as CharacterAppearance;
   if (
-    v.schema !== 1 ||
+    (v.schema !== 1 && v.schema !== 2) ||
     !Object.hasOwn(CHARACTERS, v.character) ||
     !OUTFITS.includes(v.outfit) ||
     !validCustomization(v.customization) ||
     !Array.isArray(v.equipment) ||
-    v.equipment.length > 6 ||
+    v.equipment.length >
+      (v.schema === 1 ? LEGACY_SLOTS.length : SLOTS.length) ||
     !Array.isArray(v.layers)
   )
     return false;
@@ -216,7 +231,9 @@ export function validAppearance(value: unknown): value is CharacterAppearance {
   for (const item of v.equipment) {
     if (
       !object(item) ||
-      !SLOTS.includes(item.slot) ||
+      !((v.schema === 1 ? LEGACY_SLOTS : SLOTS) as readonly string[]).includes(
+        item.slot,
+      ) ||
       seen.has(item.slot) ||
       typeof item.instanceId !== "string" ||
       !item.instanceId ||
@@ -236,7 +253,10 @@ export function validAppearance(value: unknown): value is CharacterAppearance {
     v.character,
     v.outfit,
     v.customization,
-    SLOTS.flatMap((slot) => v.equipment.filter((e) => e.slot === slot)),
+    (v.schema === 1 ? LEGACY_SLOTS : SLOTS).flatMap((slot) =>
+      v.equipment.filter((e) => e.slot === slot),
+    ),
+    v.schema,
   );
   if (
     v.appearanceKey !== expected.appearanceKey ||

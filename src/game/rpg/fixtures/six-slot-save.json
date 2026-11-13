@@ -1,0 +1,851 @@
+{
+  "version": 1,
+  "clears": ["forest-5:normal"],
+  "receipts": ["old-purchase", "legacy-transaction"],
+  "gold": 2713,
+  "xp": 1350,
+  "materials": {
+    "wood": 19,
+    "copper-ore": 31,
+    "enhancement-stone": 4
+  },
+  "candidates": [],
+  "rpg": {
+    "schema": 1,
+    "revision": 0,
+    "capacity": 60,
+    "equipment": [
+      {
+        "id": "starter-weapon",
+        "definitionId": "forest-weapon",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 8,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "starter-armor",
+        "definitionId": "forest-armor",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 0,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "starter-helmet",
+        "definitionId": "forest-helmet",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 0,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "starter-boots",
+        "definitionId": "forest-boots",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 0,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "starter-ring",
+        "definitionId": "forest-ring",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 0,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "starter-necklace",
+        "definitionId": "forest-necklace",
+        "rarity": "common",
+        "level": 1,
+        "enhancement": 0,
+        "pity": 0,
+        "affixes": {},
+        "locked": false,
+        "favorite": false
+      },
+      {
+        "id": "legacy-armor",
+        "definitionId": "desert-armor",
+        "rarity": "epic",
+        "level": 8,
+        "enhancement": 7,
+        "pity": 0,
+        "affixes": {
+          "regen": 0.262,
+          "speed": 3.233,
+          "projectiles": 1
+        },
+        "locked": false,
+        "favorite": true
+      },
+      {
+        "id": "legacy-helmet",
+        "definitionId": "frozen-helmet",
+        "rarity": "rare",
+        "level": 8,
+        "enhancement": 4,
+        "pity": 0,
+        "affixes": {
+          "maxHp": 16.817,
+          "critChance": 0.028
+        },
+        "locked": true,
+        "favorite": false
+      },
+      {
+        "id": "legacy-boots",
+        "definitionId": "infernal-boots",
+        "rarity": "legendary",
+        "level": 8,
+        "enhancement": 9,
+        "pity": 0,
+        "affixes": {
+          "critChance": 0.021,
+          "attackSpeed": 0.035,
+          "projectiles": 1,
+          "damage": 1.939
+        },
+        "locked": false,
+        "favorite": false
+      }
+    ],
+    "equipped": {
+      "weapon": "starter-weapon",
+      "armor": "legacy-armor",
+      "helmet": "legacy-helmet",
+      "boots": "legacy-boots",
+      "ring": "starter-ring",
+      "necklace": "starter-necklace"
+    },
+    "consumables": {
+      "health-tonic": 3
+    },
+    "stackFlags": {},
+    "overflow": [],
+    "upgrades": {},
+    "history": []
+  },
+  "local": {
+    "schema": 2,
+    "id": "legacy-outfitters",
+    "name": "Legacy Tailor",
+    "createdAt": 1794546000000,
+    "lastPlayed": 1794546000000,
+    "revision": 0,
+    "character": "sentinel",
+    "weapon": "arcane",
+    "stats": {
+      "kills": 0,
+      "bestKills": 0,
+      "bosses": 0,
+      "seconds": 0,
+      "stages": 0,
+      "materials": 0,
+      "goldEarned": 0,
+      "enhancements": 0,
+      "dismantled": 0,
+      "equipment": 6,
+      "legendary": 0,
+      "highestEnhancement": 0
+    },
+    "daily": {
+      "day": "2026-11-13",
+      "progress": {
+        "hunt": 1
+      },
+      "claimed": []
+    },
+    "achievements": {
+      "first-blood": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "hunter": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "forest": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "explorer": {
+        "progress": 1,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "veteran": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "level": {
+        "progress": 1,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "outfit": {
+        "progress": 6,
+        "claimed": true,
+        "unlockedAt": 1794546000000
+      },
+      "blacksmith": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "legendary": {
+        "progress": 0,
+        "unlockedAt": null,
+        "claimed": false
+      },
+      "collector": {
+        "progress": 6,
+        "unlockedAt": null,
+        "claimed": false
+      }
+    },
+    "legacyImported": true,
+    "records": [],
+    "activeRun": {
+      "id": "legacy-tailor-run",
+      "slotId": "legacy-outfitters",
+      "writer": "legacy-fixture",
+      "sequence": 1,
+      "updatedAt": 1794546000000,
+      "metrics": {
+        "kills": 0,
+        "bosses": 0,
+        "seconds": 0
+      }
+    },
+    "checkpoint": {
+      "schema": 1,
+      "run": {
+        "id": "legacy-tailor-run",
+        "slotId": "legacy-outfitters",
+        "writer": "legacy-fixture",
+        "sequence": 1
+      },
+      "at": 1794546000000,
+      "seed": 42,
+      "random": 508781842,
+      "weapon": "arcane",
+      "stage": {
+        "stageId": "forest-1",
+        "difficulty": "normal",
+        "seed": 42,
+        "clears": ["forest-5:normal"],
+        "character": "sentinel",
+        "weaponSnapshot": {
+          "schema": 1,
+          "instanceId": "starter-weapon",
+          "definitionId": "forest-weapon",
+          "name": "Riftwood Staff",
+          "family": "staff",
+          "attackId": "arcane",
+          "attack": {
+            "kind": "projectile",
+            "name": "Arcane Bolt",
+            "description": "Precise magic bolts. A balanced companion for the long hunt.",
+            "damage": 10,
+            "interval": 0.8,
+            "range": 420,
+            "speed": 430,
+            "color": "#a8dcff",
+            "icon": 0
+          },
+          "assetKey": "equipment-weapons",
+          "frame": 0,
+          "rarity": "common",
+          "enhancement": 8,
+          "instance": {
+            "id": "starter-weapon",
+            "definitionId": "forest-weapon",
+            "rarity": "common",
+            "level": 1,
+            "enhancement": 8,
+            "pity": 0,
+            "affixes": {},
+            "locked": false,
+            "favorite": false
+          },
+          "stats": {
+            "maxHp": 276,
+            "damage": 23.89748,
+            "attackSpeed": 0.060200000000000004,
+            "critChance": 0.13824,
+            "critDamage": 1.5,
+            "armor": 35.370400000000004,
+            "speed": 206.03317,
+            "regen": 0.68038,
+            "projectiles": 4,
+            "area": 1,
+            "interval": 0.7545746085644218,
+            "level": 7,
+            "power": 119
+          }
+        },
+        "visualAppearance": {
+          "schema": 1,
+          "character": "sentinel",
+          "outfit": "moss",
+          "customization": {
+            "skin": "warm",
+            "hair": "short",
+            "face": "calm"
+          },
+          "equipment": [
+            {
+              "slot": "weapon",
+              "instanceId": "starter-weapon",
+              "definitionId": "forest-weapon",
+              "rarity": "common",
+              "enhancement": 8
+            },
+            {
+              "slot": "armor",
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor",
+              "rarity": "epic",
+              "enhancement": 7
+            },
+            {
+              "slot": "helmet",
+              "instanceId": "legacy-helmet",
+              "definitionId": "frozen-helmet",
+              "rarity": "rare",
+              "enhancement": 4
+            },
+            {
+              "slot": "boots",
+              "instanceId": "legacy-boots",
+              "definitionId": "infernal-boots",
+              "rarity": "legendary",
+              "enhancement": 9
+            },
+            {
+              "slot": "ring",
+              "instanceId": "starter-ring",
+              "definitionId": "forest-ring",
+              "rarity": "common",
+              "enhancement": 0
+            },
+            {
+              "slot": "necklace",
+              "instanceId": "starter-necklace",
+              "definitionId": "forest-necklace",
+              "rarity": "common",
+              "enhancement": 0
+            }
+          ],
+          "layers": [
+            {
+              "slot": "body",
+              "key": "character-layer-sentinel-body",
+              "path": "/assets/characters/layers/sentinel/body.png",
+              "z": 0
+            },
+            {
+              "slot": "skin",
+              "key": "character-layer-sentinel-skin-warm",
+              "path": "/assets/characters/layers/sentinel/skin-warm.png",
+              "z": 1
+            },
+            {
+              "slot": "pants",
+              "key": "character-layer-sentinel-pants-desert",
+              "path": "/assets/characters/layers/sentinel/pants-desert.png",
+              "z": 2,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "inner",
+              "key": "character-layer-sentinel-inner-moss",
+              "path": "/assets/characters/layers/sentinel/inner-moss.png",
+              "z": 3
+            },
+            {
+              "slot": "back",
+              "key": "character-layer-sentinel-back-moss",
+              "path": "/assets/characters/layers/sentinel/back-moss.png",
+              "z": -4
+            },
+            {
+              "slot": "face",
+              "key": "character-layer-sentinel-face-calm",
+              "path": "/assets/characters/layers/sentinel/face-calm.png",
+              "z": 7
+            },
+            {
+              "slot": "hair",
+              "key": "character-layer-sentinel-hair-short",
+              "path": "/assets/characters/layers/sentinel/hair-short.png",
+              "z": 8
+            },
+            {
+              "slot": "armor",
+              "key": "character-layer-sentinel-armor-desert-2",
+              "path": "/assets/characters/layers/sentinel/armor-desert-2.png",
+              "z": 5,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "gloves",
+              "key": "character-layer-sentinel-gloves-desert",
+              "path": "/assets/characters/layers/sentinel/gloves-desert.png",
+              "z": 9,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "headwear",
+              "key": "character-layer-sentinel-head-frozen-1",
+              "path": "/assets/characters/layers/sentinel/head-frozen-1.png",
+              "z": 10,
+              "instanceId": "legacy-helmet",
+              "definitionId": "frozen-helmet"
+            },
+            {
+              "slot": "boots",
+              "key": "character-layer-sentinel-boots-infernal-2",
+              "path": "/assets/characters/layers/sentinel/boots-infernal-2.png",
+              "z": 4,
+              "instanceId": "legacy-boots",
+              "definitionId": "infernal-boots"
+            },
+            {
+              "slot": "ring",
+              "key": "character-layer-sentinel-ring-forest-0",
+              "path": "/assets/characters/layers/sentinel/ring-forest-0.png",
+              "z": 11,
+              "instanceId": "starter-ring",
+              "definitionId": "forest-ring"
+            },
+            {
+              "slot": "necklace",
+              "key": "character-layer-sentinel-neck-forest-0",
+              "path": "/assets/characters/layers/sentinel/neck-forest-0.png",
+              "z": 12,
+              "instanceId": "starter-necklace",
+              "definitionId": "forest-necklace"
+            }
+          ],
+          "appearanceKey": "sentinel|moss|warm|short|calm|weapon:starter-weapon:forest-weapon:common:8|armor:legacy-armor:desert-armor:epic:7|helmet:legacy-helmet:frozen-helmet:rare:4|boots:legacy-boots:infernal-boots:legendary:9|ring:starter-ring:forest-ring:common:0|necklace:starter-necklace:forest-necklace:common:0"
+        },
+        "build": {
+          "maxHp": 276,
+          "damage": 23.89748,
+          "attackSpeed": 0.060200000000000004,
+          "critChance": 0.13824,
+          "critDamage": 1.5,
+          "armor": 35.370400000000004,
+          "speed": 206.03317,
+          "regen": 0.68038,
+          "projectiles": 4,
+          "area": 1,
+          "interval": 0.7545746085644218,
+          "level": 7,
+          "power": 119
+        },
+        "appearance": {
+          "rarity": "common",
+          "icon": 0
+        }
+      },
+      "state": {
+        "phase": "playing",
+        "player": {
+          "x": 900,
+          "y": 700,
+          "r": 12,
+          "hp": 276,
+          "maxHp": 276,
+          "speed": 206.03317,
+          "angle": 0,
+          "facing": "down",
+          "attackUntil": 0,
+          "invincible": 0,
+          "moving": false,
+          "hit": 0,
+          "armor": 35.370400000000004
+        },
+        "weapon": {
+          "damage": 23.89748,
+          "delay": 0.7545746085644218,
+          "projectiles": 4,
+          "cooldown": 0.3,
+          "range": 420,
+          "speed": 430,
+          "area": 1,
+          "crit": 0.13824,
+          "critDamage": 1.5
+        },
+        "time": 0,
+        "wave": 1,
+        "kills": 0,
+        "gold": 0,
+        "level": 7,
+        "xp": 0,
+        "xpToNext": 400,
+        "regen": 0.68038,
+        "focus": 0,
+        "pickupRadius": 72,
+        "enemies": [
+          {
+            "id": 1,
+            "x": 892.3379900490339,
+            "y": 1219.9435484776318,
+            "r": 12,
+            "hp": 23.76,
+            "maxHp": 23.76,
+            "speed": 40.32,
+            "contact": 0,
+            "kind": "slime",
+            "attack": 1.1762500908225775,
+            "slow": 0,
+            "hit": 0,
+            "age": 0,
+            "enraged": false,
+            "pattern": 0,
+            "level": 5,
+            "damageScale": 1.2
+          },
+          {
+            "id": 2,
+            "x": 440.10779238789416,
+            "y": 457.3085139984021,
+            "r": 12,
+            "hp": 23.76,
+            "maxHp": 23.76,
+            "speed": 40.32,
+            "contact": 0,
+            "kind": "slime",
+            "attack": 1.445108531974256,
+            "slow": 0,
+            "hit": 0,
+            "age": 0,
+            "enraged": false,
+            "pattern": 0,
+            "level": 5,
+            "damageScale": 1.2
+          },
+          {
+            "id": 3,
+            "x": 530.7823888249459,
+            "y": 1066.167114304639,
+            "r": 12,
+            "hp": 23.76,
+            "maxHp": 23.76,
+            "speed": 40.32,
+            "contact": 0,
+            "kind": "slime",
+            "attack": 1.0513278096914291,
+            "slow": 0,
+            "hit": 0,
+            "age": 0,
+            "enraged": false,
+            "pattern": 0,
+            "level": 5,
+            "damageScale": 1.2
+          },
+          {
+            "id": 4,
+            "x": 408.2675476618997,
+            "y": 869.1129661426287,
+            "r": 12,
+            "hp": 23.76,
+            "maxHp": 23.76,
+            "speed": 40.32,
+            "contact": 0,
+            "kind": "slime",
+            "attack": 1.2369200075045228,
+            "slow": 0,
+            "hit": 0,
+            "age": 0,
+            "enraged": false,
+            "pattern": 0,
+            "level": 5,
+            "damageScale": 1.2
+          }
+        ],
+        "bullets": [],
+        "drops": [],
+        "hazards": [],
+        "spawnCooldown": 0.8,
+        "nextId": 5,
+        "offers": [],
+        "stacks": {},
+        "bossSpawned": false,
+        "build": {
+          "maxHp": 276,
+          "damage": 23.89748,
+          "attackSpeed": 0.060200000000000004,
+          "critChance": 0.13824,
+          "critDamage": 1.5,
+          "armor": 35.370400000000004,
+          "speed": 206.03317,
+          "regen": 0.68038,
+          "projectiles": 4,
+          "area": 1,
+          "interval": 0.7545746085644218,
+          "level": 7,
+          "power": 119
+        },
+        "appearance": {
+          "rarity": "common",
+          "icon": 0
+        },
+        "character": "sentinel",
+        "equippedWeapon": {
+          "schema": 1,
+          "instanceId": "starter-weapon",
+          "definitionId": "forest-weapon",
+          "name": "Riftwood Staff",
+          "family": "staff",
+          "attackId": "arcane",
+          "attack": {
+            "kind": "projectile",
+            "name": "Arcane Bolt",
+            "description": "Precise magic bolts. A balanced companion for the long hunt.",
+            "damage": 10,
+            "interval": 0.8,
+            "range": 420,
+            "speed": 430,
+            "color": "#a8dcff",
+            "icon": 0
+          },
+          "assetKey": "equipment-weapons",
+          "frame": 0,
+          "rarity": "common",
+          "enhancement": 8,
+          "instance": {
+            "id": "starter-weapon",
+            "definitionId": "forest-weapon",
+            "rarity": "common",
+            "level": 1,
+            "enhancement": 8,
+            "pity": 0,
+            "affixes": {},
+            "locked": false,
+            "favorite": false
+          },
+          "stats": {
+            "maxHp": 276,
+            "damage": 23.89748,
+            "attackSpeed": 0.060200000000000004,
+            "critChance": 0.13824,
+            "critDamage": 1.5,
+            "armor": 35.370400000000004,
+            "speed": 206.03317,
+            "regen": 0.68038,
+            "projectiles": 4,
+            "area": 1,
+            "interval": 0.7545746085644218,
+            "level": 7,
+            "power": 119
+          }
+        },
+        "visualAppearance": {
+          "schema": 1,
+          "character": "sentinel",
+          "outfit": "moss",
+          "customization": {
+            "skin": "warm",
+            "hair": "short",
+            "face": "calm"
+          },
+          "equipment": [
+            {
+              "slot": "weapon",
+              "instanceId": "starter-weapon",
+              "definitionId": "forest-weapon",
+              "rarity": "common",
+              "enhancement": 8
+            },
+            {
+              "slot": "armor",
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor",
+              "rarity": "epic",
+              "enhancement": 7
+            },
+            {
+              "slot": "helmet",
+              "instanceId": "legacy-helmet",
+              "definitionId": "frozen-helmet",
+              "rarity": "rare",
+              "enhancement": 4
+            },
+            {
+              "slot": "boots",
+              "instanceId": "legacy-boots",
+              "definitionId": "infernal-boots",
+              "rarity": "legendary",
+              "enhancement": 9
+            },
+            {
+              "slot": "ring",
+              "instanceId": "starter-ring",
+              "definitionId": "forest-ring",
+              "rarity": "common",
+              "enhancement": 0
+            },
+            {
+              "slot": "necklace",
+              "instanceId": "starter-necklace",
+              "definitionId": "forest-necklace",
+              "rarity": "common",
+              "enhancement": 0
+            }
+          ],
+          "layers": [
+            {
+              "slot": "body",
+              "key": "character-layer-sentinel-body",
+              "path": "/assets/characters/layers/sentinel/body.png",
+              "z": 0
+            },
+            {
+              "slot": "skin",
+              "key": "character-layer-sentinel-skin-warm",
+              "path": "/assets/characters/layers/sentinel/skin-warm.png",
+              "z": 1
+            },
+            {
+              "slot": "pants",
+              "key": "character-layer-sentinel-pants-desert",
+              "path": "/assets/characters/layers/sentinel/pants-desert.png",
+              "z": 2,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "inner",
+              "key": "character-layer-sentinel-inner-moss",
+              "path": "/assets/characters/layers/sentinel/inner-moss.png",
+              "z": 3
+            },
+            {
+              "slot": "back",
+              "key": "character-layer-sentinel-back-moss",
+              "path": "/assets/characters/layers/sentinel/back-moss.png",
+              "z": -4
+            },
+            {
+              "slot": "face",
+              "key": "character-layer-sentinel-face-calm",
+              "path": "/assets/characters/layers/sentinel/face-calm.png",
+              "z": 7
+            },
+            {
+              "slot": "hair",
+              "key": "character-layer-sentinel-hair-short",
+              "path": "/assets/characters/layers/sentinel/hair-short.png",
+              "z": 8
+            },
+            {
+              "slot": "armor",
+              "key": "character-layer-sentinel-armor-desert-2",
+              "path": "/assets/characters/layers/sentinel/armor-desert-2.png",
+              "z": 5,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "gloves",
+              "key": "character-layer-sentinel-gloves-desert",
+              "path": "/assets/characters/layers/sentinel/gloves-desert.png",
+              "z": 9,
+              "instanceId": "legacy-armor",
+              "definitionId": "desert-armor"
+            },
+            {
+              "slot": "headwear",
+              "key": "character-layer-sentinel-head-frozen-1",
+              "path": "/assets/characters/layers/sentinel/head-frozen-1.png",
+              "z": 10,
+              "instanceId": "legacy-helmet",
+              "definitionId": "frozen-helmet"
+            },
+            {
+              "slot": "boots",
+              "key": "character-layer-sentinel-boots-infernal-2",
+              "path": "/assets/characters/layers/sentinel/boots-infernal-2.png",
+              "z": 4,
+              "instanceId": "legacy-boots",
+              "definitionId": "infernal-boots"
+            },
+            {
+              "slot": "ring",
+              "key": "character-layer-sentinel-ring-forest-0",
+              "path": "/assets/characters/layers/sentinel/ring-forest-0.png",
+              "z": 11,
+              "instanceId": "starter-ring",
+              "definitionId": "forest-ring"
+            },
+            {
+              "slot": "necklace",
+              "key": "character-layer-sentinel-neck-forest-0",
+              "path": "/assets/characters/layers/sentinel/neck-forest-0.png",
+              "z": 12,
+              "instanceId": "starter-necklace",
+              "definitionId": "forest-necklace"
+            }
+          ],
+          "appearanceKey": "sentinel|moss|warm|short|calm|weapon:starter-weapon:forest-weapon:common:8|armor:legacy-armor:desert-armor:epic:7|helmet:legacy-helmet:frozen-helmet:rare:4|boots:legacy-boots:infernal-boots:legendary:9|ring:starter-ring:forest-ring:common:0|necklace:starter-necklace:forest-necklace:common:0"
+        }
+      },
+      "environment": {
+        "timer": 3,
+        "slow": 0,
+        "burn": 0,
+        "burnTick": 0,
+        "enemies": 0,
+        "elites": 0,
+        "bosses": 0,
+        "exposure": 0
+      },
+      "tonics": []
+    },
+    "world": {
+      "schema": 1,
+      "position": {
+        "x": 900,
+        "y": 790
+      },
+      "outfit": "moss",
+      "hp": 114,
+      "writer": "",
+      "sequence": 0,
+      "location": "haven",
+      "tutorial": true,
+      "quest": "available",
+      "extractions": 0,
+      "discoveries": [],
+      "cacheClaimed": false
+    }
+  }
+}

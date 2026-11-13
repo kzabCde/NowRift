@@ -40,6 +40,7 @@ export const havenTh = {
   "The Tinker’s Workshop": "โรงงานนักประดิษฐ์",
   "Moonthread Atelier": "ร้านอาภรณ์ด้ายจันทร์",
   "Willow Market": "ตลาดวิลโลว์",
+  "Rift Outfitters": "ริฟต์ เอาต์ฟิตเตอร์ส",
   "The Wayfarer’s Rest": "โรงเตี๊ยมนักเดินทาง",
   "Wanderer’s Vault": "คลังนักพเนจร",
   "Mara · Rift Keeper": "มารา · ผู้ดูแลรอยแยก",

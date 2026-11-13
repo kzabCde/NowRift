@@ -265,6 +265,10 @@ export const rpgTh = {
   "A unique relic recovered from {boss}.": "วัตถุโบราณพิเศษจาก{boss}",
   weapon: "อาวุธ",
   armor: "ชุดเกราะ",
+  pants: "กางเกง",
+  PANTS: "กางเกง",
+  "Equipped items occupy the seven character slots. Stackable resources use one bag slot per type. Excess earned loot remains in protected parcels.":
+    "อุปกรณ์ที่สวมใส่อยู่ในเจ็ดช่องของตัวละคร ทรัพยากรชนิดเดียวกันใช้ช่องกระเป๋าเดียวกัน ของรางวัลที่ล้นจะเก็บในพัสดุอย่างปลอดภัย",
   helmet: "หมวก",
   boots: "รองเท้า",
   ring: "แหวน",

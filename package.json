@@ -13,14 +13,16 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "test:stress": "tsx scripts/stress.ts",
-    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css src/components/CharacterEntry.tsx src/components/RiftTransition.tsx src/components/SanctuaryPanel.tsx src/app/journey.css src/components/CharacterPreview.tsx src/components/EquippedWeapon.tsx src/components/ItemIcon.tsx src/components/Sanctuary.tsx src/app/equipment.css src/components/ActionReceipt.tsx src/components/ActionReceipt.module.css src/app/pixel.css src/components/CinematicLanding.tsx src/components/CinematicLanding.module.css src/components/WeaponSprite.tsx src/components/WeaponEvolution.tsx scripts/generate-weapon-design.ts",
+    "format:check": "prettier --check src/game src/state src/components/GameUi.tsx src/components/PhaserHost.tsx src/components/NowRiftGame.tsx src/components/NowRiftMainMenu.tsx src/components/WorldMap.tsx src/components/RpgScreen.tsx src/app/rpg.css src/components/ProfileScreen.tsx src/components/SaveIndicator.tsx src/app/profile.css src/i18n e2e src/components/HavenGame.tsx src/app/haven.css src/components/CharacterEntry.tsx src/components/RiftTransition.tsx src/components/SanctuaryPanel.tsx src/app/journey.css src/components/CharacterPreview.tsx src/components/EquippedWeapon.tsx src/components/ItemIcon.tsx src/components/Sanctuary.tsx src/app/equipment.css src/components/ActionReceipt.tsx src/components/ActionReceipt.module.css src/app/pixel.css src/components/CinematicLanding.tsx src/components/CinematicLanding.module.css src/components/WeaponSprite.tsx src/components/WeaponEvolution.tsx scripts/generate-weapon-design.ts src/components/RiftOutfitters.tsx src/app/outfitters.css scripts/generate-outfitters-design.ts",
     "test:playthrough": "tsx scripts/playthrough.ts",
     "predev": "node scripts/generate-branding.mjs",
     "pretest": "node scripts/generate-branding.mjs",
     "assets:index": "node scripts/generate-asset-index.mjs",
     "assets:check": "node scripts/generate-asset-index.mjs --check && tsx scripts/validate-assets.ts",
     "assets:generate": "python3 scripts/generate-pixel-art.py && npm run assets:index",
-    "assets:landing": "node scripts/prepare-landing-assets.mjs"
+    "assets:landing": "node scripts/prepare-landing-assets.mjs",
+    "assets:outfitters": "python3 scripts/generate-outfitters.py && npm run assets:index",
+    "design:outfitters": "tsx scripts/generate-outfitters-design.ts"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.3.5",

@@ -32,7 +32,7 @@ export const ACTIVITIES = [
   },
   {
     id: "merchant",
-    name: "Merchant",
+    name: "Rift Outfitters",
     description: "Buy and sell using your real inventory.",
     landmark: "market",
   },

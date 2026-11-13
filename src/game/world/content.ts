@@ -56,7 +56,7 @@ export const LANDMARKS: Landmark[] = [
   house("forge", "Ember & Anvil", "blacksmith", 370, 420, "forge"),
   house("workshop", "The Tinker’s Workshop", "crafting", 750, 360, "workshop"),
   house("wardrobe", "Moonthread Atelier", "wardrobe", 1260, 420, "wardrobe"),
-  house("market", "Willow Market", "merchant", 1420, 850, "market"),
+  house("market", "Rift Outfitters", "merchant", 1420, 850, "market"),
   house("inn", "The Wayfarer’s Rest", "rest", 380, 960, "inn"),
   house("store", "Wanderer’s Vault", "storage", 710, 1230, "store"),
   {

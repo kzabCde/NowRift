@@ -152,7 +152,7 @@
   vertical-align: middle;
 }
 .rpg-paperdoll {
-  height: 282px;
+  height: 382px;
   position: relative;
   margin: 20px 0 10px;
   background: radial-gradient(ellipse, #86917c16, transparent 70%);
@@ -160,7 +160,7 @@
 .rpg-avatar {
   position: absolute;
   left: 50%;
-  top: 67px;
+  top: 120px;
   transform: translateX(-50%);
   width: 104px;
   height: 150px;
@@ -1171,7 +1171,7 @@
     letter-spacing: 0.5px;
   }
   .rpg-paperdoll {
-    height: 270px;
+    height: 370px;
   }
   .rpg-power {
     display: block;
