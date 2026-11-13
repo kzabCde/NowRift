@@ -35,6 +35,7 @@ import {
   statNames,
 } from "@/game/rpg/content";
 import { inventory, usedSlots } from "@/game/rpg/inventory";
+import { bagUpgradeCost } from "@/game/rpg/bag";
 import {
   calculateStats,
   characterLevel,
@@ -182,6 +183,16 @@ export default function RpgScreen({
   const closeEvolution = useCallback(() => setEvolution(null), []);
   const [visualReceipt, setVisualReceipt] =
     useState<ActionVisualReceipt | null>(null);
+  const [multiMode, setMultiMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [contextMenu, setContextMenu] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const selectionAnchor = useRef<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
   const details = useRef<HTMLElement | null>(null),
     bagPanel = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -242,6 +253,11 @@ export default function RpgScreen({
         });
         setProfile(result.progress);
         setNotice(result.entry?.message ?? "Action already applied.");
+        setContextMenu(null);
+        if (action.type === "bulkSell" || action.type === "bulkDismantle") {
+          setSelectedIds([]);
+          setMultiMode(false);
+        }
         const receipt = committedRpgVisual(profile, result, action);
         if (receipt) {
           setVisualReceipt(receipt);
@@ -320,6 +336,49 @@ export default function RpgScreen({
               ),
     );
   }, [all, filter, sort, tab]);
+  useEffect(() => {
+    const visible = new Set(bag.map((entry) => entry.id));
+    setSelectedIds((previous) => {
+      const remaining = previous.filter((id) => visible.has(id));
+      return remaining.length === previous.length ? previous : remaining;
+    });
+  }, [bag]);
+  useEffect(() => {
+    if (!contextMenu) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest(".rpg-context-menu"))
+        setContextMenu(null);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setContextMenu(null);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    document.querySelector<HTMLButtonElement>(".rpg-context-menu button")?.focus();
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [contextMenu]);
+  useEffect(() => () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+  const selectedBag = bag.filter((entry) => selectedIds.includes(entry.id));
+  const selectedGold = selectedBag.reduce(
+    (total, entry) => total + sellPrice(entry) * entry.quantity,
+    0,
+  );
+  const protectedSelection = selectedBag.some(
+    (entry) => entry.equipped || entry.locked || entry.favorite ||
+      (!!entry.equipment && entry.id.startsWith("starter-")),
+  );
+  const dismantleSelectionValid =
+    selectedBag.length > 0 &&
+    !protectedSelection &&
+    selectedBag.every((entry) => !!entry.equipment);
+  const contextEntry = contextMenu
+    ? all.find((entry) => entry.id === contextMenu.id)
+    : undefined;
   function ask(title: string, action: ActionBody, content: ReactNode) {
     if (profile && !guard.current)
       setConfirm({ title, action, revision: profile.rpg!.revision, content });
@@ -327,29 +386,165 @@ export default function RpgScreen({
   function protectReason(entry: InventoryEntry) {
     return entry.equipped
       ? "Unequip before selling or dismantling."
+      : entry.equipment && entry.id.startsWith("starter-")
+        ? "Starter equipment is protected."
       : entry.locked
         ? "Unlock this item first."
         : entry.favorite
           ? "Unfavorite this protected item first."
           : "";
   }
+  function toggleSelection(id: string) {
+    setSelectedIds((previous) =>
+      previous.includes(id)
+        ? previous.filter((candidate) => candidate !== id)
+        : [...previous, id],
+    );
+    selectionAnchor.current = id;
+    setMultiMode(true);
+    setSelection(id);
+  }
+  function onItemClick(
+    entry: InventoryEntry,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) {
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    if (!multiMode && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      inspect(entry.id);
+      return;
+    }
+    if (event.shiftKey && selectionAnchor.current) {
+      const from = bag.findIndex((e) => e.id === selectionAnchor.current);
+      const to = bag.findIndex((e) => e.id === entry.id);
+      if (from >= 0 && to >= 0) {
+        const range = bag.slice(Math.min(from, to), Math.max(from, to) + 1);
+        setSelectedIds((previous) =>
+          [...new Set([...previous, ...range.map((e) => e.id)])],
+        );
+      } else toggleSelection(entry.id);
+    } else {
+      toggleSelection(entry.id);
+    }
+    selectionAnchor.current = entry.id;
+    setMultiMode(true);
+    setSelection(entry.id);
+  }
+  function askBulk(kind: "sell" | "dismantle") {
+    if (selectedBag.length === 0 || protectedSelection ||
+      (kind === "dismantle" && !dismantleSelectionValid)) return;
+    if (kind === "sell") {
+      ask(
+        "Confirm bulk sale",
+        {
+          type: "bulkSell",
+          items: selectedBag.map((entry) => ({
+            itemId: entry.id,
+            quantity: entry.quantity,
+          })),
+        },
+        <p>
+          {text("Sell selected items")} ({selectedBag.length}) ·
+          {" "}{selectedBag.reduce((sum, entry) => sum + entry.quantity, 0)}
+          {" "}{text("units")} · +{selectedGold} {text("GOLD")}.
+          {" "}{text("This cannot be undone.")}
+        </p>,
+      );
+      return;
+    }
+    const rewards: Record<string, number> = {};
+    for (const entry of selectedBag)
+      for (const [id, count] of Object.entries(dismantleYield(entry)))
+        rewards[id] = (rewards[id] ?? 0) + count;
+    ask(
+      "Confirm bulk dismantle",
+      { type: "bulkDismantle", itemIds: selectedBag.map((entry) => entry.id) },
+      <div>
+        <p>
+          {text("Dismantle selected equipment")} ({selectedBag.length}).
+          {" "}{text("This cannot be undone.")}
+        </p>
+        <p>
+          {Object.entries(rewards)
+            .filter(([, n]) => n > 0)
+            .map(([id, n]) => `${text(ITEMS[id].name)} ×${n}`)
+            .join(" · ")}
+        </p>
+      </div>,
+    );
+  }
+  function askQuickSale(entry: InventoryEntry) {
+    const count = entry.quantity;
+    ask(
+      "Confirm sale",
+      { type: "sell", itemId: entry.id, quantity: count },
+      <p>
+        {text("Sell")} {count} × {text(ITEMS[entry.definitionId].name)}
+        {" "}{text("for")} {sellPrice(entry) * count} {text("GOLD")}.
+        {" "}{text("This cannot be undone.")}
+      </p>,
+    );
+    setContextMenu(null);
+  }
+  function askQuickDismantle(entry: InventoryEntry) {
+    ask(
+      "Confirm dismantle",
+      { type: "dismantle", itemId: entry.id, quantity: 1 },
+      <p>
+        {text("Dismantle")} {text(ITEMS[entry.definitionId].name)}?
+        {" "}{Object.entries(dismantleYield(entry))
+          .filter(([, n]) => n > 0)
+          .map(([id, n]) => `${text(ITEMS[id].name)} ×${n}`)
+          .join(" · ")}
+        {" "}{text("This cannot be undone.")}
+      </p>,
+    );
+    setContextMenu(null);
+  }
   function tile(e: InventoryEntry) {
     return (
       <button
         key={e.id}
         type="button"
-        className={`rpg-cell ${selection === e.id ? "selected" : ""}`}
+        className={`rpg-cell ${selection === e.id ? "selected" : ""} ${selectedIds.includes(e.id) ? "multi-selected" : ""}`}
         style={
           {
             "--item-color": RARITIES[e.equipment?.rarity ?? "common"].color,
           } as React.CSSProperties
         }
-        onClick={() => {
-          inspect(e.id);
+        onClick={(event) => onItemClick(e, event)}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          if (busy) return;
+          setSelection(e.id);
+          setContextMenu({
+            id: e.id,
+            x: Math.max(8, Math.min(event.clientX, window.innerWidth - 246)),
+            y: Math.max(8, Math.min(event.clientY, window.innerHeight - 340)),
+          });
+        }}
+        onTouchStart={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+          longPressTimer.current = setTimeout(() => {
+            longPressTriggered.current = true;
+            if (!selectedIds.includes(e.id)) toggleSelection(e.id);
+            else setMultiMode(true);
+          }, 480);
+        }}
+        onTouchMove={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        }}
+        onTouchEnd={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        }}
+        onTouchCancel={() => {
+          if (longPressTimer.current) clearTimeout(longPressTimer.current);
         }}
         aria-label={itemDescription(e, text)}
         title={itemDescription(e, text)}
-        aria-pressed={selection === e.id}
+        aria-pressed={multiMode ? selectedIds.includes(e.id) : selection === e.id}
       >
         <ItemIcon id={e.definitionId} weapon={e.equipment} size={40} />
         {e.quantity > 1 && <span className="rpg-quantity">{e.quantity}</span>}
@@ -362,6 +557,9 @@ export default function RpgScreen({
           </span>
         )}
         {e.equipped && <span className="rpg-equipped-tag">{text("E")}</span>}
+        {selectedIds.includes(e.id) && (
+          <span className="rpg-multi-check" aria-hidden="true">✓</span>
+        )}
       </button>
     );
   }
@@ -392,6 +590,7 @@ export default function RpgScreen({
     stats = calculateStats(profile, weapon, character),
     level = characterLevel(profile.xp),
     locked = chosen ? protectReason(chosen) : "";
+  const expansionCost = bagUpgradeCost(r.capacity);
   const quote = item && item.enhancement < 15 ? enhancementQuote(item) : null;
   const costAvailable = quote
     ? profile.gold >= quote.gold &&
