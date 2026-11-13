@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { emptyProgress } from "../campaign/progression";
-import { applyCommand, dismantleYield, sellPrice, type ActionBody } from "./actions";
+import {
+  applyCommand,
+  dismantleYield,
+  sellPrice,
+  type ActionBody,
+} from "./actions";
 import { BAG_MAX_CAPACITY, BAG_UPGRADE_COSTS, bagUpgradeCost } from "./bag";
 import { inventory, usedSlots } from "./inventory";
 import { seededEquipment } from "./items";
@@ -32,7 +37,9 @@ describe("bag upgrades and transactional inventory management", () => {
       expect(validRpg(p.rpg)).toBe(true);
     }
     expect(p.rpg!.capacity).toBe(BAG_MAX_CAPACITY);
-    expect(p.gold).toBe(initialGold - BAG_UPGRADE_COSTS.reduce((a, b) => a + b, 0));
+    expect(p.gold).toBe(
+      initialGold - BAG_UPGRADE_COSTS.reduce((a, b) => a + b, 0),
+    );
     expect(() => act(p, { type: "expandBag" })).toThrow("maximum");
     expect(p.rpg!.history).toHaveLength(6);
   });
@@ -50,10 +57,17 @@ describe("bag upgrades and transactional inventory management", () => {
   });
   test("duplicate receipts and stale revisions cannot purchase an expansion twice", () => {
     const p = fixture();
-    const command = { id: "expand-once", at: 123, expectedRevision: 0, action: { type: "expandBag" } as const };
+    const command = {
+      id: "expand-once",
+      at: 123,
+      expectedRevision: 0,
+      action: { type: "expandBag" } as const,
+    };
     const first = applyCommand(p, command).progress;
     expect(applyCommand(first, command).progress).toEqual(first);
-    expect(() => applyCommand(first, { ...command, id: "stale-expand" })).toThrow("changed");
+    expect(() =>
+      applyCommand(first, { ...command, id: "stale-expand" }),
+    ).toThrow("changed");
     expect(first.rpg!.capacity).toBe(70);
   });
   test("bulk sale of unique gear and stack quantities pays a single receipt", () => {
@@ -63,12 +77,26 @@ describe("bag upgrades and transactional inventory management", () => {
     p.rpg!.equipment.push(blade, ring);
     p.materials.wood = 8;
     const a = inventory(p);
-    const sold = [a.find(e => e.id === blade.id)!, a.find(e => e.id === ring.id)!, a.find(e => e.id === "stack:wood")!];
-    const expected = sellPrice(sold[0]) + sellPrice(sold[1]) + sellPrice(sold[2]) * 3;
+    const sold = [
+      a.find((e) => e.id === blade.id)!,
+      a.find((e) => e.id === ring.id)!,
+      a.find((e) => e.id === "stack:wood")!,
+    ];
+    const expected =
+      sellPrice(sold[0]) + sellPrice(sold[1]) + sellPrice(sold[2]) * 3;
     const before = p.gold;
-    const next = act(p, { type: "bulkSell", items: [{ itemId: blade.id, quantity: 1 }, { itemId: ring.id, quantity: 1 }, { itemId: "stack:wood", quantity: 3 }] });
+    const next = act(p, {
+      type: "bulkSell",
+      items: [
+        { itemId: blade.id, quantity: 1 },
+        { itemId: ring.id, quantity: 1 },
+        { itemId: "stack:wood", quantity: 3 },
+      ],
+    });
     expect(next.gold).toBe(before + expected);
-    expect(next.rpg!.equipment.some(e => e.id === blade.id || e.id === ring.id)).toBe(false);
+    expect(
+      next.rpg!.equipment.some((e) => e.id === blade.id || e.id === ring.id),
+    ).toBe(false);
     expect(next.materials.wood).toBe(5);
     expect(next.rpg!.history).toHaveLength(1);
     expect(p.gold).toBe(before);
@@ -84,11 +112,17 @@ describe("bag upgrades and transactional inventory management", () => {
       [normal, normal],
       [normal, { itemId: "no-such-item", quantity: 1 }],
       [{ itemId: "stack:wood", quantity: 10 }],
-    ]) expect(() => act(p, { type: "bulkSell", items })).toThrow();
+    ])
+      expect(() => act(p, { type: "bulkSell", items })).toThrow();
     blade.locked = true;
-    expect(() => act(p, { type: "bulkSell", items: [normal, { itemId: blade.id, quantity: 1 }] })).toThrow("Protected");
+    expect(() =>
+      act(p, {
+        type: "bulkSell",
+        items: [normal, { itemId: blade.id, quantity: 1 }],
+      }),
+    ).toThrow("Protected");
     expect(p.materials.wood).toBe(4);
-    expect(p.rpg!.equipment.some(e => e.id === blade.id)).toBe(true);
+    expect(p.rpg!.equipment.some((e) => e.id === blade.id)).toBe(true);
     expect(p.rpg!.history).toHaveLength(0);
   });
   test("bulk dismantling aggregates yields, handles overflow and leaves originals unchanged", () => {
@@ -98,21 +132,29 @@ describe("bag upgrades and transactional inventory management", () => {
     a.enhancement = 5;
     b.enhancement = 5;
     p.rpg!.equipment.push(a, b);
-    const yieldA = dismantleYield(inventory(p).find(e => e.id === a.id)!);
-    const yieldB = dismantleYield(inventory(p).find(e => e.id === b.id)!);
+    const yieldA = dismantleYield(inventory(p).find((e) => e.id === a.id)!);
+    const yieldB = dismantleYield(inventory(p).find((e) => e.id === b.id)!);
     const next = act(p, { type: "bulkDismantle", itemIds: [a.id, b.id] });
     for (const id of Object.keys(yieldA))
-      expect(next.materials[id]).toBe((yieldA[id as keyof typeof yieldA] ?? 0) + (yieldB[id as keyof typeof yieldB] ?? 0));
+      expect(next.materials[id]).toBe(
+        (yieldA[id as keyof typeof yieldA] ?? 0) +
+          (yieldB[id as keyof typeof yieldB] ?? 0),
+      );
     expect(next.rpg!.history).toHaveLength(1);
-    expect(p.rpg!.equipment.some(e => e.id === a.id)).toBe(true);
+    expect(p.rpg!.equipment.some((e) => e.id === a.id)).toBe(true);
 
     const full = fixture();
     full.rpg!.consumables = {};
     for (let i = 0; i < 60; i++)
-      full.rpg!.equipment.push(seededEquipment(`bag-gear-${i}`, "desert-weapon", "rare", 5));
-    full.rpg!.equipment.find(e => e.id === "bag-gear-0")!.enhancement = 5;
+      full.rpg!.equipment.push(
+        seededEquipment(`bag-gear-${i}`, "desert-weapon", "rare", 5),
+      );
+    full.rpg!.equipment.find((e) => e.id === "bag-gear-0")!.enhancement = 5;
     expect(usedSlots(full)).toBe(60);
-    const result = act(full, { type: "bulkDismantle", itemIds: ["bag-gear-0"] });
+    const result = act(full, {
+      type: "bulkDismantle",
+      itemIds: ["bag-gear-0"],
+    });
     expect(result.rpg!.overflow.length).toBe(1);
     expect(usedSlots(result)).toBe(60);
     expect(result.rpg!.overflow[0].definitionId).toBe("enhancement-stone");
@@ -121,7 +163,11 @@ describe("bag upgrades and transactional inventory management", () => {
   test("existing starter items remain protected in single-item actions", () => {
     const p = fixture();
     p.rpg!.equipped.weapon = null;
-    expect(() => act(p, { type: "sell", itemId: "starter-weapon", quantity: 1 })).toThrow("Starter");
-    expect(() => act(p, { type: "dismantle", itemId: "starter-weapon", quantity: 1 })).toThrow("Starter");
+    expect(() =>
+      act(p, { type: "sell", itemId: "starter-weapon", quantity: 1 }),
+    ).toThrow("Starter");
+    expect(() =>
+      act(p, { type: "dismantle", itemId: "starter-weapon", quantity: 1 }),
+    ).toThrow("Starter");
   });
 });

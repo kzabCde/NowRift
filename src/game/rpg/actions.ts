@@ -183,40 +183,66 @@ export function applyCommand(
         throw new Error("Invalid bulk sale selection.");
       const seen = new Set<string>();
       const sales = a.items.map((request) => {
-        if (!request || typeof request.itemId !== "string" || seen.has(request.itemId))
+        if (
+          !request ||
+          typeof request.itemId !== "string" ||
+          seen.has(request.itemId)
+        )
           throw new Error("Duplicate or invalid item in bulk sale.");
         seen.add(request.itemId);
         const owned = findEntry(p, request.itemId);
         const count = quantity(request.quantity);
-        if (count > owned.quantity) throw new Error("Insufficient item quantity.");
-        if (owned.equipped || owned.locked || owned.favorite ||
-          (owned.equipment && owned.id.startsWith("starter-")))
-          throw new Error("Protected equipment or inventory item cannot be sold.");
+        if (count > owned.quantity)
+          throw new Error("Insufficient item quantity.");
+        if (
+          owned.equipped ||
+          owned.locked ||
+          owned.favorite ||
+          (owned.equipment && owned.id.startsWith("starter-"))
+        )
+          throw new Error(
+            "Protected equipment or inventory item cannot be sold.",
+          );
         return { owned, count, value: sellPrice(owned) * count };
       });
       const total = sales.reduce((sum, sale) => sum + sale.value, 0);
-      if (!Number.isSafeInteger(total)) throw new Error("Invalid bulk sale value.");
+      if (!Number.isSafeInteger(total))
+        throw new Error("Invalid bulk sale value.");
       for (const { owned, count } of sales) removeEntry(p, owned, count);
       gold(p, total);
-      entry.items = sales.map(({ owned, count }) =>
-        `Sold ${ITEMS[owned.definitionId].name} ×${count}`);
+      entry.items = sales.map(
+        ({ owned, count }) =>
+          `Sold ${ITEMS[owned.definitionId].name} ×${count}`,
+      );
       entry.message = "Bulk sale complete.";
       break;
     }
     case "bulkDismantle": {
-      if (!Array.isArray(a.itemIds) || a.itemIds.length < 1 || a.itemIds.length > 120 ||
-        new Set(a.itemIds).size !== a.itemIds.length)
+      if (
+        !Array.isArray(a.itemIds) ||
+        a.itemIds.length < 1 ||
+        a.itemIds.length > 120 ||
+        new Set(a.itemIds).size !== a.itemIds.length
+      )
         throw new Error("Invalid bulk dismantle selection.");
       const rewards: Record<string, number> = {};
       const targets = a.itemIds.map((itemId) => {
         if (typeof itemId !== "string") throw new Error("Invalid item ID.");
         const owned = findEntry(p, itemId);
-        if (!owned.equipment || owned.equipped || owned.locked || owned.favorite ||
-          owned.id.startsWith("starter-"))
-          throw new Error("Only unprotected, unequipped equipment can be dismantled.");
+        if (
+          !owned.equipment ||
+          owned.equipped ||
+          owned.locked ||
+          owned.favorite ||
+          owned.id.startsWith("starter-")
+        )
+          throw new Error(
+            "Only unprotected, unequipped equipment can be dismantled.",
+          );
         for (const [id, n] of Object.entries(dismantleYield(owned))) {
           const amount = (rewards[id] ?? 0) + n;
-          if (!Number.isSafeInteger(amount)) throw new Error("Invalid salvage quantity.");
+          if (!Number.isSafeInteger(amount))
+            throw new Error("Invalid salvage quantity.");
           rewards[id] = amount;
         }
         return owned;
@@ -226,7 +252,8 @@ export function applyCommand(
         if (count > 0) grantStack(p, id, count, `salvage:${command.id}:${id}`);
       entry.items = [
         ...targets.map((e) => `Dismantled ${ITEMS[e.definitionId].name}`),
-        ...Object.entries(rewards).filter(([, count]) => count > 0)
+        ...Object.entries(rewards)
+          .filter(([, count]) => count > 0)
           .map(([id, count]) => `Obtained ${ITEMS[id].name} ×${count}`),
       ];
       entry.message = "Bulk dismantle complete.";

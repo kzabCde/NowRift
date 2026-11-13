@@ -354,22 +354,30 @@ export default function RpgScreen({
     };
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape);
-    document.querySelector<HTMLButtonElement>(".rpg-context-menu button")?.focus();
+    document
+      .querySelector<HTMLButtonElement>(".rpg-context-menu button")
+      ?.focus();
     return () => {
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("keydown", escape);
     };
   }, [contextMenu]);
-  useEffect(() => () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    },
+    [],
+  );
   const selectedBag = bag.filter((entry) => selectedIds.includes(entry.id));
   const selectedGold = selectedBag.reduce(
     (total, entry) => total + sellPrice(entry) * entry.quantity,
     0,
   );
   const protectedSelection = selectedBag.some(
-    (entry) => entry.equipped || entry.locked || entry.favorite ||
+    (entry) =>
+      entry.equipped ||
+      entry.locked ||
+      entry.favorite ||
       (!!entry.equipment && entry.id.startsWith("starter-")),
   );
   const dismantleSelectionValid =
@@ -388,11 +396,11 @@ export default function RpgScreen({
       ? "Unequip before selling or dismantling."
       : entry.equipment && entry.id.startsWith("starter-")
         ? "Starter equipment is protected."
-      : entry.locked
-        ? "Unlock this item first."
-        : entry.favorite
-          ? "Unfavorite this protected item first."
-          : "";
+        : entry.locked
+          ? "Unlock this item first."
+          : entry.favorite
+            ? "Unfavorite this protected item first."
+            : "";
   }
   function toggleSelection(id: string) {
     setSelectedIds((previous) =>
@@ -421,9 +429,9 @@ export default function RpgScreen({
       const to = bag.findIndex((e) => e.id === entry.id);
       if (from >= 0 && to >= 0) {
         const range = bag.slice(Math.min(from, to), Math.max(from, to) + 1);
-        setSelectedIds((previous) =>
-          [...new Set([...previous, ...range.map((e) => e.id)])],
-        );
+        setSelectedIds((previous) => [
+          ...new Set([...previous, ...range.map((e) => e.id)]),
+        ]);
       } else toggleSelection(entry.id);
     } else {
       toggleSelection(entry.id);
@@ -433,8 +441,12 @@ export default function RpgScreen({
     setSelection(entry.id);
   }
   function askBulk(kind: "sell" | "dismantle") {
-    if (selectedBag.length === 0 || protectedSelection ||
-      (kind === "dismantle" && !dismantleSelectionValid)) return;
+    if (
+      selectedBag.length === 0 ||
+      protectedSelection ||
+      (kind === "dismantle" && !dismantleSelectionValid)
+    )
+      return;
     if (kind === "sell") {
       ask(
         "Confirm bulk sale",
@@ -446,10 +458,10 @@ export default function RpgScreen({
           })),
         },
         <p>
-          {text("Sell selected items")} ({selectedBag.length}) ·
-          {" "}{selectedBag.reduce((sum, entry) => sum + entry.quantity, 0)}
-          {" "}{text("units")} · +{selectedGold} {text("GOLD")}.
-          {" "}{text("This cannot be undone.")}
+          {text("Sell selected items")} ({selectedBag.length}) ·{" "}
+          {selectedBag.reduce((sum, entry) => sum + entry.quantity, 0)}{" "}
+          {text("units")} · +{selectedGold} {text("GOLD")}.{" "}
+          {text("This cannot be undone.")}
         </p>,
       );
       return;
@@ -463,8 +475,8 @@ export default function RpgScreen({
       { type: "bulkDismantle", itemIds: selectedBag.map((entry) => entry.id) },
       <div>
         <p>
-          {text("Dismantle selected equipment")} ({selectedBag.length}).
-          {" "}{text("This cannot be undone.")}
+          {text("Dismantle selected equipment")} ({selectedBag.length}).{" "}
+          {text("This cannot be undone.")}
         </p>
         <p>
           {Object.entries(rewards)
@@ -481,9 +493,9 @@ export default function RpgScreen({
       "Confirm sale",
       { type: "sell", itemId: entry.id, quantity: count },
       <p>
-        {text("Sell")} {count} × {text(ITEMS[entry.definitionId].name)}
-        {" "}{text("for")} {sellPrice(entry) * count} {text("GOLD")}.
-        {" "}{text("This cannot be undone.")}
+        {text("Sell")} {count} × {text(ITEMS[entry.definitionId].name)}{" "}
+        {text("for")} {sellPrice(entry) * count} {text("GOLD")}.{" "}
+        {text("This cannot be undone.")}
       </p>,
     );
     setContextMenu(null);
@@ -493,12 +505,12 @@ export default function RpgScreen({
       "Confirm dismantle",
       { type: "dismantle", itemId: entry.id, quantity: 1 },
       <p>
-        {text("Dismantle")} {text(ITEMS[entry.definitionId].name)}?
-        {" "}{Object.entries(dismantleYield(entry))
+        {text("Dismantle")} {text(ITEMS[entry.definitionId].name)}?{" "}
+        {Object.entries(dismantleYield(entry))
           .filter(([, n]) => n > 0)
           .map(([id, n]) => `${text(ITEMS[id].name)} ×${n}`)
-          .join(" · ")}
-        {" "}{text("This cannot be undone.")}
+          .join(" · ")}{" "}
+        {text("This cannot be undone.")}
       </p>,
     );
     setContextMenu(null);
@@ -544,7 +556,9 @@ export default function RpgScreen({
         }}
         aria-label={itemDescription(e, text)}
         title={itemDescription(e, text)}
-        aria-pressed={multiMode ? selectedIds.includes(e.id) : selection === e.id}
+        aria-pressed={
+          multiMode ? selectedIds.includes(e.id) : selection === e.id
+        }
       >
         <ItemIcon id={e.definitionId} weapon={e.equipment} size={40} />
         {e.quantity > 1 && <span className="rpg-quantity">{e.quantity}</span>}
@@ -558,7 +572,9 @@ export default function RpgScreen({
         )}
         {e.equipped && <span className="rpg-equipped-tag">{text("E")}</span>}
         {selectedIds.includes(e.id) && (
-          <span className="rpg-multi-check" aria-hidden="true">✓</span>
+          <span className="rpg-multi-check" aria-hidden="true">
+            ✓
+          </span>
         )}
       </button>
     );
@@ -1188,39 +1204,45 @@ export default function RpgScreen({
                     </small>
                   </div>
                   {tab === "inventory" && (
-                      <div className="rpg-bag-expansion">
-                        <div>
-                          <strong>{text("BACKPACK CAPACITY")}</strong>
-                          <small>{usedSlots(profile)} / {r.capacity} {text("slots")}</small>
-                          <small>
-                            {expansionCost === null
-                              ? text("MAX CAPACITY")
-                              : `+10 ${text("slots")} · ${expansionCost.toLocaleString()} ${text("GOLD")}`}
-                          </small>
-                        </div>
-                        <button
-                          className="rpg-button"
-                          data-testid="expand-backpack"
-                          disabled={busy || expansionCost === null || profile.gold < expansionCost}
-                          onClick={() => {
-                            if (expansionCost === null) return;
-                            ask(
-                              "Confirm bag expansion",
-                              { type: "expandBag" },
-                              <p>
-                                {text("Expand backpack by 10 slots")} ·
-                                {" "}{expansionCost.toLocaleString()} {text("GOLD")}.
-                              </p>,
-                            );
-                          }}
-                        >
+                    <div className="rpg-bag-expansion">
+                      <div>
+                        <strong>{text("BACKPACK CAPACITY")}</strong>
+                        <small>
+                          {usedSlots(profile)} / {r.capacity} {text("slots")}
+                        </small>
+                        <small>
                           {expansionCost === null
                             ? text("MAX CAPACITY")
-                            : text("EXPAND BACKPACK")}
-                        </button>
+                            : `+10 ${text("slots")} · ${expansionCost.toLocaleString()} ${text("GOLD")}`}
+                        </small>
                       </div>
-                    )}
-                    <div className="rpg-bag-tools">
+                      <button
+                        className="rpg-button"
+                        data-testid="expand-backpack"
+                        disabled={
+                          busy ||
+                          expansionCost === null ||
+                          profile.gold < expansionCost
+                        }
+                        onClick={() => {
+                          if (expansionCost === null) return;
+                          ask(
+                            "Confirm bag expansion",
+                            { type: "expandBag" },
+                            <p>
+                              {text("Expand backpack by 10 slots")} ·{" "}
+                              {expansionCost.toLocaleString()} {text("GOLD")}.
+                            </p>,
+                          );
+                        }}
+                      >
+                        {expansionCost === null
+                          ? text("MAX CAPACITY")
+                          : text("EXPAND BACKPACK")}
+                      </button>
+                    </div>
+                  )}
+                  <div className="rpg-bag-tools">
                     <label>
                       {text("Filter")}
                       <select
@@ -1274,17 +1296,25 @@ export default function RpgScreen({
                           selectionAnchor.current = null;
                         }}
                       >
-                        {multiMode ? text("CANCEL SELECTION") : text("SELECT ITEMS")}
+                        {multiMode
+                          ? text("CANCEL SELECTION")
+                          : text("SELECT ITEMS")}
                       </button>
                       {multiMode && (
                         <>
-                          <span>{text("Selected")} {selectedBag.length}</span>
+                          <span>
+                            {text("Selected")} {selectedBag.length}
+                          </span>
                           <button
                             type="button"
                             className="rpg-button"
-                            onClick={() => setSelectedIds(
-                              bag.filter((entry) => !protectReason(entry)).map((entry) => entry.id),
-                            )}
+                            onClick={() =>
+                              setSelectedIds(
+                                bag
+                                  .filter((entry) => !protectReason(entry))
+                                  .map((entry) => entry.id),
+                              )
+                            }
                           >
                             {text("SELECT ELIGIBLE VISIBLE")}
                           </button>
@@ -1298,10 +1328,15 @@ export default function RpgScreen({
                           <button
                             type="button"
                             className="rpg-button"
-                            disabled={busy || selectedBag.length === 0 || protectedSelection}
+                            disabled={
+                              busy ||
+                              selectedBag.length === 0 ||
+                              protectedSelection
+                            }
                             onClick={() => askBulk("sell")}
                           >
-                            {text("SELL SELECTED")} +{selectedGold} {text("GOLD")}
+                            {text("SELL SELECTED")} +{selectedGold}{" "}
+                            {text("GOLD")}
                           </button>
                           <button
                             type="button"
@@ -1313,10 +1348,13 @@ export default function RpgScreen({
                           </button>
                           {protectedSelection && (
                             <small className="rpg-bulk-warning">
-                              {text("Remove equipped, locked, favorite or starter items from selection.")}
+                              {text(
+                                "Remove equipped, locked, favorite or starter items from selection.",
+                              )}
                             </small>
                           )}
-                          {!protectedSelection && selectedBag.length > 0 &&
+                          {!protectedSelection &&
+                            selectedBag.length > 0 &&
                             !dismantleSelectionValid && (
                               <small className="rpg-bulk-warning">
                                 {text("Only equipment can be dismantled.")}
@@ -1750,44 +1788,79 @@ export default function RpgScreen({
           onKeyDown={(event) => {
             if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
             const buttons = Array.from(
-              event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+              event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                "button:not(:disabled)",
+              ),
             );
             if (buttons.length === 0) return;
-            const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+            const current = buttons.indexOf(
+              document.activeElement as HTMLButtonElement,
+            );
             const direction = event.key === "ArrowDown" ? 1 : -1;
-            buttons[(current + direction + buttons.length) % buttons.length]?.focus();
+            buttons[
+              (current + direction + buttons.length) % buttons.length
+            ]?.focus();
             event.preventDefault();
           }}
         >
           <strong>{text(ITEMS[contextEntry.definitionId].name)}</strong>
-          <button role="menuitem" onClick={() => {
-            inspect(contextEntry.id);
-            setContextMenu(null);
-          }}>{text("VIEW DETAILS")}</button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              inspect(contextEntry.id);
+              setContextMenu(null);
+            }}
+          >
+            {text("VIEW DETAILS")}
+          </button>
           {contextEntry.equipment && (
             <button
               role="menuitem"
-              disabled={busy || (contextEntry.equipped && usedSlots(profile) >= r.capacity)}
+              disabled={
+                busy ||
+                (contextEntry.equipped && usedSlots(profile) >= r.capacity)
+              }
               onClick={() => {
-                void run(contextEntry.equipped
-                  ? { type: "unequip", slot: ITEMS[contextEntry.definitionId].slot! }
-                  : { type: "equip", itemId: contextEntry.id });
+                void run(
+                  contextEntry.equipped
+                    ? {
+                        type: "unequip",
+                        slot: ITEMS[contextEntry.definitionId].slot!,
+                      }
+                    : { type: "equip", itemId: contextEntry.id },
+                );
                 setContextMenu(null);
               }}
             >
               {contextEntry.equipped ? text("UNEQUIP") : text("EQUIP ITEM")}
             </button>
           )}
-          <button role="menuitem" disabled={busy} onClick={() => {
-            void run({ type: "flag", itemId: contextEntry.id, flag: "locked" });
-            setContextMenu(null);
-          }}>
+          <button
+            role="menuitem"
+            disabled={busy}
+            onClick={() => {
+              void run({
+                type: "flag",
+                itemId: contextEntry.id,
+                flag: "locked",
+              });
+              setContextMenu(null);
+            }}
+          >
             {contextEntry.locked ? text("UNLOCK ITEM") : text("LOCK ITEM")}
           </button>
-          <button role="menuitem" disabled={busy} onClick={() => {
-            void run({ type: "flag", itemId: contextEntry.id, flag: "favorite" });
-            setContextMenu(null);
-          }}>
+          <button
+            role="menuitem"
+            disabled={busy}
+            onClick={() => {
+              void run({
+                type: "flag",
+                itemId: contextEntry.id,
+                flag: "favorite",
+              });
+              setContextMenu(null);
+            }}
+          >
             {contextEntry.favorite ? text("UNFAVORITE") : text("FAVORITE")}
           </button>
           <button
@@ -1795,19 +1868,28 @@ export default function RpgScreen({
             disabled={busy || !!protectReason(contextEntry)}
             title={text(protectReason(contextEntry))}
             onClick={() => askQuickSale(contextEntry)}
-          >{text("SELL")}</button>
+          >
+            {text("SELL")}
+          </button>
           {contextEntry.equipment && (
             <button
               role="menuitem"
               disabled={busy || !!protectReason(contextEntry)}
               title={text(protectReason(contextEntry))}
               onClick={() => askQuickDismantle(contextEntry)}
-            >{text("DISMANTLE")}</button>
+            >
+              {text("DISMANTLE")}
+            </button>
           )}
-          <button role="menuitem" onClick={() => {
-            toggleSelection(contextEntry.id);
-            setContextMenu(null);
-          }}>{text("SELECT MULTIPLE")}</button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              toggleSelection(contextEntry.id);
+              setContextMenu(null);
+            }}
+          >
+            {text("SELECT MULTIPLE")}
+          </button>
         </div>
       )}
       {evolution && (
