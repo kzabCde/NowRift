@@ -8,7 +8,12 @@ import {
 } from "./content";
 import { seededEquipment } from "./items";
 import { emptyEquipment, addEquipment } from "./inventory";
-import { SLOTS, type RpgState, type EquipmentInstance } from "./model";
+import {
+  SLOTS,
+  LEGACY_SLOTS,
+  type RpgState,
+  type EquipmentInstance,
+} from "./model";
 export function validEquipmentInstance(e: EquipmentInstance) {
   return (
     !!e &&
@@ -34,11 +39,12 @@ export function validEquipmentInstance(e: EquipmentInstance) {
     )
   );
 }
-export function validRpg(r: unknown): r is RpgState {
+function validRpgVersion(r: unknown, legacy = false): boolean {
   if (!r || typeof r !== "object") return false;
   const p = r as RpgState;
+  const slots = legacy ? LEGACY_SLOTS : SLOTS;
   if (
-    p.schema !== 1 ||
+    p.schema !== (legacy ? 1 : 2) ||
     !Number.isSafeInteger(p.revision) ||
     p.revision < 0 ||
     p.capacity !== 60 ||
@@ -46,9 +52,9 @@ export function validRpg(r: unknown): r is RpgState {
     !p.equipment.every(validEquipmentInstance) ||
     new Set(p.equipment.map((e) => e.id)).size !== p.equipment.length ||
     !p.equipped ||
-    Object.keys(p.equipped).length !== 6 ||
+    Object.keys(p.equipped).length !== slots.length ||
     !Object.keys(p.equipped).every((s) =>
-      SLOTS.includes(s as (typeof SLOTS)[number]),
+      (slots as readonly string[]).includes(s),
     ) ||
     !p.consumables ||
     !p.upgrades ||
@@ -71,7 +77,7 @@ export function validRpg(r: unknown): r is RpgState {
   const equipped = Object.values(p.equipped).filter(Boolean);
   if (new Set(equipped).size !== equipped.length) return false;
   if (
-    !SLOTS.every(
+    !slots.every(
       (s) =>
         p.equipped[s] === null ||
         p.equipment.some(
@@ -123,16 +129,33 @@ export function validRpg(r: unknown): r is RpgState {
     )
   );
 }
+export function validRpg(r: unknown): r is RpgState {
+  return validRpgVersion(r);
+}
+/** A strict, idempotent upgrade. Invalid current/legacy saves are never repaired by guessing. */
+export function migrateRpg(value: unknown): RpgState | null {
+  if (validRpg(value)) return value;
+  if (!validRpgVersion(value, true)) return null;
+  const old = value as RpgState;
+  return {
+    ...structuredClone(old),
+    schema: 2,
+    equipped: { ...old.equipped, pants: null },
+  };
+}
 /** Add the local RPG schema once; preserve the existing campaign wallet and receipts. */
 export function initializeRpg(profile: Progress): Progress {
   if (profile.rpg) {
-    if (!validRpg(profile.rpg))
+    const migrated = migrateRpg(profile.rpg);
+    if (!migrated)
       throw new Error("RPG save is damaged. Original data has been preserved.");
-    return profile;
+    return migrated === profile.rpg
+      ? profile
+      : { ...structuredClone(profile), rpg: migrated };
   }
   const p: Progress = structuredClone(profile);
   p.rpg = {
-    schema: 1,
+    schema: 2,
     revision: 0,
     capacity: 60,
     equipment: [],
@@ -143,7 +166,7 @@ export function initializeRpg(profile: Progress): Progress {
     upgrades: {},
     history: [],
   };
-  for (const slot of SLOTS) {
+  for (const slot of LEGACY_SLOTS) {
     const item = seededEquipment(
       "starter-" + slot,
       "forest-" + slot,

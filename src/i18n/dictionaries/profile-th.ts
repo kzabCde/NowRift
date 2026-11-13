@@ -165,6 +165,7 @@ export const profileTh = {
   "Reach permanent character level 10": "ตัวละครถาวรถึงเลเวล 10",
   "Ready for the rift": "พร้อมเผชิญรอยแยก",
   "Fill all six equipment slots": "สวมใส่อุปกรณ์ครบหกช่อง",
+  "Equip six items": "สวมใส่อุปกรณ์หกชิ้น",
   "Master Blacksmith": "ปรมาจารย์ช่างตีเหล็ก",
   "Reach +10 enhancement": "เสริมพลังถึง +10",
   "Legendary Collector": "ผู้สะสมตำนาน",

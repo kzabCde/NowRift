@@ -181,7 +181,7 @@ test("Sanctuary, nested inventory and settings retain the same Phaser world and 
   const panel = page.getByRole("dialog", { name: "Sanctuary", exact: true });
   await expect(panel).toBeVisible();
   await expect(panel).toContainText("Rowan");
-  await expect(panel.locator(".sanctuary-equipment > div")).toHaveCount(6);
+  await expect(panel.locator(".sanctuary-equipment > div")).toHaveCount(7);
   const beforeWeapon = await data(page);
   await expect(panel.locator(".equipped-weapon")).toContainText(
     "Riftwood Staff +0",

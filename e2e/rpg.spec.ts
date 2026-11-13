@@ -187,7 +187,7 @@ test("inventory sorts, filters, compares, protects and equips unique gear", asyn
   await expect(page.getByTestId("bag-capacity")).toHaveText(
     `${usedSlots(p)} / 60`,
   );
-  await expect(page.locator(".rpg-slot")).toHaveCount(6);
+  await expect(page.locator(".rpg-slot")).toHaveCount(7);
   await page.getByLabel("Inventory sort").selectOption("name");
   await page.getByLabel("Inventory category").selectOption("material");
   await expect(page.locator(".rpg-grid button")).toHaveCount(4);

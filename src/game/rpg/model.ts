@@ -1,7 +1,17 @@
+/** Stable legacy ordering also defines the original item/icon contracts. */
+export const LEGACY_SLOTS = [
+  "weapon",
+  "armor",
+  "helmet",
+  "boots",
+  "ring",
+  "necklace",
+] as const;
 export const SLOTS = [
   "weapon",
   "armor",
   "helmet",
+  "pants",
   "boots",
   "ring",
   "necklace",
@@ -83,7 +93,7 @@ export type LedgerEntry = {
   };
 };
 export type RpgState = {
-  schema: 1;
+  schema: 2;
   revision: number;
   capacity: number;
   equipment: EquipmentInstance[];

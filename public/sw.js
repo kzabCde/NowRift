@@ -1,5 +1,5 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v17-weapon-evolution";
+const VERSION = "nowrift-pwa-v18-outfitters";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -26,6 +26,7 @@ const CORE_URLS = [
   "/assets/haven/player-ember.png",
   "/assets/haven/player-tide.png",
   "/assets/items/atlas.png",
+  "/assets/items/outfitters.png",
   "/assets/worlds/forest/projectiles.png",
   "/assets/worlds/forest/tiles.png",
   "/assets/worlds/forest/tree.png",

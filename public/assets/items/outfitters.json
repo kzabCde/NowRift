@@ -1,0 +1,172 @@
+{
+  "size": [
+    128,
+    128
+  ],
+  "cell": [
+    32,
+    32
+  ],
+  "frames": [
+    {
+      "definitionId": "forest-armor",
+      "frame": 0,
+      "rect": [
+        0,
+        0,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "forest-helmet",
+      "frame": 1,
+      "rect": [
+        32,
+        0,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "forest-pants",
+      "frame": 2,
+      "rect": [
+        64,
+        0,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "forest-boots",
+      "frame": 3,
+      "rect": [
+        96,
+        0,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "desert-armor",
+      "frame": 4,
+      "rect": [
+        0,
+        32,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "desert-helmet",
+      "frame": 5,
+      "rect": [
+        32,
+        32,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "desert-pants",
+      "frame": 6,
+      "rect": [
+        64,
+        32,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "desert-boots",
+      "frame": 7,
+      "rect": [
+        96,
+        32,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "frozen-armor",
+      "frame": 8,
+      "rect": [
+        0,
+        64,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "frozen-helmet",
+      "frame": 9,
+      "rect": [
+        32,
+        64,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "frozen-pants",
+      "frame": 10,
+      "rect": [
+        64,
+        64,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "frozen-boots",
+      "frame": 11,
+      "rect": [
+        96,
+        64,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "infernal-armor",
+      "frame": 12,
+      "rect": [
+        0,
+        96,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "infernal-helmet",
+      "frame": 13,
+      "rect": [
+        32,
+        96,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "infernal-pants",
+      "frame": 14,
+      "rect": [
+        64,
+        96,
+        32,
+        32
+      ]
+    },
+    {
+      "definitionId": "infernal-boots",
+      "frame": 15,
+      "rect": [
+        96,
+        96,
+        32,
+        32
+      ]
+    }
+  ]
+}

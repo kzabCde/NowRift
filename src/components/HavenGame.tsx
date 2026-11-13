@@ -329,9 +329,11 @@ export default function HavenGame({
     stationTab =
       panel === "blacksmith"
         ? "blacksmith"
-        : panel === "merchant" || panel === "crafting"
-          ? "shop"
-          : "inventory";
+        : panel === "merchant"
+          ? "outfitters"
+          : panel === "crafting"
+            ? "shop"
+            : "inventory";
   const journal = () => (
     <>
       <span className="eyebrow">{h("Mara’s request")}</span>

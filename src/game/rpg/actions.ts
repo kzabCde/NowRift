@@ -9,12 +9,12 @@ import {
   removeEntry,
   addEquipment,
   grantStack,
-  canAdd,
   claim,
 } from "./inventory";
 import { hash, createEquipment } from "./items";
 import { spend, gold, quantity } from "./economy";
 import { enhancementOutcome } from "./enhancement";
+import { purchaseEligibility } from "./shop";
 export type ActionBody =
   | { type: "equip"; itemId: string }
   | { type: "unequip"; slot: Slot }
@@ -196,8 +196,8 @@ export function applyCommand(
       const offer = SHOP.find((o) => o.id === a.offerId),
         n = quantity(a.quantity);
       if (!offer) throw new Error("Unknown shop offer.");
-      if (!canAdd(p, offer.item, offer.rarity ? n : 1))
-        throw new Error("Inventory full.");
+      const blocked = purchaseEligibility(p, offer, n);
+      if (blocked) throw new Error(blocked);
       spend(p, offer.price * n);
       if (offer.rarity)
         for (let i = 0; i < n; i++)

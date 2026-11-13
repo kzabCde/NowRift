@@ -1,6 +1,11 @@
 import { RELICS } from "../loadout";
 import { ITEM_IDS, WORLDS } from "../campaign/content";
-import { SLOTS, type ItemDefinition, type Rarity, type StatKey } from "./model";
+import {
+  LEGACY_SLOTS,
+  type ItemDefinition,
+  type Rarity,
+  type StatKey,
+} from "./model";
 export const RARITIES: Record<
   Rarity,
   {
@@ -65,7 +70,7 @@ export const RARITIES: Record<
     salvage: 12,
   },
 };
-const primary: Record<(typeof SLOTS)[number], StatKey> = {
+const primary: Record<(typeof LEGACY_SLOTS)[number], StatKey> = {
   weapon: "damage",
   armor: "maxHp",
   helmet: "armor",
@@ -116,7 +121,7 @@ const WEAPON_ITEMS: NonNullable<ItemDefinition["weapon"]>[] = [
 export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
   [
     ...WORLDS.flatMap((w, wi) =>
-      SLOTS.map((slot, i) => ({
+      LEGACY_SLOTS.map((slot, i) => ({
         id: `${w.id}-${slot}`,
         name: names[wi][i],
         kind: "equipment" as const,
@@ -127,6 +132,20 @@ export const ITEMS: Record<string, ItemDefinition> = Object.fromEntries(
         description: `${w.name} ${slot}. A permanent companion for campaign runs.`,
       })),
     ),
+    ...WORLDS.map((w, i) => ({
+      id: `${w.id}-pants`,
+      name: [
+        "Briarweave Trousers",
+        "Dunewalker Wraps",
+        "Frostguard Legplates",
+        "Cinderweave Greaves",
+      ][i],
+      kind: "equipment" as const,
+      slot: "pants" as const,
+      icon: 44 + i,
+      primary: "armor" as const,
+      description: `${w.name} legwear. Independently equipped protection for the journey.`,
+    })),
     ...WORLDS.map((w, i) => ({
       id: "boss-" + w.id,
       name: RELICS[w.boss.reward as keyof typeof RELICS].name,
@@ -236,7 +255,15 @@ export const UPGRADES = {
     amount: 3,
   },
 };
-export const SHOP = [
+export type ShopOffer = {
+  id: string;
+  item: string;
+  price: number;
+  rarity?: Rarity;
+  level?: number;
+  requiredClear?: string;
+};
+export const GENERAL_SHOP: readonly ShopOffer[] = [
   { id: "health-tonic", item: "health-tonic", price: 25 },
   { id: "focus-tonic", item: "focus-tonic", price: 45 },
   { id: "ore", item: "copper-ore", price: 20 },
@@ -269,6 +296,35 @@ export const SHOP = [
     level: 5,
     price: 350,
   },
+];
+export const WEARABLE_SLOTS = ["armor", "helmet", "pants", "boots"] as const;
+export const OUTFITTER_OFFERS: readonly ShopOffer[] = WORLDS.flatMap(
+  (world, wi) =>
+    WEARABLE_SLOTS.flatMap((slot) =>
+      (["common", "uncommon", "rare", "epic", "legendary"] as const).map(
+        (rarity, ri) => {
+          // Reuse the original forest vest offer and its exact price/rolls.
+          if (wi === 0 && slot === "armor" && rarity === "uncommon")
+            return GENERAL_SHOP.find((o) => o.id === "armor")!;
+          const level = 1 + wi * 4 + ri * 2;
+          const gate = Math.max(wi - 1, ri < 2 ? -1 : ri - 2);
+          return {
+            id: `outfitters-${world.id}-${slot}-${rarity}`,
+            item: `${world.id}-${slot}`,
+            rarity,
+            level,
+            price: Math.ceil((36 + level * 16) * RARITIES[rarity].cost),
+            ...(gate >= 0
+              ? { requiredClear: `${WORLDS[gate].id}-5:normal` }
+              : {}),
+          };
+        },
+      ),
+    ),
+);
+export const SHOP: readonly ShopOffer[] = [
+  ...GENERAL_SHOP,
+  ...OUTFITTER_OFFERS.filter((o) => o.id !== "armor"),
 ];
 export const RECIPES = [
   {

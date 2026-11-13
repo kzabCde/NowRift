@@ -5,7 +5,7 @@ import { initializeRpg, validRpg } from "./profile";
 import { SLOTS, RARITY_IDS } from "./model";
 import { ITEMS, RARITIES, SHOP, ENHANCEMENT, AFFIX_BOUNDS } from "./content";
 import { createEquipment, seededEquipment, weightedRarity } from "./items";
-import { seeded } from "../campaign/content";
+import { seeded, STAGES } from "../campaign/content";
 import {
   applyCommand,
   dismantleYield,
@@ -67,7 +67,7 @@ function bagItem(
   return e;
 }
 describe("item registry, rarity, migration and inventory", () => {
-  test("all six slots and five rarity tiers have functional original icon definitions", () => {
+  test("all seven slots and five rarity tiers have functional original icon definitions", () => {
     for (const s of SLOTS)
       expect(Object.values(ITEMS).some((d) => d.slot === s)).toBe(true);
     for (const d of Object.values(ITEMS)) {
@@ -382,6 +382,7 @@ describe("economy, progression and connected combat", () => {
   });
   test("no ordinary buy/sell or dismantle resale loop creates gold", () => {
     const p = fixture();
+    p.clears = STAGES.map((stage) => `${stage.id}:normal`);
     for (const offer of SHOP) {
       const q = command(p, {
         type: "buy",

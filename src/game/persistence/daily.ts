@@ -162,7 +162,7 @@ export const ACHIEVEMENTS = [
     id: "outfit",
     category: "Equipment",
     name: "Ready for the rift",
-    detail: "Fill all six equipment slots",
+    detail: "Equip six items",
     icon: 1,
     target: 6,
     gift: { gold: 100 },

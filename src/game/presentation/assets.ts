@@ -116,11 +116,14 @@ function definition(source: (typeof ASSET_SOURCES)[number]): PixelAsset {
           : `character-${name}`;
     compatibility = ["wanderer", "sentinel", "strider"];
     if (!weapon) audit = "UNUSED";
-  } else if (path === "/assets/items/atlas.png") {
+  } else if (
+    path === "/assets/items/atlas.png" ||
+    path === "/assets/items/outfitters.png"
+  ) {
     kind = "spritesheet";
     category = "item";
     bundle = "common";
-    key = "items";
+    key = name === "outfitters" ? "outfitters-items" : "items";
     frameWidth = frameHeight = 32;
   } else if (path.startsWith("/assets/haven/")) {
     key = `haven-${name}`;

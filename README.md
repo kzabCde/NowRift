@@ -6,6 +6,8 @@ A playable, original pixel-art Bullet Heaven campaign built with **Next.js 15**,
 
 Open **Sanctuary → Daily activities & achievements** in the city, or **Manage saves & backups** during character selection, to manage characters, claim rewards, inspect actual statistics, and export or restore a save. Check-in rewards are shared across the local player’s three slots and reset at midnight in **Asia/Bangkok**. Daily quests and achievements use actual combat and inventory actions. See [Phase IV persistence rules, validation and limitations](docs/phase-4-validation.md).
 
+Visit **Rift Outfitters** at the market for chest armor, headwear, independent pants and boots. Browse four biome collections and five rarities, try on real stat comparisons, buy with existing gold, equip, sell eligible gear or open the forge. Existing six-slot saves migrate safely to seven slots while frozen runs keep their original equipment. See [merchant, migration, original art, design boards and validation](docs/rift-outfitters.md).
+
 ## Campaign
 
 Press **Play** to create or continue a character. Move with WASD/arrows or touch drag; press **E** near a building, NPC or portal. **I** opens inventory, **M** opens the town map, **Q** opens the journal, and **H** toggles Sanctuary. The portal’s forest expedition requires 20 seconds and 5 kills before returning to its extraction point. Successful extraction banks enemy loot and gathered supplies; defeat/abandonment loses unbanked expedition loot while existing equipment remains safe. The inn restores health for the next trip. The first prologue rewards one actual extraction.

@@ -14,7 +14,10 @@ export function enhancementQuote(
     material =
       slot === "weapon"
         ? "copper-ore"
-        : slot === "armor" || slot === "helmet" || slot === "boots"
+        : slot === "armor" ||
+            slot === "helmet" ||
+            slot === "pants" ||
+            slot === "boots"
           ? "wood"
           : "slime-core";
   const materials: Record<string, number> = {

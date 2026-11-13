@@ -3,6 +3,7 @@ import ItemIcon from "./ItemIcon";
 export { default as ItemIcon } from "./ItemIcon";
 import CharacterPreview from "./CharacterPreview";
 import EquippedWeapon from "./EquippedWeapon";
+import RiftOutfitters from "./RiftOutfitters";
 import {
   WeaponEvolutionPreview,
   WeaponEvolutionReveal,
@@ -28,7 +29,7 @@ import type { Progress } from "@/game/campaign/progression";
 import {
   ITEMS,
   RARITIES,
-  SHOP,
+  GENERAL_SHOP,
   RECIPES,
   UPGRADES,
   statNames,
@@ -62,7 +63,13 @@ import {
 } from "@/game/rpg/model";
 import type { WeaponId } from "@/game/content/forest";
 
-type Tab = "inventory" | "character" | "blacksmith" | "shop" | "history";
+type Tab =
+  | "inventory"
+  | "character"
+  | "blacksmith"
+  | "shop"
+  | "outfitters"
+  | "history";
 type Confirm = {
   title: string;
   action: ActionBody;
@@ -418,27 +425,38 @@ export default function RpgScreen({
         </div>
       </header>
       <div className="rpg-shell">
-        <div className="rpg-heading">
-          <div>
-            <span className="eyebrow">{text("THE WANDERER’S SANCTUARY")}</span>
-            <h1>
-              {text("Every relic")} <em>{text("tells a story.")}</em>
-            </h1>
+        {tab !== "outfitters" && (
+          <div className="rpg-heading">
+            <div>
+              <span className="eyebrow">
+                {text("THE WANDERER’S SANCTUARY")}
+              </span>
+              <h1>
+                {text("Every relic")} <em>{text("tells a story.")}</em>
+              </h1>
+            </div>
+            <div className="rpg-wallet">
+              <span>{text("YOUR COIN PURSE")}</span>
+              <strong data-testid="rpg-gold">
+                {profile.gold.toLocaleString()} <small>{text("GOLD")}</small>
+              </strong>
+              <small>
+                {text("LEVEL")} {level.level}
+                {text("· POWER")} {stats.power}
+              </small>
+            </div>
           </div>
-          <div className="rpg-wallet">
-            <span>{text("YOUR COIN PURSE")}</span>
-            <strong data-testid="rpg-gold">
-              {profile.gold.toLocaleString()} <small>{text("GOLD")}</small>
-            </strong>
-            <small>
-              {text("LEVEL")} {level.level}
-              {text("· POWER")} {stats.power}
-            </small>
-          </div>
-        </div>
+        )}
         <nav className="rpg-tabs" aria-label={text("RPG systems")}>
           {(
-            ["inventory", "character", "blacksmith", "shop", "history"] as Tab[]
+            [
+              "inventory",
+              "character",
+              "blacksmith",
+              "outfitters",
+              "shop",
+              "history",
+            ] as Tab[]
           ).map((t) => (
             <button
               key={t}
@@ -450,11 +468,13 @@ export default function RpgScreen({
                 setFilter("all");
               }}
             >
-              {t === "shop"
-                ? text("THE TRADER")
-                : t === "history"
-                  ? text("JOURNAL")
-                  : text(t.toUpperCase())}
+              {t === "outfitters"
+                ? text("RIFT OUTFITTERS")
+                : t === "shop"
+                  ? text("THE TRADER")
+                  : t === "history"
+                    ? text("JOURNAL")
+                    : text(t.toUpperCase())}
             </button>
           ))}
         </nav>
@@ -561,6 +581,42 @@ export default function RpgScreen({
               <p>{text("Your journey has yet to leave a mark.")}</p>
             )}
           </section>
+        ) : tab === "outfitters" ? (
+          <RiftOutfitters
+            profile={profile}
+            character={character}
+            busy={busy}
+            onBuy={(offer) =>
+              ask(
+                "Confirm purchase",
+                { type: "buy", offerId: offer.id, quantity: 1 },
+                <p>
+                  {text(ITEMS[offer.item].name)} ·{" "}
+                  {text(RARITIES[offer.rarity!].name)} · {text("Item level")}{" "}
+                  {offer.level}
+                  <br />
+                  {offer.price} {text("Gold")}
+                </p>,
+              )
+            }
+            onEquip={(itemId) => void run({ type: "equip", itemId })}
+            onUnequip={(slot) => void run({ type: "unequip", slot })}
+            onSell={(candidate) => {
+              const entry = all.find((e) => e.id === candidate.id)!;
+              ask(
+                "Confirm sale",
+                { type: "sell", itemId: candidate.id, quantity: 1 },
+                <p>
+                  {text(ITEMS[candidate.definitionId].name)} +
+                  {candidate.enhancement} · {sellPrice(entry)} {text("Gold")}
+                </p>,
+              );
+            }}
+            onForge={(id) => {
+              setSelection(id);
+              setTab("blacksmith");
+            }}
+          />
         ) : tab === "shop" ? (
           <section className="rpg-shop">
             <div className="rpg-panel">
@@ -585,7 +641,7 @@ export default function RpgScreen({
                 />
               </label>
               <div className="rpg-offers">
-                {SHOP.map((offer) => {
+                {GENERAL_SHOP.map((offer) => {
                   const def = ITEMS[offer.item],
                     preview = offer.rarity
                       ? shopEquipment(offer.id, "preview")
@@ -775,6 +831,7 @@ export default function RpgScreen({
                     return (
                       <button
                         key={slot}
+                        data-slot={slot}
                         className={`rpg-slot ${e && selection === e.id ? "selected" : ""}`}
                         aria-label={`${slot} equipment slot${e ? ": " + ITEMS[e.definitionId].name : ": empty"}`}
                         onClick={() => {
@@ -939,6 +996,7 @@ export default function RpgScreen({
                           "weapon",
                           "armor",
                           "helmet",
+                          "pants",
                           "boots",
                           "ring",
                           "necklace",
@@ -947,7 +1005,7 @@ export default function RpgScreen({
                           "favorites",
                         ].map((x) => (
                           <option key={x} value={x}>
-                            {x.toUpperCase()}
+                            {text(x.toUpperCase())}
                           </option>
                         ))}
                       </select>
@@ -975,7 +1033,8 @@ export default function RpgScreen({
                       {
                         length: Math.max(
                           0,
-                          (tab === "blacksmith" ? 6 : 60) - bag.length,
+                          (tab === "blacksmith" ? SLOTS.length : 60) -
+                            bag.length,
                         ),
                       },
                       (_, i) => (
@@ -989,7 +1048,7 @@ export default function RpgScreen({
                   </div>
                   <p className="muted">
                     {text(
-                      "Equipped items occupy the six character slots. Stackable resources use one bag slot per type. Excess earned loot remains in protected parcels.",
+                      "Equipped items occupy the seven character slots. Stackable resources use one bag slot per type. Excess earned loot remains in protected parcels.",
                     )}
                   </p>
                   {tab === "blacksmith" && (
@@ -1386,7 +1445,7 @@ export default function RpgScreen({
       {confirm && (
         <Modal title={text(confirm.title)} onClose={closeConfirm}>
           <span className="eyebrow">{text("REVIEW BEFORE YOU COMMIT")}</span>
-          <h2>{confirm.title}</h2>
+          <h2>{text(confirm.title)}</h2>
           <div className="rpg-confirm-copy">{confirm.content}</div>
           <div className="dialog-actions">
             <button
