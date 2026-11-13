@@ -101,6 +101,17 @@ describe("bag upgrades and transactional inventory management", () => {
     expect(next.rpg!.history).toHaveLength(1);
     expect(p.gold).toBe(before);
   });
+  test("bulk sale accepts a stack larger than the normal shop purchase limit", () => {
+    const p = fixture();
+    p.materials.wood = 12000;
+    const value = sellPrice(inventory(p).find((e) => e.id === "stack:wood")!);
+    const next = act(p, {
+      type: "bulkSell",
+      items: [{ itemId: "stack:wood", quantity: 12000 }],
+    });
+    expect(next.materials.wood).toBe(0);
+    expect(next.gold).toBe(p.gold + 12000 * value);
+  });
   test("bulk sale rejects protected, duplicate, missing and over-quantity items atomically", () => {
     const p = fixture();
     const blade = seededEquipment("protected", "desert-weapon", "rare", 5);

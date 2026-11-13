@@ -191,7 +191,9 @@ export function applyCommand(
           throw new Error("Duplicate or invalid item in bulk sale.");
         seen.add(request.itemId);
         const owned = findEntry(p, request.itemId);
-        const count = quantity(request.quantity);
+        const count = request.quantity;
+        if (!Number.isSafeInteger(count) || count < 1)
+          throw new Error("Invalid bulk sale quantity.");
         if (count > owned.quantity)
           throw new Error("Insufficient item quantity.");
         if (

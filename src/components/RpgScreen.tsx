@@ -344,24 +344,33 @@ export default function RpgScreen({
     });
   }, [bag]);
   useEffect(() => {
-    if (!contextMenu) return;
+    if (!contextMenu && !multiMode) return;
     const dismiss = (event: PointerEvent) => {
       if (!(event.target as Element | null)?.closest(".rpg-context-menu"))
         setContextMenu(null);
     };
     const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setContextMenu(null);
+      if (event.key !== "Escape") return;
+      if (contextMenu) {
+        setContextMenu(null);
+        document.querySelector<HTMLButtonElement>(".rpg-cell.selected")?.focus();
+      } else {
+        setSelectedIds([]);
+        setMultiMode(false);
+        selectionAnchor.current = null;
+      }
     };
-    document.addEventListener("pointerdown", dismiss);
+    if (contextMenu) document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape);
-    document
-      .querySelector<HTMLButtonElement>(".rpg-context-menu button")
-      ?.focus();
+    if (contextMenu)
+      document
+        .querySelector<HTMLButtonElement>(".rpg-context-menu button")
+        ?.focus();
     return () => {
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("keydown", escape);
     };
-  }, [contextMenu]);
+  }, [contextMenu, multiMode]);
   useEffect(
     () => () => {
       if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -529,7 +538,7 @@ export default function RpgScreen({
         onClick={(event) => onItemClick(e, event)}
         onContextMenu={(event) => {
           event.preventDefault();
-          if (busy) return;
+          if (busy || longPressTriggered.current) return;
           setSelection(e.id);
           setContextMenu({
             id: e.id,
