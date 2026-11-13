@@ -8,13 +8,22 @@ Open **Sanctuary → Daily activities & achievements** in the city, or **Manage 
 
 Visit **Rift Outfitters** at the market for chest armor, headwear, independent pants and boots. Browse four biome collections and five rarities, try on real stat comparisons, buy with existing gold, equip, sell eligible gear or open the forge. Existing six-slot saves migrate safely to seven slots while frozen runs keep their original equipment. See [merchant, migration, original art, design boards and validation](docs/rift-outfitters.md).
 
+**Rift Haven** is now a seamless **3584 × 3008** city with nine districts, original
+compound architecture, local residents, day/night lights and district soundscapes.
+Open **M / Map** for the Town Map: Plaza and Sanctuary are available immediately;
+attune district beacons or visit their stations to unlock more Fast Travel points.
+Town travel saves a collision-safe arrival without changing character progression.
+See the [implementation and validation report](docs/haven-city.md),
+[editable layout/art boards](docs/design/haven-city.html) and
+[asset inventory](docs/haven-city-assets.json).
+
 ## Campaign
 
 Press **Play** to create or continue a character. Move with WASD/arrows or touch drag; press **E** near a building, NPC or portal. **I** opens inventory, **M** opens the town map, **Q** opens the journal, and **H** toggles Sanctuary. The portal’s forest expedition requires 20 seconds and 5 kills before returning to its extraction point. Successful extraction banks enemy loot and gathered supplies; defeat/abandonment loses unbanked expedition loot while existing equipment remains safe. The inn restores health for the next trip. The first prologue rewards one actual extraction.
 
 Equip an owned weapon through **Sanctuary → Open Inventory**, then walk to **Portal Sanctuary → Campaign challenges**. Four worlds each contain five playable stages, with Normal, Hard and Nightmare difficulty and saved sequential unlocks. Stages 1–4 are survival encounters; Stage 5 culminates in the world boss. City adventures return to Rift Heaven. **Practice & legacy tools** explicitly opens the retained launcher and original **Start New Run** practice route.
 
-**Inventory & equipment** opens the sanctuary: a 60-slot inventory, six equipment slots, five rarities, character stats and permanent disciplines, +0–15 enhancement with pity, a trader, material crafting, confirmed dismantling, protected overflow loot and a transaction journal. Actual enemy, elite, boss and stage rewards fund the same wallet and inventory. Your equipped weapon controls campaign attacks, held art and statistics; character choice remains independent. Empty weapon slots block stage entry. The four original temporary skills remain available only in the explicit practice route.
+**Inventory & equipment** opens the sanctuary: a 60-slot inventory, seven equipment slots, five rarities, character stats and permanent disciplines, +0–15 enhancement with pity, a trader, material crafting, confirmed dismantling, protected overflow loot and a transaction journal. Actual enemy, elite, boss and stage rewards fund the same wallet and inventory. Your equipped weapon controls campaign attacks, held art and statistics; character choice remains independent. Empty weapon slots block stage entry. The four original temporary skills remain available only in the explicit practice route.
 
 Use the World Map to earn permanent rewards, then improve your gear and enter harder stages. Gear changes apply when a new campaign run starts. Recovery preserves that run’s original weapon instance, attack configuration and stats. Pause a campaign to use healing or attack-speed tonics from your real inventory. See [Phase III rules, architecture, tests and limitations](docs/phase-3-validation.md), including all probability tables and random bounds. [Phase II validation](docs/phase-2-validation.md) records the preceding world implementation.
 
@@ -53,6 +62,7 @@ Use **Play** for the persistent-world journey, or **Practice & legacy tools → 
 | Sanctuary       | H opens/closes personal management over the city             | Sanctuary button                                    |
 | Interact        | E near a station, NPC or resource                            | Contextual action button                            |
 | Find activities | Activity Directory marks real station entrances              | Same; walk to the marked entrance                   |
+| Town Map        | M; select an unlocked district, then Fast Travel             | Map button; touch district and Fast Travel          |
 | Inventory       | Hub → Inventory & equipment; click an item or equipment slot | Tap; details scroll into view                       |
 | Tonics          | Pause a campaign, then select a tonic                        | Same; real inventory is consumed                    |
 

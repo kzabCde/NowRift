@@ -2,6 +2,12 @@ import { calculateStats, resolveEquippedWeapon } from "../rpg/stats";
 import { grantGift } from "../persistence/daily";
 import type { SaveData } from "../persistence/model";
 import { HAVEN, LANDMARKS, near, validPosition } from "./content";
+import {
+  WAYPOINTS,
+  fastTravelReason,
+  waypoint,
+  waypointLanding,
+} from "./waypoints";
 import { OUTFITS, type WorldCommand } from "./save";
 import { validCustomization } from "../presentation/customization";
 export function applyWorldCommand(
@@ -29,6 +35,12 @@ export function applyWorldCommand(
       "This world is open in another tab. Return to the launcher and enter again.",
     );
   if (command.type === "position") {
+    const epoch = command.epoch ?? 0;
+    if (!Number.isSafeInteger(epoch) || epoch < 0)
+      throw new Error("Invalid position epoch.");
+    if (epoch < w.positionEpoch) return;
+    if (epoch !== w.positionEpoch)
+      throw new Error("This position belongs to a different city arrival.");
     if (
       !Number.isSafeInteger(command.sequence) ||
       command.sequence <= w.sequence
@@ -38,6 +50,27 @@ export function applyWorldCommand(
       throw new Error("That position is blocked. Return to the plaza.");
     w.position = { ...command.position };
     w.sequence = command.sequence;
+    return;
+  }
+  if (command.type === "fast-travel") {
+    const blocked = fastTravelReason(w, command.waypointId);
+    if (blocked) throw new Error(blocked);
+    if (
+      !Number.isSafeInteger(command.expectedEpoch) ||
+      command.expectedEpoch !== w.positionEpoch
+    )
+      throw new Error(
+        "The city position changed. Reopen the Town Map and try again.",
+      );
+    const destination = waypoint(command.waypointId)!;
+    const landing = waypointLanding(destination);
+    if (!landing)
+      throw new Error(
+        "This waypoint has no safe landing. Follow its route instead.",
+      );
+    w.position = { ...landing };
+    w.positionEpoch++;
+    w.sequence++;
     return;
   }
   if (command.type === "visit") {
@@ -50,6 +83,14 @@ export function applyWorldCommand(
       throw new Error("Move closer to interact.");
     w.position = { ...command.position };
     if (!w.discoveries.includes(l.id)) w.discoveries.push(l.id);
+    for (const destination of WAYPOINTS)
+      if (
+        (destination.initial ||
+          destination.unlocksFrom.includes(l.id) ||
+          l.waypointId === destination.id) &&
+        !w.waypoints.includes(destination.id)
+      )
+        w.waypoints.push(destination.id);
     return;
   }
   if (command.type === "outfit") {

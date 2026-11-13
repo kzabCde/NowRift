@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { districtAt } from "../world/city";
+import { HavenCity } from "./haven-city";
 import { CharacterRig } from "./character-rig";
 import { CombatVfx } from "./combat-vfx";
 import { drainFeedback } from "../feedback";
@@ -10,11 +12,9 @@ import {
 } from "../presentation/action-feedback";
 import { facingFromAngle, type Facing } from "../presentation/character";
 import { GameBridge, type Command } from "../bridge";
-import { assetAnimationFrame } from "../presentation/assets";
 import {
   HAVEN,
   LANDMARKS,
-  FOLIAGE,
   move,
   nearest,
   validPosition,
@@ -35,6 +35,7 @@ import {
   type Game,
 } from "../engine";
 export class HavenScene extends Phaser.Scene {
+  city!: HavenCity;
   bridge!: GameBridge;
   startData!: HavenStart;
   actor!: Phaser.GameObjects.Container;
@@ -45,6 +46,7 @@ export class HavenScene extends Phaser.Scene {
   trainingGame: Game | null = null;
   trainingShots: Phaser.GameObjects.Image[] = [];
   position: Point = { ...HAVEN.spawn };
+  positionEpoch = 0;
   locked = false;
   moving = false;
   keys: Record<string, Phaser.Input.Keyboard.Key> = {};
@@ -79,6 +81,7 @@ export class HavenScene extends Phaser.Scene {
     this.position = validPosition(this.startData.position)
       ? { ...this.startData.position }
       : { ...HAVEN.spawn };
+    this.positionEpoch = this.startData.positionEpoch ?? 0;
     this.locked = true;
     this.pointer = null;
     this.drag = null;
@@ -96,60 +99,11 @@ export class HavenScene extends Phaser.Scene {
     this.didEnter = false;
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
-    this.add
-      .image(0, 0, "haven-terrain")
-      .setOrigin(0)
-      .setScale(2)
-      .setDepth(-10000);
-    this.add
-      .image(900, 690, "haven-fountain")
-      .setOrigin(0.5, 1)
-      .setScale(2)
-      .setDepth(690);
-    for (const l of LANDMARKS) {
-      const image = this.add
-        .image(l.x, l.y, "haven-" + l.art, 0)
-        .setOrigin(0.5, 1)
-        .setScale(l.kind === "npc" ? (1.6 * 32) / 48 : 2)
-        .setDepth(l.y);
-      this.staticSprites.push(image);
-      if (l.kind === "portal") image.setAlpha(0.95);
-      if (l.kind === "portal" || l.kind === "npc")
-        this.animated.push({ image, kind: l.kind });
-      if (l.kind !== "treasure")
-        this.labels.push({
-          id: l.id,
-          text: this.add
-            .text(l.entrance.x, l.entrance.y + 17, "", {
-              fontFamily: "monospace",
-              fontSize: "10px",
-              color: "#e1d7b3",
-              backgroundColor: "#1a2a26cc",
-              padding: { x: 5, y: 4 },
-            })
-            .setOrigin(0.5, 0)
-            .setDepth(l.y + 2),
-        });
-    }
-    for (const tree of FOLIAGE)
-      this.staticSprites.push(
-        this.add
-          .image(tree.x, tree.y, "haven-tree")
-          .setOrigin(0.5, 0.9)
-          .setScale(1.6)
-          .setDepth(tree.y),
-      );
-    for (const station of [
-      { key: "portal", x: 1310, y: 1074, scale: 3, depth: 1181 },
-      { key: "fire", x: 282, y: 368, scale: 1, depth: 421 },
-      { key: "water", x: 900, y: 614, scale: 2, depth: 691 },
-    ])
-      this.stationLoops.push({
-        image: this.add
-          .image(station.x, station.y, "pixel-station-" + station.key, 0)
-          .setScale(station.scale)
-          .setDepth(station.depth),
-      });
+    this.city = new HavenCity(this);
+    this.labels = this.city.labels;
+    this.staticSprites = this.city.sprites;
+    if (this.startData.milestones)
+      this.city.setMilestones(this.startData.milestones);
     this.ring = this.add.graphics().setDepth(1e5);
     this.ambience = this.add.graphics().setDepth(691);
     this.stick = this.add.graphics().setScrollFactor(0).setDepth(1e6);
@@ -257,7 +211,10 @@ export class HavenScene extends Phaser.Scene {
     };
     const interrupt = () => {
       clear();
-      this.bridge.emit("haven-save", { ...this.position });
+      this.bridge.emit("haven-save", {
+        position: { ...this.position },
+        epoch: this.positionEpoch,
+      });
       if (!this.locked) this.bridge.emit("haven-shortcut", "pause");
     };
     const visibility = () => {
@@ -279,14 +236,9 @@ export class HavenScene extends Phaser.Scene {
     window.addEventListener("blur", interrupt);
     window.addEventListener("pagehide", interrupt);
     document.addEventListener("visibilitychange", visibility);
-    this.cameras.main
-      .setBounds(0, 0, HAVEN.width, HAVEN.height)
-      .startFollow(this.actor, true, 0.1, 0.1);
+    this.cameras.main.startFollow(this.actor, true, 0.1, 0.1);
     const resize = () => {
-      this.cameras.main.setZoom(
-        Math.max(0.65, Math.min(1.15, this.scale.width / 1050)) *
-          useSettings.getState().zoom,
-      );
+      this.resizeCamera();
       clear();
     };
     resize();
@@ -294,6 +246,7 @@ export class HavenScene extends Phaser.Scene {
     onSceneEnd(this, () => {
       off();
       offLocale();
+      audio.setDistrict(null);
       clear();
       for (const [key, fn] of Object.entries(shortcuts))
         this.input.keyboard?.off(key, fn);
@@ -319,8 +272,13 @@ export class HavenScene extends Phaser.Scene {
           position: { ...this.position },
           locked: this.locked,
           session: this.startData.session,
+          epoch: this.positionEpoch,
         }),
         appearance: () => this.rig.describe(),
+        city: () => this.city.describe(this.position),
+        setCityTime: (phase) => this.city.setTime(phase),
+        emitSave: (position, epoch) =>
+          this.bridge.emit("haven-save", { position, epoch }),
         action: () => ({
           active: this.visualAction.active
             ? { ...this.visualAction.active }
@@ -331,11 +289,24 @@ export class HavenScene extends Phaser.Scene {
           if (!validPosition(p)) throw new Error("Blocked test position");
           this.position = { ...p };
           this.actor.setPosition(p.x, p.y);
+          this.cameras.main.centerOn(p.x, p.y);
           this.publish();
         },
       };
     this.publish();
     this.bridge.emit("ready", true);
+  }
+  private resizeCamera() {
+    const zoom =
+      Math.max(0.65, Math.min(1.15, this.scale.width / 1050)) *
+      useSettings.getState().zoom;
+    // The camera may reveal scenery under the HUD, while physical movement stays
+    // inside the authored city. Edge arrivals remain above the touch controls.
+    const top = (this.scale.height < 500 ? 90 : 180) / zoom,
+      bottom = (this.scale.width < 650 ? 174 : 94) / zoom;
+    this.cameras.main
+      .setZoom(zoom)
+      .setBounds(0, -top, HAVEN.width, HAVEN.height + top + bottom);
   }
   command(c: Command, interact: () => void) {
     if (
@@ -355,7 +326,8 @@ export class HavenScene extends Phaser.Scene {
       g.enemies = [];
       g.obstacles = [];
       g.spawnCooldown = 1e6;
-      const e = spawnEnemy(g, "elite", 310, 1240)!;
+      const training = LANDMARKS.find((l) => l.id === "training")!;
+      const e = spawnEnemy(g, "elite", training.x, training.y)!;
       e.hp = e.maxHp = 1e9;
       e.speed = 0;
       e.attack = 1e6;
@@ -363,7 +335,23 @@ export class HavenScene extends Phaser.Scene {
       this.training = 0;
       audio.play("attack");
     }
+    if (c.type === "haven-teleport") {
+      if (c.epoch > this.positionEpoch && validPosition(c.position)) {
+        this.positionEpoch = c.epoch;
+        this.position = { ...c.position };
+        this.facing = c.facing;
+        this.drag = null;
+        this.pointer = null;
+        this.input.keyboard?.resetKeys();
+        this.game.canvas.dataset.touchActive = "false";
+        this.actor.setPosition(c.position.x, c.position.y);
+        this.cameras.main.centerOn(c.position.x, c.position.y);
+        this.lastSave = performance.now();
+        this.publish();
+      }
+    }
     if (c.type === "haven-equipment") {
+      if (c.milestones) this.city.setMilestones(c.milestones);
       this.startData.character = c.character;
       this.startData.weapon = c.weapon ? structuredClone(c.weapon) : null;
       this.startData.visualAppearance = c.visualAppearance
@@ -375,6 +363,7 @@ export class HavenScene extends Phaser.Scene {
     }
     if (c.type === "haven-feedback") this.present(c.receipt);
     if (c.type === "haven-lock") {
+      audio.setScene("exploration", "forest", c.locked);
       this.locked = c.locked;
       this.input.keyboard?.resetKeys();
       if (!c.locked) {
@@ -451,6 +440,12 @@ export class HavenScene extends Phaser.Scene {
       paused: this.locked,
       moving: this.moving,
       training: this.training,
+      district: this.city
+        ? this.city.describe(this.position).district
+        : "plaza",
+      night: this.city
+        ? this.city.describe(this.position).lighting.night
+        : false,
     });
   }
   update(_time: number, _delta: number) {
@@ -464,60 +459,22 @@ export class HavenScene extends Phaser.Scene {
           : prefs.quality === "low"
             ? 30
             : 60;
-    if (time - this.lastAmbience > (prefs.quality === "low" ? 300 : 100)) {
-      this.lastAmbience = time;
-      this.ambience.clear();
-      if (!prefs.reducedEffects) {
-        const ripple = (time % 1800) / 1800;
-        this.ambience
-          .lineStyle(1, 0xb4ddcd, 0.4 * (1 - ripple))
-          .strokeEllipse(900, 652, 45 + ripple * 76, 13 + ripple * 20);
-        for (const entry of this.animated) {
-          if (entry.kind === "portal")
-            entry.image.setAlpha(0.78 + 0.16 * Math.sin(time / 700));
-          else
-            entry.image.setFrame(
-              assetAnimationFrame(entry.image.texture.key, "idle", time),
-            );
-        }
-      }
-    }
-    for (const loop of this.stationLoops)
-      loop.image.setFrame(
-        prefs.reducedEffects
-          ? 0
-          : assetAnimationFrame(loop.image.texture.key, "idle", time),
-      );
+    const district = districtAt(this.position);
+    audio.setDistrict(district.id, district.ambience);
+    this.city.update(time, this.position, prefs);
     if (targetFps !== this.fpsLimit) {
       this.game.loop.setFPSLimit(targetFps);
       this.fpsLimit = targetFps;
     }
     const zoom =
       Math.max(0.65, Math.min(1.15, this.scale.width / 1050)) * prefs.zoom;
-    if (this.cameras.main.zoom !== zoom) this.cameras.main.setZoom(zoom);
-    if (time - this.lastCull > 250 && this.cameras.main.worldView.width) {
-      const v = this.cameras.main.worldView;
-      for (const sprite of this.staticSprites)
-        sprite.setVisible(
-          sprite.x + sprite.displayWidth / 2 > v.left - 80 &&
-            sprite.x - sprite.displayWidth / 2 < v.right + 80 &&
-            sprite.y > v.top - 80 &&
-            sprite.y - sprite.displayHeight < v.bottom + 80,
-        );
-      for (const label of this.labels)
-        label.text.setVisible(
-          label.text.x > v.left - 200 &&
-            label.text.x < v.right + 200 &&
-            label.text.y > v.top - 40 &&
-            label.text.y < v.bottom + 40,
-        );
-      this.lastCull = time;
-    }
+    if (this.cameras.main.zoom !== zoom) this.resizeCamera();
     if (this.trainingGame) {
       const g = this.trainingGame;
       for (const e of g.enemies) {
-        e.x = 310;
-        e.y = 1240;
+        const training = LANDMARKS.find((l) => l.id === "training")!;
+        e.x = training.x;
+        e.y = training.y;
         e.speed = 0;
       }
       advanceGame(g, delta / 1000, 0, 0);
@@ -616,7 +573,10 @@ export class HavenScene extends Phaser.Scene {
       this.lastHud = time;
     }
     if (this.moving && time - this.lastSave > 10000) {
-      this.bridge.emit("haven-save", { ...this.position });
+      this.bridge.emit("haven-save", {
+        position: { ...this.position },
+        epoch: this.positionEpoch,
+      });
       this.lastSave = time;
     }
   }
@@ -624,9 +584,17 @@ export class HavenScene extends Phaser.Scene {
 declare global {
   interface Window {
     __NOWRIFT_HAVEN__?: {
-      state: () => { position: Point; locked: boolean; session: string };
+      state: () => {
+        position: Point;
+        locked: boolean;
+        session: string;
+        epoch: number;
+      };
       place: (p: Point) => void;
       appearance: () => ReturnType<CharacterRig["describe"]>;
+      city: () => ReturnType<HavenCity["describe"]>;
+      setCityTime: (phase: number) => void;
+      emitSave: (position: Point, epoch: number) => void;
       action: () => {
         active: ReturnType<typeof createVisualActionState>["active"];
         lastReceipt: ActionVisualReceipt | null;

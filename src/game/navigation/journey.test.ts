@@ -127,7 +127,12 @@ test("damaged roots and orphan slots are preserved and block new identities", as
 });
 test("blocked or absent city coordinates recover only position", async () => {
   const p = await repo.createCharacter(identity());
-  for (const position of [{ x: 370, y: 400 }, { x: -1, y: 5 }, null]) {
+  const forge = LANDMARKS.find((l) => l.id === "forge")!;
+  for (const position of [
+    { x: forge.x, y: forge.y - 50 },
+    { x: -1, y: 5 },
+    null,
+  ]) {
     await transact((_records, store) =>
       store.put(
         { ...p, local: { ...p.local, world: { ...p.local.world, position } } },

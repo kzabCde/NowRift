@@ -572,3 +572,331 @@
     padding-top: max(4px, env(safe-area-inset-top));
   }
 }
+.haven-district {
+  display: block;
+  margin-top: 6px;
+  color: #d2c59d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.haven-district-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-block: 16px;
+  font-size: 11px;
+}
+.haven-district-legend span {
+  padding: 6px;
+  color: #bcc7ad;
+}
+.haven-district-legend b {
+  color: #d3ba7d;
+  margin-right: 4px;
+}
+.haven-guild-records {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 24px 0;
+}
+.haven-guild-records article {
+  border: 1px solid #7c8c664d;
+  background: #132827;
+  padding: 16px;
+}
+.haven-guild-records h3 {
+  font: 22px var(--serif);
+  color: #dbc49a;
+  margin: 0 0 12px;
+}
+.haven-guild-records strong,
+.haven-guild-records small {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.haven-lore p {
+  font: 18px/1.9 var(--serif);
+  color: #d8d5b6;
+}
+.haven-lore small {
+  display: block;
+  padding-top: 20px;
+  color: #acb99f;
+}
+@media (max-width: 600px) {
+  .haven-district {
+    max-width: 145px;
+    font-size: 9px;
+  }
+  .haven-district-legend {
+    grid-template-columns: 1fr 1fr;
+  }
+  .haven-guild-records {
+    grid-template-columns: 1fr;
+  }
+}
+.town-map > p {
+  color: #b8c4af;
+  font-size: 13px;
+  line-height: 1.8;
+}
+@media (min-width: 900px) {
+  .haven-page .modal-panel:has(.town-map) {
+    width: min(1120px, 94vw);
+    max-width: 1120px;
+  }
+  .town-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 0 24px;
+  }
+  .town-map > .eyebrow,
+  .town-map > h2,
+  .town-map > p,
+  .town-map > details {
+    grid-column: 1 / -1;
+  }
+  .town-map .town-map-overview {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+  }
+  .town-map .town-map-content {
+    display: block;
+    margin-top: 20px;
+  }
+  .town-map .town-waypoint-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .town-map .town-waypoint-detail {
+    position: static;
+    margin-top: 12px;
+    padding: 14px;
+  }
+  .town-map .town-waypoint-detail h3 {
+    font-size: 23px;
+    margin: 8px 0;
+  }
+  .town-map .town-waypoint-detail button {
+    margin: 10px 0;
+  }
+}
+.town-map .town-map-overview {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 20px 0;
+  border: 1px solid #9ba17b;
+  background: #263f35;
+  overflow: visible;
+}
+.town-map-overview > img {
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.town-map-overview .town-waypoint-marker {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d6bd82;
+  color: #f1dfb5;
+  background: #234c45ec;
+  transform: translate(-50%, -50%);
+  font: 14px var(--serif);
+  border-radius: 50%;
+}
+.town-map-overview .town-waypoint-marker[data-unlocked="false"] {
+  background: #373d3deb;
+  border-color: #8e9583;
+  color: #adb6a4;
+}
+.town-map-overview .town-waypoint-marker[aria-pressed="true"] {
+  box-shadow: 0 0 0 3px #deca8b88;
+  background: #5c6e4f;
+}
+.town-waypoint-marker > span {
+  display: none;
+}
+.town-map-overview .town-player-marker {
+  z-index: 4;
+  color: #eff6df;
+  background: #376f76;
+  border: 2px solid #e3e8c9;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font: 8px/11px sans-serif;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.town-map-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.town-waypoint-list {
+  display: grid;
+  gap: 8px;
+}
+.town-waypoint-list button {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  text-align: left;
+  gap: 5px 8px;
+  min-height: 54px;
+  padding: 10px;
+  border: 1px solid #73826866;
+  color: #cbd0b5;
+  background: #142b27;
+}
+.town-waypoint-list button[aria-pressed="true"] {
+  border-color: #d0b780;
+  background: #354d3b;
+}
+.town-waypoint-list strong {
+  font: 16px var(--serif);
+}
+.town-waypoint-list b {
+  color: #d4be88;
+  grid-row: span 2;
+  align-self: center;
+}
+.town-waypoint-list small {
+  font-size: 10px;
+  color: #a5b49e;
+}
+.town-waypoint-detail {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #939f764d;
+  background: #16332f;
+  align-self: start;
+  position: sticky;
+  top: 0;
+}
+.town-waypoint-detail h3 {
+  font: 28px/1.2 var(--serif);
+  color: #e4d2a9;
+  margin: 16px 0;
+}
+.town-waypoint-detail p {
+  font-size: 12px;
+  color: #bac6ab;
+  line-height: 1.8;
+}
+.town-waypoint-detail button {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin: 16px 0;
+  white-space: normal;
+}
+.town-waypoint-detail small {
+  display: block;
+  color: #b9b596;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.town-travel-reason {
+  border-left: 2px solid #b2976a;
+  padding-left: 12px;
+}
+.town-stations {
+  margin-top: 24px;
+  font-size: 13px;
+}
+.town-stations summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  color: #d2c08f;
+}
+.town-travel-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  color: #d7e9d0;
+  background: #132e32f0;
+  pointer-events: all;
+  animation: town-travel-fade 0.5s ease both;
+}
+.town-travel-transition i {
+  display: block;
+  width: 76px;
+  height: 76px;
+  border: 3px double #a5d3c5;
+  transform: rotate(45deg);
+  box-shadow:
+    inset 0 0 0 8px #2c5759,
+    0 0 0 4px #d6e2b84d;
+}
+.town-travel-transition strong {
+  font: 24px var(--serif);
+}
+.town-travel-transition span {
+  font-size: 13px;
+  color: #b7c9b3;
+}
+@keyframes town-travel-fade {
+  0% {
+    opacity: 0;
+  }
+  20%,
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (min-width: 650px) {
+  .town-waypoint-marker > span {
+    display: block;
+    position: absolute;
+    top: 46px;
+    padding: 4px 7px;
+    background: #1c3933ed;
+    color: #e8d7ae;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 600px) {
+  .town-map-content {
+    grid-template-columns: 1fr;
+  }
+  .town-waypoint-list {
+    grid-template-columns: 1fr 1fr;
+  }
+  .town-waypoint-list button {
+    padding: 8px;
+    grid-template-columns: 15px 1fr;
+  }
+  .town-waypoint-list strong {
+    font-size: 14px;
+  }
+  .town-waypoint-detail {
+    position: static;
+  }
+  .town-map-overview .town-waypoint-marker {
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .town-travel-transition {
+    animation: none;
+  }
+}

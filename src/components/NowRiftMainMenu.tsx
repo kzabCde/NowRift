@@ -64,7 +64,7 @@ export default function NowRiftMainMenu() {
     audio.setScene(
       screen === "gateway"
         ? "menu"
-        : screen === "game"
+        : screen === "game" || screen === "haven"
           ? "exploration"
           : "character",
     );

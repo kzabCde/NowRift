@@ -1,0 +1,782 @@
+{
+  "schema": 1,
+  "layoutRevision": 3,
+  "dimensions": [
+    3584,
+    3008
+  ],
+  "nativeTile": [
+    16,
+    16
+  ],
+  "worldScale": 2,
+  "authoredSource": [
+    "src/game/world/city-layout.json",
+    "scripts/generate-haven-city.py",
+    "art/haven-city/palette.json"
+  ],
+  "assets": [
+    {
+      "path": "/assets/haven/board.png",
+      "key": "haven-board",
+      "width": 42,
+      "height": 54,
+      "frame": [
+        42,
+        54
+      ],
+      "frames": 1,
+      "bytes": 378,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/chest.png",
+      "key": "haven-chest",
+      "width": 42,
+      "height": 54,
+      "frame": [
+        42,
+        54
+      ],
+      "frames": 1,
+      "bytes": 385,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/city-conservatory.png",
+      "key": "haven-city-conservatory",
+      "width": 160,
+      "height": 192,
+      "frame": [
+        160,
+        192
+      ],
+      "frames": 1,
+      "bytes": 2975,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-cooling-shed.png",
+      "key": "haven-city-cooling-shed",
+      "width": 112,
+      "height": 96,
+      "frame": [
+        112,
+        96
+      ],
+      "frames": 1,
+      "bytes": 968,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-crystal.png",
+      "key": "haven-city-crystal",
+      "width": 80,
+      "height": 112,
+      "frame": [
+        80,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1185,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-forge.png",
+      "key": "haven-city-forge",
+      "width": 192,
+      "height": 144,
+      "frame": [
+        192,
+        144
+      ],
+      "frames": 1,
+      "bytes": 2772,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-foundry-wing.png",
+      "key": "haven-city-foundry-wing",
+      "width": 128,
+      "height": 112,
+      "frame": [
+        128,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1763,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-fountain.png",
+      "key": "haven-city-fountain",
+      "width": 112,
+      "height": 104,
+      "frame": [
+        112,
+        104
+      ],
+      "frames": 1,
+      "bytes": 1156,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-fx.png",
+      "key": "haven-city-fx",
+      "width": 256,
+      "height": 336,
+      "frame": [
+        32,
+        48
+      ],
+      "frames": 56,
+      "bytes": 2863,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-greenhouse.png",
+      "key": "haven-city-greenhouse",
+      "width": 160,
+      "height": 144,
+      "frame": [
+        160,
+        144
+      ],
+      "frames": 1,
+      "bytes": 1980,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-guild.png",
+      "key": "haven-city-guild",
+      "width": 160,
+      "height": 144,
+      "frame": [
+        160,
+        144
+      ],
+      "frames": 1,
+      "bytes": 2719,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-balcony.png",
+      "key": "haven-city-home-balcony",
+      "width": 112,
+      "height": 128,
+      "frame": [
+        112,
+        128
+      ],
+      "frames": 1,
+      "bytes": 1617,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-blue.png",
+      "key": "haven-city-home-blue",
+      "width": 96,
+      "height": 112,
+      "frame": [
+        96,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1733,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-corner.png",
+      "key": "haven-city-home-corner",
+      "width": 128,
+      "height": 128,
+      "frame": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "bytes": 1602,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-laundry.png",
+      "key": "haven-city-home-laundry",
+      "width": 112,
+      "height": 128,
+      "frame": [
+        112,
+        128
+      ],
+      "frames": 1,
+      "bytes": 1633,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-red.png",
+      "key": "haven-city-home-red",
+      "width": 96,
+      "height": 112,
+      "frame": [
+        96,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1504,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-home-thatch.png",
+      "key": "haven-city-home-thatch",
+      "width": 96,
+      "height": 112,
+      "frame": [
+        96,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1807,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-lore.png",
+      "key": "haven-city-lore",
+      "width": 32,
+      "height": 48,
+      "frame": [
+        32,
+        48
+      ],
+      "frames": 1,
+      "bytes": 274,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-maproom.png",
+      "key": "haven-city-maproom",
+      "width": 128,
+      "height": 144,
+      "frame": [
+        128,
+        144
+      ],
+      "frames": 1,
+      "bytes": 2063,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-market-arcade.png",
+      "key": "haven-city-market-arcade",
+      "width": 192,
+      "height": 112,
+      "frame": [
+        192,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1511,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-market-hall.png",
+      "key": "haven-city-market-hall",
+      "width": 160,
+      "height": 144,
+      "frame": [
+        160,
+        144
+      ],
+      "frames": 1,
+      "bytes": 2135,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-oak-shrine.png",
+      "key": "haven-city-oak-shrine",
+      "width": 96,
+      "height": 144,
+      "frame": [
+        96,
+        144
+      ],
+      "frames": 1,
+      "bytes": 1231,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-portal.png",
+      "key": "haven-city-portal",
+      "width": 160,
+      "height": 176,
+      "frame": [
+        160,
+        176
+      ],
+      "frames": 1,
+      "bytes": 3586,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-props.png",
+      "key": "haven-city-props",
+      "width": 256,
+      "height": 384,
+      "frame": [
+        32,
+        48
+      ],
+      "frames": 64,
+      "bytes": 10422,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-residents.png",
+      "key": "haven-city-residents",
+      "width": 768,
+      "height": 864,
+      "frame": [
+        48,
+        48
+      ],
+      "frames": 288,
+      "bytes": 46110,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-shelter.png",
+      "key": "haven-city-shelter",
+      "width": 128,
+      "height": 112,
+      "frame": [
+        128,
+        112
+      ],
+      "frames": 1,
+      "bytes": 1125,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-armor.png",
+      "key": "haven-city-stall-armor",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 727,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-boots.png",
+      "key": "haven-city-stall-boots",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 665,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-helmet.png",
+      "key": "haven-city-stall-helmet",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 718,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-pants.png",
+      "key": "haven-city-stall-pants",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 661,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-resources.png",
+      "key": "haven-city-stall-resources",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 704,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-stall-supplies.png",
+      "key": "haven-city-stall-supplies",
+      "width": 72,
+      "height": 80,
+      "frame": [
+        72,
+        80
+      ],
+      "frames": 1,
+      "bytes": 752,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-tiles.png",
+      "key": "haven-city-tiles",
+      "width": 128,
+      "height": 160,
+      "frame": [
+        16,
+        16
+      ],
+      "frames": 80,
+      "bytes": 3650,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-trees.png",
+      "key": "haven-city-trees",
+      "width": 384,
+      "height": 384,
+      "frame": [
+        96,
+        128
+      ],
+      "frames": 12,
+      "bytes": 12309,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-watchtower.png",
+      "key": "haven-city-watchtower",
+      "width": 64,
+      "height": 176,
+      "frame": [
+        64,
+        176
+      ],
+      "frames": 1,
+      "bytes": 1673,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/city-waypoint.png",
+      "key": "haven-city-waypoint",
+      "width": 32,
+      "height": 48,
+      "frame": [
+        32,
+        48
+      ],
+      "frames": 1,
+      "bytes": 457,
+      "use": "Live city",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/dummy.png",
+      "key": "haven-dummy",
+      "width": 42,
+      "height": 54,
+      "frame": [
+        42,
+        54
+      ],
+      "frames": 1,
+      "bytes": 463,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/forge.png",
+      "key": "haven-forge",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5336,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/fountain.png",
+      "key": "haven-fountain",
+      "width": 100,
+      "height": 100,
+      "frame": [
+        100,
+        100
+      ],
+      "frames": 1,
+      "bytes": 1675,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/inn.png",
+      "key": "haven-inn",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5265,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/market.png",
+      "key": "haven-market",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5503,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/npc.png",
+      "key": "haven-npc",
+      "width": 480,
+      "height": 48,
+      "frame": [
+        48,
+        48
+      ],
+      "frames": 10,
+      "bytes": 2898,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/player-ember.png",
+      "key": "haven-player-ember",
+      "width": 320,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1759,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/player-moss.png",
+      "key": "haven-player-moss",
+      "width": 320,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1743,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/player-tide.png",
+      "key": "haven-player-tide",
+      "width": 320,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1778,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/portal.png",
+      "key": "haven-portal",
+      "width": 90,
+      "height": 105,
+      "frame": [
+        90,
+        105
+      ],
+      "frames": 1,
+      "bytes": 1414,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/store.png",
+      "key": "haven-store",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5126,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/terrain.png",
+      "key": "haven-terrain",
+      "width": 896,
+      "height": 752,
+      "frame": [
+        896,
+        752
+      ],
+      "frames": 1,
+      "bytes": 209107,
+      "use": "Town Map overview only",
+      "source": "scripts/generate-haven-city.py"
+    },
+    {
+      "path": "/assets/haven/tree.png",
+      "key": "haven-tree",
+      "width": 80,
+      "height": 104,
+      "frame": [
+        80,
+        104
+      ],
+      "frames": 1,
+      "bytes": 2875,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/wardrobe.png",
+      "key": "haven-wardrobe",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5389,
+      "use": "Live city",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/haven/workshop.png",
+      "key": "haven-workshop",
+      "width": 150,
+      "height": 160,
+      "frame": [
+        150,
+        160
+      ],
+      "frames": 1,
+      "bytes": 5504,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/pixel/interactions/fire.png",
+      "key": "pixel-station-fire",
+      "width": 256,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 8,
+      "bytes": 650,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/pixel/interactions/portal.png",
+      "key": "pixel-station-portal",
+      "width": 256,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 8,
+      "bytes": 1357,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    },
+    {
+      "path": "/assets/pixel/interactions/water.png",
+      "key": "pixel-station-water",
+      "width": 256,
+      "height": 32,
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 8,
+      "bytes": 488,
+      "use": "Retained legacy / other presentation",
+      "source": "scripts/generate-pixel-art.py"
+    }
+  ],
+  "remaining": [
+    "Private houses and annex doors are scenic, without interiors.",
+    "Training is a real weapon test; the reserved duel ring has no PvP implementation.",
+    "NPC schedules and lighting are local cosmetic presentation, not a shared multiplayer simulation.",
+    "Figma tools were unavailable; these editable HTML/SVG boards are the design deliverable."
+  ]
+}

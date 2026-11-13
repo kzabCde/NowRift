@@ -1,0 +1,48 @@
+{
+  "schema": 2,
+  "tiles": {
+    "path": "city-tiles.png",
+    "cell": [
+      16,
+      16
+    ],
+    "columns": 8,
+    "frames": 80
+  },
+  "props": {
+    "path": "city-props.png",
+    "cell": [
+      32,
+      48
+    ],
+    "columns": 8,
+    "frames": 64
+  },
+  "trees": {
+    "path": "city-trees.png",
+    "cell": [
+      96,
+      128
+    ],
+    "columns": 4,
+    "frames": 12
+  },
+  "residents": {
+    "path": "city-residents.png",
+    "cell": [
+      48,
+      48
+    ],
+    "columns": 16,
+    "frames": 288
+  },
+  "effects": {
+    "path": "city-fx.png",
+    "cell": [
+      32,
+      48
+    ],
+    "columns": 8,
+    "frames": 56
+  }
+}

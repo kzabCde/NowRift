@@ -338,10 +338,16 @@ export default function RiftOutfitters({
   profile,
   character,
   busy,
+  initialCategory = "armor",
   ...callbacks
-}: { profile: Progress; character: CharacterId; busy: boolean } & Callbacks) {
+}: {
+  profile: Progress;
+  character: CharacterId;
+  busy: boolean;
+  initialCategory?: Category;
+} & Callbacks) {
   const { t, text } = useI18n();
-  const [category, setCategory] = useState<Category>("armor"),
+  const [category, setCategory] = useState<Category>(initialCategory),
     [collection, setCollection] = useState("forest"),
     [rarity, setRarity] = useState("all"),
     [mode, setMode] = useState<"stock" | "owned">("stock"),

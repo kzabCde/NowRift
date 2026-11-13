@@ -1,3 +1,4 @@
+import { cityTh } from "./city-th";
 import { profileTh } from "./profile-th";
 import { landingTh } from "./landing-th";
 import { visualTh } from "./visual-th";
@@ -8,6 +9,7 @@ import { rpgTh } from "./rpg-th";
 import { outfittersTh } from "./outfitters-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  city: cityTh,
   outfitters: outfittersTh,
   landing: landingTh,
   visual: visualTh,
