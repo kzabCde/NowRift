@@ -673,6 +673,7 @@ test("right-click context actions and Ctrl multi-selection sell two equipment it
     .getByRole("dialog", { name: "Confirm bulk sale" })
     .getByRole("button", { name: "CONFIRM", exact: true })
     .click();
+  await expect(page.locator(".rpg-cell.multi-selected")).toHaveCount(0);
   const state = await saved(page);
   expect(
     state.rpg!.equipment.some(
