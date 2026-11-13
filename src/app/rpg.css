@@ -1280,3 +1280,133 @@
     scroll-margin-top: 12px;
   }
 }
+
+/* Inventory expansion and accessible multi-item management */
+.rpg-bag-expansion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #8a8c624f;
+  background: #1a2823;
+  margin-top: 16px;
+}
+.rpg-bag-expansion > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rpg-bag-expansion strong {
+  font: 9px var(--mono);
+  letter-spacing: 1px;
+  color: #dcc58c;
+}
+.rpg-bag-expansion small {
+  font: 10px var(--mono);
+  color: #bac5af;
+}
+.rpg-bag-expansion .rpg-button {
+  white-space: nowrap;
+  border-color: #cbb67d;
+  color: #e4d09a;
+}
+.rpg-bulk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 15px;
+}
+.rpg-bulk-toolbar > span {
+  font: 10px var(--mono);
+  color: #d6c08d;
+}
+.rpg-bulk-toolbar .rpg-button {
+  min-height: 36px;
+  padding: 8px 11px;
+}
+.rpg-bulk-warning {
+  width: 100%;
+  color: #e2b1a0;
+  font: 10px/1.5 var(--mono);
+}
+.rpg-cell.multi-selected {
+  outline: 2px solid #e0bc73;
+  outline-offset: 1px;
+  background-color: #314538;
+  z-index: 2;
+}
+.rpg-multi-check {
+  position: absolute;
+  left: 3px;
+  bottom: 3px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: #18261d;
+  background: #e0bc73;
+  border-radius: 2px;
+  font: bold 12px sans-serif;
+  pointer-events: none;
+}
+.rpg-context-menu {
+  position: fixed;
+  z-index: 1000;
+  width: min(238px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #c8b17d;
+  background: #17231f;
+  box-shadow: 0 12px 36px #000b;
+}
+.rpg-context-menu strong {
+  display: block;
+  padding: 8px 10px 11px;
+  margin-bottom: 5px;
+  font: 11px var(--mono);
+  color: #e4d2a4;
+  border-bottom: 1px solid #bda77744;
+}
+.rpg-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  min-height: 38px;
+  text-align: left;
+  background: transparent;
+  color: #d7dfce;
+  border: 1px solid transparent;
+  font: 9px var(--mono);
+}
+.rpg-context-menu button:hover:not(:disabled),
+.rpg-context-menu button:focus-visible {
+  background: #4f624233;
+  border-color: #a9b58688;
+  outline: none;
+}
+.rpg-context-menu button:disabled {
+  color: #7b837b;
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  .rpg-bag-expansion {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .rpg-bag-expansion > div {
+    flex: 1 1 150px;
+  }
+  .rpg-bag-expansion .rpg-button {
+    flex: 1 1 120px;
+  }
+  .rpg-bulk-toolbar .rpg-button {
+    flex: 1 1 auto;
+    font-size: 8px;
+  }
+  .rpg-context-menu {
+    max-height: calc(100dvh - 25px);
+  }
+}

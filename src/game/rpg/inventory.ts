@@ -100,6 +100,8 @@ export function grantStack(
   target[definitionId] = next;
 }
 export function removeEntry(p: Progress, entry: InventoryEntry, quantity = 1) {
+  if (entry.equipment && entry.id.startsWith("starter-"))
+    throw new Error("Starter equipment is protected.");
   if (entry.equipped || entry.locked || entry.favorite)
     throw new Error("Equipped, locked and favorite items are protected.");
   if (
