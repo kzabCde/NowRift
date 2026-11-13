@@ -151,6 +151,7 @@ export default function RpgScreen({
   character: requestedCharacter = "wanderer",
   initialTab = "inventory",
   focusRecipes = false,
+  initialMerchantCategory,
   onCommitted,
 }: {
   onBack: () => void;
@@ -158,6 +159,7 @@ export default function RpgScreen({
   character?: CharacterId;
   initialTab?: Tab;
   focusRecipes?: boolean;
+  initialMerchantCategory?: "armor" | "helmet" | "pants" | "boots";
   onCommitted?: (receipt: ActionVisualReceipt, progress: Progress) => void;
 }) {
   const { text } = useI18n();
@@ -583,6 +585,7 @@ export default function RpgScreen({
           </section>
         ) : tab === "outfitters" ? (
           <RiftOutfitters
+            initialCategory={initialMerchantCategory}
             profile={profile}
             character={character}
             busy={busy}

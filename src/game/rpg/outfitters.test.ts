@@ -1,5 +1,6 @@
 import "fake-indexeddb/auto";
 import { beforeEach, expect, test } from "vitest";
+import { migrateWorld } from "../world/save";
 import legacy from "./fixtures/six-slot-save.json";
 import { emptyProgress, type Progress } from "../campaign/progression";
 import { migrateSave } from "../persistence/validation";
@@ -71,6 +72,7 @@ test("the six-slot golden save migrates once without rewards or changes to its f
   const expected = structuredClone(before);
   expected.rpg.schema = 2;
   expected.rpg.equipped.pants = null;
+  expected.local.world = migrateWorld(expected.local.world);
   expect(next).toEqual(expected);
   expect(migrateSave(next, next.local.id, next.local.lastPlayed)).toEqual(next);
   expect(before).toEqual(legacy);

@@ -130,7 +130,27 @@ function definition(source: (typeof ASSET_SOURCES)[number]): PixelAsset {
     bundle = "haven";
     pivot = [0.5, 1];
     scale = 2;
-    if (name === "npc" || name.startsWith("player-")) {
+    if (name === "city-tiles") {
+      kind = "spritesheet";
+      category = "terrain";
+      frameWidth = frameHeight = 16;
+      pivot = [0, 0];
+    } else if (name === "city-props" || name === "city-fx") {
+      kind = "spritesheet";
+      category = name === "city-fx" ? "vfx" : "prop";
+      frameWidth = 32;
+      frameHeight = 48;
+    } else if (name === "city-trees") {
+      kind = "spritesheet";
+      category = "prop";
+      frameWidth = 96;
+      frameHeight = 128;
+    } else if (name === "city-residents") {
+      kind = "spritesheet";
+      category = "character";
+      frameWidth = frameHeight = 48;
+      pivot = [0.5, 0.75];
+    } else if (name === "npc" || name.startsWith("player-")) {
       kind = "spritesheet";
       category = "character";
       frameWidth = frameHeight = source.height;

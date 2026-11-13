@@ -4,9 +4,12 @@ import type { Point } from "./content";
 import type { WeaponSnapshot } from "../rpg/model";
 import type { CharacterAppearance } from "../presentation/appearance";
 import type { ActionVisualReceipt } from "../presentation/action-feedback";
+import type { CityMilestones } from "./city";
 export type HavenStart = {
+  milestones?: CityMilestones;
   session: string;
   position: Point;
+  positionEpoch?: number;
   outfit: Outfit;
   character: CharacterId;
   weapon: WeaponSnapshot | null;
@@ -18,6 +21,8 @@ export type HavenSnapshot = {
   paused: boolean;
   moving: boolean;
   training: number;
+  district?: string;
+  night?: boolean;
 };
 export type HavenCommand =
   | {
@@ -25,12 +30,19 @@ export type HavenCommand =
     }
   | {
       type: "haven-equipment";
+      milestones?: CityMilestones;
       character: CharacterId;
       weapon: WeaponSnapshot | null;
       visualAppearance?: CharacterAppearance;
     }
   | { type: "haven-feedback"; receipt: ActionVisualReceipt }
   | { type: "haven-lock"; locked: boolean }
+  | {
+      type: "haven-teleport";
+      position: Point;
+      epoch: number;
+      facing: "down" | "up" | "left" | "right";
+    }
   | { type: "haven-interact" }
   | { type: "haven-look"; outfit: Outfit }
   | { type: "haven-locate"; id: string };

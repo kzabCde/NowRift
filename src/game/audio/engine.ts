@@ -41,6 +41,9 @@ export class RiftAudio {
   private beat = 0;
   private scene: MusicState = "menu";
   private world: WorldId = "forest";
+  private district: string | null = null;
+  private districtSound = { cutoff: 800, gain: 0.12 };
+  private nextAtmosphere = 0;
   private paused = false;
   private hidden = false;
   private mounts = 0;
@@ -67,6 +70,8 @@ export class RiftAudio {
       schedulers: this.timer ? 1 : 0,
       state: this.scene,
       world: this.world,
+      district: this.district,
+      ambientLoops: [...this.voices].filter((v) => v.bus === "ambient").length,
       paused: this.paused,
       mounts: this.mounts,
       events: { ...this.events },
@@ -226,6 +231,7 @@ export class RiftAudio {
     if (!changed && paused === this.paused) return;
     this.scene = state;
     this.world = world;
+    if (state !== "exploration") this.district = null;
     this.paused = paused;
     this.configure(this.preferences);
     if (changed) {
@@ -243,6 +249,17 @@ export class RiftAudio {
       this.layers = [];
       while (this.retiring.length > 4) this.retiring.shift()!.node.disconnect();
     }
+  }
+  setDistrict(id: string | null, sound = { cutoff: 800, gain: 0.12 }) {
+    if (this.district === id) return;
+    this.district = id;
+    this.districtSound = {
+      cutoff: Math.max(80, Math.min(4000, sound.cutoff)),
+      gain: Math.max(0, Math.min(0.25, sound.gain)),
+    };
+    this.nextAtmosphere = 0;
+    if (this.context?.state === "running" && this.scene === "exploration")
+      this.ambience();
   }
   play(id: SoundId) {
     const c = this.context,
@@ -369,6 +386,40 @@ export class RiftAudio {
       this.layers.push(layer);
       this.ambience();
     }
+    // District details share the existing scheduler and voice cap, including with music disabled.
+    if (
+      this.district &&
+      !this.paused &&
+      this.preferences.ambient > 0 &&
+      !this.preferences.muted &&
+      c.currentTime >= this.nextAtmosphere
+    ) {
+      const motifs: Record<string, [number, number, number, OscillatorType]> = {
+        plaza: [620, 420, 0.35, "sine"],
+        emberforge: [210, 95, 0.22, "triangle"],
+        market: [290, 360, 0.28, "sine"],
+        grove: [1400, 1950, 0.16, "sine"],
+        guild: [530, 790, 0.26, "sine"],
+        garden: [1850, 1350, 0.2, "sine"],
+        gate: [165, 220, 1.1, "sine"],
+        training: [180, 90, 0.12, "triangle"],
+        hearthside: [440, 660, 0.24, "sine"],
+      };
+      const motif = motifs[this.district];
+      if (motif)
+        this.tone(
+          motif[0],
+          motif[1],
+          motif[2],
+          0.007,
+          motif[3],
+          this.ambient!,
+          "district",
+          0,
+        );
+      this.nextAtmosphere =
+        c.currentTime + (this.district === "emberforge" ? 3.7 : 7.2);
+    }
     // Do not schedule silence or a backlog after a browser interruption.
     if (this.preferences.muted || this.preferences.music === 0) {
       this.nextNote = c.currentTime;
@@ -466,14 +517,19 @@ export class RiftAudio {
     source.buffer = buffer;
     source.loop = true;
     filter.type = "lowpass";
-    filter.frequency.value = {
-      forest: 800,
-      desert: 1400,
-      frozen: 2400,
-      infernal: 190,
-    }[this.world];
+    filter.frequency.value = this.district
+      ? this.districtSound.cutoff
+      : {
+          forest: 800,
+          desert: 1400,
+          frozen: 2400,
+          infernal: 190,
+        }[this.world];
     gain.gain.value = 0;
-    gain.gain.linearRampToValueAtTime(0.18, c.currentTime + 1.2);
+    gain.gain.linearRampToValueAtTime(
+      this.district ? this.districtSound.gain : 0.18,
+      c.currentTime + 1.2,
+    );
     source.connect(filter).connect(gain).connect(this.ambient!);
     const voice: Voice = { source, gain, priority: 0, bus: "ambient" };
     this.voices.add(voice);

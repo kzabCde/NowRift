@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { SaveData, PlayerProfile } from "../src/game/persistence/model";
-import { LANDMARKS } from "../src/game/world/content";
+import { HAVEN, LANDMARKS, validPosition } from "../src/game/world/content";
 import { waitForHavenInput } from "./helpers/haven";
 async function save(page: Page): Promise<SaveData> {
   return page.evaluate(
@@ -256,8 +256,9 @@ test.describe("instrumented open-world integration", () => {
       await page.bringToFront();
       const resume = page.getByRole("button", { name: "Resume", exact: true });
       if (await resume.isVisible()) await resume.click();
-      await page.evaluate(() =>
-        window.__NOWRIFT_HAVEN__!.place({ x: 1260, y: 454 }),
+      await page.evaluate(
+        (p) => window.__NOWRIFT_HAVEN__!.place(p),
+        LANDMARKS.find((l) => l.id === "wardrobe")!.entrance,
       );
       await page.locator(".haven-interact").click();
       await expect(
@@ -301,15 +302,20 @@ test.describe("instrumented open-world integration", () => {
         ),
     );
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.evaluate(() =>
-      window.__NOWRIFT_HAVEN__!.place({ x: 370, y: 454 }),
+    await page.evaluate(
+      (p) => window.__NOWRIFT_HAVEN__!.place(p),
+      LANDMARKS.find((l) => l.id === "forge")!.entrance,
     );
     await page.keyboard.down("w");
     await page.waitForTimeout(700);
     await page.keyboard.up("w");
     expect(
       (await page.evaluate(() => window.__NOWRIFT_HAVEN__!.state().position)).y,
-    ).toBeGreaterThanOrEqual(419);
+    ).toBeGreaterThanOrEqual(
+      LANDMARKS.find((l) => l.id === "forge")!.solid!.y +
+        LANDMARKS.find((l) => l.id === "forge")!.solid!.h +
+        12,
+    );
     await page
       .locator("canvas")
       .evaluate((e) => e.setAttribute("data-instance", "original"));
@@ -544,6 +550,7 @@ test("the cached town, character and map continue after an offline reload", asyn
   page,
   context,
 }) => {
+  test.setTimeout(60000);
   await guest(page);
   await haven(page);
   const before = await save(page);
@@ -572,15 +579,30 @@ test("the cached town, character and map continue after an offline reload", asyn
   await expect(page.getByRole("dialog", { name: "Town map" })).toBeVisible();
   expect((await save(page)).rpg).toEqual(before.rpg);
   await close(page);
-  // Use the actual streets without any test-only navigation.
-  for (const [key, ms] of [
-    ["d", 1150],
-    ["s", 2300],
-    ["d", 1150],
-  ] as const) {
+  // Walk the expanded south lane and east approach with real keyboard input.
+  // These are street turns, not test-only position writes or town teleports.
+  const portal = LANDMARKS.find((l) => l.id === "portal")!;
+  let from = { ...HAVEN.spawn };
+  for (const target of [
+    { x: HAVEN.spawn.x, y: portal.entrance.y + 26 },
+    { x: portal.entrance.x, y: portal.entrance.y + 26 },
+  ]) {
+    const dx = target.x - from.x,
+      dy = target.y - from.y;
+    const distance = Math.hypot(dx, dy);
+    for (let n = 0; n <= distance; n += 4)
+      expect(
+        validPosition({
+          x: from.x + (dx * n) / distance,
+          y: from.y + (dy * n) / distance,
+        }),
+      ).toBe(true);
+    const key = dx ? "d" : "s",
+      ms = (distance / HAVEN.speed) * 1000;
     await page.keyboard.down(key);
     await page.waitForTimeout(ms);
     await page.keyboard.up(key);
+    from = target;
   }
   await expect(page.locator(".haven-interact")).toContainText(
     "Portal Sanctuary",

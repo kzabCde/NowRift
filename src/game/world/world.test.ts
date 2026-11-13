@@ -9,6 +9,7 @@ import {
   nearest,
   validPosition,
 } from "./content";
+import { CITY } from "./city";
 import { defaultWorld, validWorld } from "./save";
 import {
   expeditionLayout,
@@ -179,16 +180,29 @@ describe("authored safe world and movement", () => {
     );
   });
   test("solid buildings, fountain and water block movement while doors remain reachable", () => {
-    expect(validPosition({ x: 370, y: 350 })).toBe(false);
-    expect(validPosition({ x: 900, y: 600 })).toBe(false);
-    expect(validPosition({ x: 1700, y: 500 })).toBe(false);
-    expect(validPosition({ x: 1700, y: 1080 })).toBe(true);
-    let p = { x: 370, y: 454 };
+    const building = LANDMARKS.find((l) => l.id === "forge")!,
+      water = CITY.water[0],
+      bridge = CITY.bridges[1];
+    expect(validPosition({ x: building.x, y: building.y - 60 })).toBe(false);
+    expect(
+      validPosition({
+        x: CITY.structures[0].solid.x + 20,
+        y: CITY.structures[0].solid.y + 20,
+      }),
+    ).toBe(false);
+    expect(
+      validPosition({ x: water.x + water.w / 2, y: water.y + water.h / 2 }),
+    ).toBe(false);
+    expect(
+      validPosition({ x: bridge.x + bridge.w / 2, y: bridge.y + bridge.h / 2 }),
+    ).toBe(true);
+    let p = { ...building.entrance };
     for (let i = 0; i < 100; i++) p = move(p, 0, -1, 0.05);
-    expect(p.y).toBeGreaterThanOrEqual(419);
+    const forge = LANDMARKS.find((l) => l.id === "forge")!.solid!;
+    expect(p.y).toBeGreaterThanOrEqual(forge.y + forge.h + HAVEN.radius);
   });
   test("nearby interactions require range and choose the closest doorway", () => {
-    expect(nearest(HAVEN.spawn)).toBeNull();
+    expect(nearest(HAVEN.spawn)?.id).toBe("waypoint-plaza");
     for (const l of LANDMARKS) expect(nearest(l.entrance)?.id).toBe(l.id);
     expect(nearest({ x: 20, y: 20 })).toBeNull();
   });

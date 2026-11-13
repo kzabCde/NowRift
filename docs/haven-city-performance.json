@@ -1,0 +1,35 @@
+{
+  "environment": "Headless Chromium 156 on Linux; retained Canvas2D renderer. Four-second frame samples after visiting every waypoint. CPU throttling and a phone viewport are emulation, not physical mobile hardware. Texture bytes estimate uncompressed source images, not measured GPU allocation.",
+  "measurements": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000,
+        "cpu": 1
+      },
+      "fps": 58.98377946062635,
+      "p95FrameMs": 16.799999999999272,
+      "phaserFps": 110.13046646118164,
+      "heapBytes": 27439976,
+      "textureBytes": 23945860,
+      "sprites": 335,
+      "visibleSprites": 62,
+      "motes": 8
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "cpu": 4
+      },
+      "fps": 27.32240437156954,
+      "p95FrameMs": 50.099999999998545,
+      "phaserFps": 55.75889007002479,
+      "heapBytes": 33192760,
+      "textureBytes": 23945860,
+      "sprites": 335,
+      "visibleSprites": 47,
+      "motes": 8
+    }
+  ]
+}

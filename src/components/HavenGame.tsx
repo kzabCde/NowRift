@@ -43,10 +43,14 @@ import RpgScreen, { ItemIcon } from "./RpgScreen";
 import WorldMap from "./WorldMap";
 import { Brand, Modal, Settings, DialogSurface } from "./GameUi";
 import RiftTransition from "./RiftTransition";
+import TownMap from "./TownMap";
+import { waypoint } from "@/game/world/waypoints";
+import { useSettings } from "@/state/settings";
 import SanctuaryPanel from "./SanctuaryPanel";
 import ProfileScreen from "./ProfileScreen";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import { shortcutAllowed } from "@/game/navigation/flow";
+import { DISTRICTS, cityMilestones } from "@/game/world/city";
 import { ACTIVITIES } from "@/game/world/activities";
 type Panel =
   | InteractionKind
@@ -81,6 +85,8 @@ export default function HavenGame({
   const bridge = useMemo(() => new GameBridge(), []),
     writer = useRef(uid()),
     sequence = useRef(0),
+    positionEpoch = useRef(0),
+    travelTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     busyRef = useRef(false),
     pending = useRef<Promise<unknown>>(Promise.resolve());
   const profileRef = useRef<SaveData | null>(null);
@@ -98,8 +104,17 @@ export default function HavenGame({
   const [customization, setCustomization] = useState<AppearanceCustomization>({
     ...DEFAULT_CUSTOMIZATION,
   });
+  const [stationId, setStationId] = useState<string | null>(null);
+  const station = LANDMARKS.find((l) => l.id === stationId);
   const panel = panels.at(-1) ?? null;
   const setPanel = (next: Panel) => setPanels(next ? [next] : []);
+  const [townTravel, setTownTravel] = useState<string | null>(null);
+  useEffect(
+    () => () => {
+      if (travelTimer.current) clearTimeout(travelTimer.current);
+    },
+    [],
+  );
   const [revealed, setRevealed] = useState(false),
     [rendererError, setRendererError] = useState(""),
     [attempt, setAttempt] = useState(0);
@@ -133,15 +148,19 @@ export default function HavenGame({
         setP(next);
         profileRef.current = next;
         const w = next.local.world!;
+        positionEpoch.current = w.positionEpoch;
+        sequence.current = w.sequence;
         setOutfit(w.outfit);
         setCustomization({ ...(w.customization ?? DEFAULT_CUSTOMIZATION) });
         setInitial({
           session: writer.current,
           position: w.position,
+          positionEpoch: w.positionEpoch,
           outfit: w.outfit,
           character: next.local.character,
           weapon: resolveEquippedWeapon(next),
           visualAppearance: resolveAppearance(next),
+          milestones: cityMilestones(next),
         });
         if (w.tutorial) setPanel("tutorial");
       })
@@ -153,12 +172,13 @@ export default function HavenGame({
     };
   }, [slotId]);
   const savePosition = useCallback(
-    (position: Point) => {
+    (position: Point, epoch = positionEpoch.current) => {
       const command: WorldCommand = {
         type: "position",
         writer: writer.current,
         sequence: ++sequence.current,
         position,
+        epoch,
       };
       pending.current = pending.current
         .then(() => profileRepository.world(slotId, command))
@@ -197,7 +217,9 @@ export default function HavenGame({
       bridge.on("ready", setReady),
       bridge.on("loading", setLoading),
       bridge.on("error", setRendererError),
-      bridge.on("haven-save", savePosition),
+      bridge.on("haven-save", ({ position, epoch }) =>
+        savePosition(position, epoch),
+      ),
       bridge.on("haven-shortcut", (name) =>
         setPanel(
           name === "inventory"
@@ -223,6 +245,7 @@ export default function HavenGame({
             setCustomization({
               ...(next.local.world!.customization ?? DEFAULT_CUSTOMIZATION),
             });
+            setStationId(landmark.id);
             setPanel(landmark.kind);
           } else setPanel("pause");
         });
@@ -233,9 +256,15 @@ export default function HavenGame({
   useEffect(() => {
     bridge.emit("command", {
       type: "haven-lock",
-      locked: panel !== null || busy || !!error || !!rendererError || !revealed,
+      locked:
+        panel !== null ||
+        busy ||
+        !!townTravel ||
+        !!error ||
+        !!rendererError ||
+        !revealed,
     });
-  }, [panel, busy, error, rendererError, revealed, bridge, ready]);
+  }, [panel, busy, townTravel, error, rendererError, revealed, bridge, ready]);
   useEffect(() => {
     if (p && ready)
       bridge.emit("command", {
@@ -243,6 +272,7 @@ export default function HavenGame({
         character: p.local.character,
         weapon: resolveEquippedWeapon(p),
         visualAppearance: resolveAppearance(p),
+        milestones: cityMilestones(p),
       });
   }, [p, ready, bridge]);
   const close = useCallback(() => {
@@ -292,6 +322,50 @@ export default function HavenGame({
     savePosition,
     t,
   ]);
+  async function fastTravel(waypointId: string) {
+    if (busyRef.current || townTravel || !profileRef.current) return;
+    const destination = waypoint(waypointId);
+    if (!destination) return;
+    setTownTravel(destination.name);
+    const next = await action({
+      type: "fast-travel",
+      writer: writer.current,
+      waypointId,
+      expectedEpoch: positionEpoch.current,
+    });
+    if (!next) {
+      setTownTravel(null);
+      return;
+    }
+    const world = next.local.world!;
+    positionEpoch.current = world.positionEpoch;
+    sequence.current = world.sequence;
+    current.current = {
+      ...current.current,
+      position: { ...world.position },
+      near: null,
+      moving: false,
+    };
+    setHud(current.current);
+    bridge.emit("command", {
+      type: "haven-teleport",
+      position: world.position,
+      epoch: world.positionEpoch,
+      facing: destination.facing as "down",
+    });
+    audio.play("magic");
+    setPanel(null);
+    const reduced =
+      useSettings.getState().reducedEffects ||
+      matchMedia("(prefers-reduced-motion:reduce)").matches;
+    travelTimer.current = setTimeout(
+      () => {
+        setTownTravel(null);
+        travelTimer.current = null;
+      },
+      reduced ? 30 : 480,
+    );
+  }
   async function leave(profiles = false) {
     savePosition(current.current.position);
     await pending.current;
@@ -330,7 +404,9 @@ export default function HavenGame({
       panel === "blacksmith"
         ? "blacksmith"
         : panel === "merchant"
-          ? "outfitters"
+          ? station?.stock === "supplies" || station?.stock === "resources"
+            ? "shop"
+            : "outfitters"
           : panel === "crafting"
             ? "shop"
             : "inventory";
@@ -403,16 +479,39 @@ export default function HavenGame({
           />
         )}
       </div>
+      {townTravel && (
+        <div
+          className="town-travel-transition"
+          role="status"
+          data-testid="town-travel-transition"
+        >
+          <i aria-hidden="true" />
+          <strong>{text("Travelling through the city")}</strong>
+          <span>{text(townTravel)}</span>
+        </div>
+      )}
       <header className="haven-topbar">
         <Brand />
         <div className="haven-title">
           <span className="eyebrow">{h("SAFE SANCTUARY")}</span>
           <h1>{j("Rift Heaven")}</h1>
+          <small
+            className="haven-district"
+            data-district={hud.district ?? "plaza"}
+          >
+            {text(
+              DISTRICTS.find((d) => d.id === hud.district)?.name ??
+                "Central Plaza",
+            )}{" "}
+            · {text(hud.night ? "Lantern hours" : "Daylight")}
+          </small>
         </div>
         <div className="haven-toolbar">
           <SaveIndicator />
           <LanguageSwitcher compact />
-          <button onClick={() => void leave()}>{h("Menu")}</button>
+          <button disabled={busy || !!townTravel} onClick={() => void leave()}>
+            {h("Menu")}
+          </button>
         </div>
       </header>
       <aside className="haven-status" aria-label={j("Rift Heaven")}>
@@ -617,12 +716,22 @@ export default function HavenGame({
           <DialogSurface
             className="haven-screen-overlay"
             title={text(
-              LANDMARKS.find((l) => l.kind === panel)?.name ?? "Inventory",
+              station?.kind === panel
+                ? station.name
+                : (LANDMARKS.find((l) => l.kind === panel)?.name ??
+                    "Inventory"),
             )}
             onClose={close}
           >
             <RpgScreen
               initialTab={stationTab}
+              initialMerchantCategory={
+                panel === "merchant" &&
+                station?.stock &&
+                ["armor", "helmet", "pants", "boots"].includes(station.stock)
+                  ? (station.stock as "armor" | "helmet" | "pants" | "boots")
+                  : undefined
+              }
               focusRecipes={panel === "crafting"}
               weapon={p?.local.weapon}
               character={p?.local.character}
@@ -670,25 +779,27 @@ export default function HavenGame({
         ].includes(panel) && (
           <Modal
             title={
-              panel === "npc"
-                ? h("Mara · Rift Keeper")
-                : panel === "map"
-                  ? h("Town map")
-                  : panel === "portal"
-                    ? h("Portal Sanctuary")
-                    : panel === "wardrobe"
-                      ? h("Change appearance")
-                      : panel === "pause"
-                        ? h("Paused")
-                        : panel === "tutorial"
-                          ? h("A place to return to.")
-                          : panel === "rest"
-                            ? h("The Wayfarer’s Rest")
-                            : panel === "training"
-                              ? h("Training Grounds")
-                              : panel === "treasure"
-                                ? h("The Forgotten Cache")
-                                : h("Journal")
+              panel === "lore" || panel === "guild" || panel === "waypoint"
+                ? text(station?.name ?? "Adventurer’s Guild")
+                : panel === "npc"
+                  ? h("Mara · Rift Keeper")
+                  : panel === "map"
+                    ? h("Town map")
+                    : panel === "portal"
+                      ? h("Portal Sanctuary")
+                      : panel === "wardrobe"
+                        ? h("Change appearance")
+                        : panel === "pause"
+                          ? h("Paused")
+                          : panel === "tutorial"
+                            ? h("A place to return to.")
+                            : panel === "rest"
+                              ? h("The Wayfarer’s Rest")
+                              : panel === "training"
+                                ? h("Training Grounds")
+                                : panel === "treasure"
+                                  ? h("The Forgotten Cache")
+                                  : h("Journal")
             }
             onClose={close}
           >
@@ -729,71 +840,103 @@ export default function HavenGame({
                 {journal()}
               </>
             )}
-            {panel === "map" && (
+            {panel === "lore" &&
+              station &&
+              (() => {
+                const district = DISTRICTS.find(
+                  (d) => d.id === station.district,
+                );
+                return district ? (
+                  <article className="haven-lore">
+                    <span className="eyebrow">{text(district.name)}</span>
+                    <h2>{text(district.loreTitle)}</h2>
+                    <p>{text(district.lore)}</p>
+                    <small>
+                      {text(
+                        "Discovery recorded in this character’s city journal.",
+                      )}
+                    </small>
+                  </article>
+                ) : null;
+              })()}
+            {panel === "guild" && (
               <>
-                <h2>{h("Town map")}</h2>
-                <div
-                  className="haven-map"
-                  role="img"
-                  aria-label={h("Town map")}
-                  style={{ backgroundImage: "url(/assets/haven/terrain.png)" }}
-                >
-                  {LANDMARKS.filter(
-                    (l) =>
-                      l.kind !== "treasure" || w?.discoveries.includes(l.id),
-                  ).map((l) => (
-                    <button
-                      key={l.id}
-                      title={text(l.name)}
-                      style={{
-                        left: `${(l.entrance.x / HAVEN.width) * 100}%`,
-                        top: `${(l.entrance.y / HAVEN.height) * 100}%`,
-                      }}
-                      onClick={() => {
-                        bridge.emit("command", {
-                          type: "haven-locate",
-                          id: l.id,
-                        });
-                        close();
-                      }}
-                    >
-                      ◆
-                    </button>
-                  ))}
-                  <i
-                    style={{
-                      left: `${(hud.position.x / HAVEN.width) * 100}%`,
-                      top: `${(hud.position.y / HAVEN.height) * 100}%`,
-                    }}
-                    title={h("You are here")}
-                  />
-                </div>
-                <div className="haven-map-list">
-                  {LANDMARKS.filter(
-                    (l) => l.kind !== "treasure" || w?.cacheClaimed,
-                  ).map((l) => (
-                    <button
-                      key={l.id}
-                      onClick={() => {
-                        bridge.emit("command", {
-                          type: "haven-locate",
-                          id: l.id,
-                        });
-                        close();
-                      }}
-                    >
-                      {text(l.name)}
+                <span className="eyebrow">{text("Adventurer’s Guild")}</span>
+                <h2>{text("Story missions & guardian records")}</h2>
+                {journal()}
+                <div className="haven-guild-records">
+                  {WORLDS.map((world) => (
+                    <article key={world.id}>
+                      <h3>{text(world.name)}</h3>
+                      <p>{text(world.boss.name)}</p>
+                      <strong>
+                        {
+                          STAGES.filter(
+                            (stage) =>
+                              stage.worldId === world.id &&
+                              p?.clears.includes(stage.id + ":normal"),
+                          ).length
+                        }{" "}
+                        / 5 {text("Story stages cleared")}
+                      </strong>
                       <small>
-                        {h(
-                          w?.discoveries.includes(l.id)
-                            ? "Discovered"
-                            : "Not visited",
-                        )}
+                        {text("Guardian records")}:{" "}
+                        {(["normal", "hard", "nightmare"] as const)
+                          .filter((d) =>
+                            p?.clears.includes(world.id + "-5:" + d),
+                          )
+                          .map((d) =>
+                            text(
+                              d === "normal"
+                                ? "Normal"
+                                : d === "hard"
+                                  ? "Hard"
+                                  : "Nightmare",
+                            ),
+                          )
+                          .join(" · ") || text("Not yet defeated")}
                       </small>
-                    </button>
+                    </article>
                   ))}
                 </div>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    bridge.emit("command", {
+                      type: "haven-locate",
+                      id: "portal",
+                    });
+                    close();
+                  }}
+                >
+                  {text("Follow the Rift Gate route")} →
+                </button>
               </>
+            )}
+            {panel === "map" && w && (
+              <TownMap
+                world={w}
+                position={hud.position}
+                busy={busy || !!townTravel}
+                onTravel={(id) => void fastTravel(id)}
+                onMark={(id) => {
+                  bridge.emit("command", { type: "haven-locate", id });
+                  close();
+                }}
+              />
+            )}
+            {panel === "waypoint" && station && (
+              <article className="haven-lore">
+                <span className="eyebrow">{text("ATTUNED WAYPOINT")}</span>
+                <h2>{text(station.name)}</h2>
+                <p>{text("This district is now available on the Town Map.")}</p>
+                <button
+                  className="primary-button"
+                  onClick={() => setPanel("map")}
+                >
+                  {text("Open Town Map")} →
+                </button>
+              </article>
             )}
             {panel === "portal" && (
               <>
@@ -1076,6 +1219,27 @@ export default function HavenGame({
             {panel === "rest" && (
               <>
                 <h2>{h("The Wayfarer’s Rest")}</h2>
+                <p>
+                  {text(
+                    "Sanctuary Grove keeps a fire for every returning traveler.",
+                  )}
+                </p>
+                <button
+                  className="quiet-button"
+                  onClick={() =>
+                    setPanels((previous) => [...previous, "storage"])
+                  }
+                >
+                  {text("Open Inventory")} →
+                </button>
+                <button
+                  className="quiet-button"
+                  onClick={() =>
+                    setPanels((previous) => [...previous, "sanctuary"])
+                  }
+                >
+                  {text("Open Sanctuary")} →
+                </button>
                 <p>
                   {h(
                     "Rest restores your haven health. Your next expedition starts with that health.",
