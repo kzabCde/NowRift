@@ -1,4 +1,5 @@
 import type { Progress } from "../campaign/progression";
+import { BAG_BASE_CAPACITY, validBagCapacity } from "./bag";
 import {
   ITEMS,
   RARITIES,
@@ -47,7 +48,7 @@ function validRpgVersion(r: unknown, legacy = false): boolean {
     p.schema !== (legacy ? 1 : 2) ||
     !Number.isSafeInteger(p.revision) ||
     p.revision < 0 ||
-    p.capacity !== 60 ||
+    !validBagCapacity(p.capacity) ||
     !Array.isArray(p.equipment) ||
     !p.equipment.every(validEquipmentInstance) ||
     new Set(p.equipment.map((e) => e.id)).size !== p.equipment.length ||
@@ -157,7 +158,7 @@ export function initializeRpg(profile: Progress): Progress {
   p.rpg = {
     schema: 2,
     revision: 0,
-    capacity: 60,
+    capacity: BAG_BASE_CAPACITY,
     equipment: [],
     equipped: emptyEquipment(),
     consumables: { "health-tonic": 3 },
