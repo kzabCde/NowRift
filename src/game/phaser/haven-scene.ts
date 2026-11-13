@@ -588,6 +588,7 @@ export class HavenScene extends Phaser.Scene {
       attackId: active?.player.attackUntil,
       angle: active?.player.attackAngle,
       reduced: prefs.reducedEffects,
+      lowQuality: prefs.quality === "low",
     });
     if (this.moving && time - this.lastStep > 360) {
       audio.play("step");

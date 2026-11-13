@@ -1,3 +1,4 @@
+import { resolveWeaponVisual } from "./weapon-visual";
 import "fake-indexeddb/auto";
 import { beforeEach, expect, test } from "vitest";
 import { emptyProgress } from "../campaign/progression";
@@ -92,11 +93,11 @@ test("all archetypes, biome equipment and rarity silhouettes resolve to existing
           expect(meta.width).toBe(1248);
         }
         const weapon = campaignLoadout(p, undefined, character).weaponSnapshot;
-        expect(weaponVisualFrame(weapon)).toBeGreaterThanOrEqual(
-          rarity === "legendary" ? 10 : rarity === "rare" ? 6 : 0,
+        expect(weaponVisualFrame(weapon)).toBe(
+          resolveWeaponVisual(weapon)!.frame,
         );
         expect(weaponVisualFrame(weapon)).toBeLessThan(
-          pixelAsset("equipment-weapons")!.frameCount,
+          pixelAsset("weapon-evolution")!.frameCount,
         );
       }
 });

@@ -5,6 +5,187 @@
   vertical-align: middle;
   image-rendering: pixelated;
 }
+.weapon-sprite {
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+.weapon-sprite img {
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.weapon-sprite.rpg-icon {
+  background: none;
+  border-bottom: 1px solid var(--weapon-accent);
+}
+.weapon-sprite[data-weapon-fallback] {
+  outline: 1px dashed #d6ab59;
+}
+.weapon-art-missing {
+  color: #d6ab59;
+  font: 24px var(--serif);
+}
+.actor-weapon.weapon-sprite {
+  position: absolute;
+}
+.weapon-evolution-label {
+  display: block;
+  color: #d1c38d;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.weapon-evolution {
+  margin: 20px 0;
+  border: 1px solid #91ac9155;
+  padding: 16px;
+  background: #0c1f24;
+  color: #b8c5b0;
+  font-size: 12px;
+}
+.weapon-evolution.milestone-ready {
+  border-color: #d6ab59;
+}
+.weapon-evolution-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.weapon-evolution figure {
+  margin: 12px 0;
+  text-align: center;
+  min-width: 0;
+  flex: 1;
+}
+.weapon-evolution-stage {
+  display: grid;
+  place-items: center;
+  min-height: 108px;
+  background: repeating-conic-gradient(#122a2d 0% 25%, #10262a 0% 50%) 0 / 16px
+    16px;
+  border-bottom: 1px solid #5d7965;
+}
+.weapon-evolution-stage.future {
+  border-color: #a18755;
+}
+.weapon-evolution figcaption strong,
+.weapon-evolution figcaption small {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.weapon-evolution figcaption strong {
+  font: 18px var(--serif);
+  color: #e8ddba;
+}
+.evolution-arrow {
+  color: #c5ab73;
+  font-size: 20px;
+}
+.evolution-callout {
+  color: #f8d47a;
+  padding: 10px;
+  border-left: 2px solid #d6ab59;
+}
+.weapon-evolution-collection {
+  border-top: 1px solid #91ac9133;
+  padding-top: 12px;
+}
+.weapon-evolution-collection summary {
+  cursor: pointer;
+}
+.weapon-evolution-collection > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.weapon-evolution-collection figure[data-locked="true"] {
+  color: #b4aa90;
+}
+.weapon-evolution-reveal {
+  text-align: center;
+  padding: 20px 0;
+}
+.evolution-transform {
+  position: relative;
+  width: 160px;
+  height: 180px;
+  margin: 20px auto;
+}
+.evolution-transform .weapon-sprite {
+  position: absolute;
+  inset: 0;
+}
+.evolution-before {
+  animation: evolution-before 0.9s steps(4) both;
+}
+.evolution-after {
+  animation: evolution-after 1.8s steps(6) both;
+}
+.evolution-forge-pulse {
+  position: absolute;
+  inset: 30px;
+  border: 4px solid var(--evolution-color);
+  animation: evolution-pulse 1s steps(5) both;
+  transform: rotate(45deg);
+}
+@keyframes evolution-before {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes evolution-after {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(2);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+@keyframes evolution-pulse {
+  0%,
+  30% {
+    opacity: 0;
+    scale: 0.2;
+  }
+  60% {
+    opacity: 0.8;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.4;
+  }
+}
+.weapon-evolution-reveal.reduced .evolution-before,
+.weapon-evolution-reveal.reduced .evolution-forge-pulse {
+  display: none;
+}
+.weapon-evolution-reveal.reduced .evolution-after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .evolution-before,
+  .evolution-forge-pulse {
+    display: none;
+  }
+  .evolution-after {
+    animation: none;
+  }
+}
 .actor-layer,
 .actor-weapon {
   position: absolute;
@@ -20,7 +201,8 @@
     var(--actor-repeat) both;
 }
 .actor-weapon {
-  transform: translate(-50%, -75%);
+  transform-origin: 50% 75%;
+  transform: translate(-50%, -75%) rotate(var(--held-angle, 0rad));
   animation: actor-hand 0.6667s steps(4) infinite;
 }
 .actor-shadow {
@@ -54,7 +236,8 @@
 }
 @keyframes actor-hand {
   to {
-    transform: translate(-50%, calc(-75% - var(--actor-pixel) * 2));
+    transform: translate(-50%, calc(-75% - var(--actor-pixel) * 2))
+      rotate(var(--held-angle, 0rad));
   }
 }
 @keyframes equipment-shimmer {

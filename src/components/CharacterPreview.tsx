@@ -12,16 +12,19 @@ import {
 import {
   defaultAppearance,
   resolveAppearance,
-  weaponVisualFrame,
   type CharacterAppearance,
 } from "@/game/presentation/appearance";
 import {
   CHARACTER_ART,
   WEAPON_ART,
   handPoint,
+  weaponRestAngle,
 } from "@/game/presentation/character";
 import { RARITIES } from "@/game/rpg/content";
 import { useI18n } from "@/i18n/useI18n";
+import { resolveWeaponVisual } from "@/game/presentation/weapon-visual";
+import { useSettings } from "@/state/settings";
+import WeaponSprite from "./WeaponSprite";
 /** Uses the same modular atlases, source frame tracks and hand anchors as Phaser. */
 export default function CharacterPreview({
   character,
@@ -58,7 +61,9 @@ export default function CharacterPreview({
   const hand = handPoint(character, "down", false, first),
     pixel = size / CHARACTER_ART.size,
     weaponSize = WEAPON_ART.size * pixel;
-  const frame = weapon ? weaponVisualFrame(weapon) : null;
+  const visual = resolveWeaponVisual(weapon),
+    frame = visual?.frame ?? null;
+  const reduced = useSettings((s) => s.reducedEffects || s.quality === "low");
   const tool =
     pose === "mine"
       ? 15
@@ -66,10 +71,11 @@ export default function CharacterPreview({
         ? 16
         : pose === "gather"
           ? 17
-          : frame;
+          : null;
   const animation = {
     "--actor-size": `${size}px`,
     "--actor-pixel": `${pixel}px`,
+    "--held-angle": `${weaponRestAngle("down")}rad`,
     "--actor-first": `${-first * size}px`,
     "--actor-last": `${-(track.loop ? last + 1 : last) * size}px`,
     "--actor-duration": `${animationDuration(pose)}ms`,
@@ -97,6 +103,7 @@ export default function CharacterPreview({
       data-appearance-key={look.appearanceKey}
       data-weapon-instance={weapon?.instanceId ?? ""}
       data-weapon-frame={frame ?? ""}
+      data-weapon-tier={visual?.tier ?? ""}
       data-pose={pose}
     >
       <span className="actor-shadow" />
@@ -130,7 +137,19 @@ export default function CharacterPreview({
           }}
         />
       )}
-      {weapon && weapon.enhancement > 0 && (
+      {tool === null && weapon && (
+        <WeaponSprite
+          weapon={weapon}
+          size={weaponSize}
+          className="actor-weapon"
+          style={{
+            left: (24 + hand.x) * pixel,
+            top: (36 + hand.y) * pixel,
+            zIndex: 13,
+          }}
+        />
+      )}
+      {visual && visual.tier >= 2 && !reduced && (
         <span className="actor-enchantment" />
       )}
     </span>

@@ -2,10 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { emptyProgress, type Progress } from "../src/game/campaign/progression";
 import { initializeRpg } from "../src/game/rpg/profile";
 import { seededEquipment } from "../src/game/rpg/items";
+import { resolveWeaponVisual } from "../src/game/presentation/weapon-visual";
 import { ITEMS } from "../src/game/rpg/content";
 import { CHARACTERS, type CharacterId } from "../src/game/loadout";
 import { STAGES } from "../src/game/campaign/content";
-import { weaponVisualFrame } from "../src/game/presentation/appearance";
 import { resolveEquippedWeapon } from "../src/game/rpg/stats";
 import { LANDMARKS } from "../src/game/world/content";
 import type { SaveData } from "../src/game/persistence/model";
@@ -102,6 +102,99 @@ async function exitRun(page: Page) {
     .click();
   await expect(page.locator(".hub-main")).toBeVisible();
 }
+test("24 evolution frames match the live Phaser layer and React HUD after replacement", async ({
+  page,
+}, info) => {
+  test.skip(!process.env.NOWRIFT_E2E, "Uses the explicit rendering fixture");
+  test.setTimeout(90000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seed(page);
+  await page.getByRole("button", { name: "WORLD MAP →", exact: true }).click();
+  await page
+    .getByRole("button", { name: "START STAGE →", exact: true })
+    .click();
+  await expect(page.locator(".game-state")).toContainText("LIVE RUN");
+  for (const [row, definition] of definitions.entries())
+    for (let tier = 0; tier < 6; tier++) {
+      const p = fixture(),
+        weapon = p.rpg!.equipment.find((e) => e.definitionId === definition)!;
+      weapon.enhancement = tier * 3;
+      p.rpg!.equipped.weapon = weapon.id;
+      const snapshot = resolveEquippedWeapon(p)!,
+        visual = resolveWeaponVisual(snapshot)!;
+      // Rendering-only replacement in an explicit test build; normal combat is covered below.
+      await page.evaluate((snapshot) => {
+        const g = window.__NOWRIFT_TEST__!.state();
+        g.equippedWeapon = snapshot;
+        g.enemies = [];
+        g.spawnCooldown = 999;
+        g.player.invincible = 999;
+      }, snapshot);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => window.__NOWRIFT_TEST__!.appearance!().weaponFrame,
+          ),
+        )
+        .toBe(row * 6 + tier);
+      const icon = page.locator(".active-weapon .weapon-sprite");
+      await expect(icon).toHaveAttribute(
+        "data-weapon-frame",
+        String(visual.frame),
+      );
+      await expect(icon).toHaveAttribute("data-weapon-tier", String(tier));
+      await expect(icon.locator("img")).toHaveJSProperty("naturalWidth", 192);
+      if (row === 1 && (tier === 0 || tier === 5))
+        await page.screenshot({
+          path: info.outputPath(
+            `sunsteel-${tier === 0 ? "before" : "after"}.png`,
+          ),
+          fullPage: true,
+        });
+    }
+  expect(errors).toEqual([]);
+});
+
+test("missing evolution atlas uses a marked family-correct React and Phaser fallback", async ({
+  browser,
+}) => {
+  test.skip(!process.env.NOWRIFT_E2E, "Inspects the actual Phaser fallback");
+  const context = await browser.newContext({ serviceWorkers: "block" }),
+    page = await context.newPage();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await page.route("**/assets/characters/weapon-evolution.png", (route) =>
+      route.abort(),
+    );
+    await seed(page);
+    await equip(page, "desert-weapon");
+    const layer = page.locator(".wanderer-card .actor-weapon");
+    await expect(layer).toHaveAttribute("data-weapon-fallback", "evolution");
+    await expect(layer).toHaveAttribute("data-weapon-frame", "1");
+    await expect(layer).toHaveAttribute("title", /showing base weapon/);
+    await page
+      .getByRole("button", { name: "WORLD MAP →", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "START STAGE →", exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.__NOWRIFT_TEST__?.appearance!().weaponAsset),
+      )
+      .toBe("equipment-weapons");
+    expect(
+      await page.evaluate(
+        () => window.__NOWRIFT_TEST__!.appearance!().weaponFrame,
+      ),
+    ).toBe(1);
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
 for (const character of Object.keys(CHARACTERS) as CharacterId[]) {
   test(`${character} equips all four owned weapons in Inventory and uses them across four Worlds`, async ({
     page,
@@ -154,8 +247,8 @@ for (const character of Object.keys(CHARACTERS) as CharacterId[]) {
           window.__NOWRIFT_TEST__!.appearance!(),
         );
         expect(rendered.body).toBe(`character-layer-${character}-body`);
-        expect(rendered.weaponAsset).toBe("equipment-weapons");
-        expect(rendered.weaponFrame).toBe(weaponVisualFrame(expected));
+        expect(rendered.weaponAsset).toBe("weapon-evolution");
+        expect(rendered.weaponFrame).toBe(i * 6 + 1);
         expect(rendered.weaponVisible).toBe(true);
         const actual = await page.evaluate(() => {
           const g = window.__NOWRIFT_TEST__!.state();
@@ -257,10 +350,11 @@ test("mobile equipment previews remain layered, change with owned gear, and surv
   await seed(page);
   await equip(page, "desert-weapon");
   const layer = page.locator(".wanderer-card .actor-weapon");
-  await expect(layer).toHaveCSS("background-image", /characters\/weapons.png/);
-  await expect(
-    page.locator(".wanderer-card .character-preview"),
-  ).toHaveAttribute("data-weapon-frame", "7");
+  await expect(layer.locator("img")).toHaveAttribute(
+    "src",
+    /characters\/weapon-evolution.png/,
+  );
+  await expect(layer).toHaveAttribute("data-weapon-frame", "7");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 2,
@@ -433,7 +527,7 @@ test.describe("equipment checkpoint and live town rendering", () => {
       .poll(() =>
         page.evaluate(() => window.__NOWRIFT_HAVEN__?.appearance().weaponFrame),
       )
-      .toBe(8);
+      .toBe(13);
     const training = LANDMARKS.find((l) => l.id === "training")!;
     await page.evaluate(
       (position) => window.__NOWRIFT_HAVEN__!.place(position),

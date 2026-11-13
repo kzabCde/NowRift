@@ -1,3 +1,4 @@
+import { EVOLUTION_TIERS } from "../src/game/presentation/weapon-visual";
 import { test, expect, type Page } from "@playwright/test";
 import { initializeRpg } from "../src/game/rpg/profile";
 import { emptyProgress, type Progress } from "../src/game/campaign/progression";
@@ -76,6 +77,106 @@ async function selectBlade(page: Page) {
     page.getByRole("heading", { name: /^Sunsteel Blade/ }),
   ).toBeVisible();
 }
+for (const target of [3, 6, 9, 12, 15]) {
+  test(`a saved +${target} milestone transforms the equipped weapon, can be skipped, and survives reload`, async ({
+    page,
+  }, info) => {
+    const p = fixture(),
+      item = p.rpg!.equipment.find((e) => e.id === "sample-blade")!;
+    item.enhancement = target - 1;
+    const chance = enhancementQuote(item).effective,
+      tier = target / 3,
+      tierName = EVOLUTION_TIERS[tier];
+    p.rpg!.equipped.weapon = item.id;
+    // Choose a successful real seeded action using this item’s actual quoted probability.
+    let id = "";
+    for (let i = 0; i < 100; i++)
+      if (seeded(hash("action-evolution-" + i))() < chance) {
+        id = "evolution-" + i;
+        break;
+      }
+    await page.addInitScript(
+      (id) =>
+        Object.defineProperty(Crypto.prototype, "randomUUID", {
+          value: () => id,
+        }),
+      id,
+    );
+    await seed(page, p);
+    await page.getByRole("button", { name: "BLACKSMITH", exact: true }).click();
+    await selectBlade(page);
+    const preview = page.locator(".weapon-evolution");
+    await expect(preview).toContainText(tierName);
+    await expect(preview).toContainText(
+      "Your next success transforms this weapon.",
+    );
+    await expect(page.locator(".rpg-chance")).toContainText(`${chance * 100}%`);
+    if (target === 6)
+      await page.screenshot({
+        path: info.outputPath("evolution-before.png"),
+        fullPage: true,
+        animations: "disabled",
+      });
+    await page
+      .getByRole("button", { name: "ENHANCE EQUIPMENT", exact: true })
+      .click();
+    await page
+      .getByRole("dialog", { name: "Confirm enhancement" })
+      .getByRole("button", { name: "CONFIRM", exact: true })
+      .click();
+    const reveal = page.getByRole("dialog", { name: "Weapon evolved" });
+    await expect(reveal).toBeVisible();
+    await expect(reveal).toContainText(`${tierName} +${target}`);
+    await reveal.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(reveal).toHaveCount(0);
+    await expect(page.locator(".rpg-character .actor-weapon")).toHaveAttribute(
+      "data-weapon-frame",
+      String(6 + tier),
+    );
+    const state = await saved(page);
+    expect(
+      state.rpg!.equipment.find((e) => e.id === item.id)!.enhancement,
+    ).toBe(target);
+    expect(state.gold).toBe(p.gold - enhancementQuote(item).gold);
+    if (target === 6)
+      await page.screenshot({
+        path: info.outputPath("evolution-after.png"),
+        fullPage: true,
+        animations: "disabled",
+      });
+    await page.reload();
+    await page
+      .getByRole("button", { name: "Practice & legacy tools", exact: true })
+      .click();
+    await expect(page.locator(".wanderer-card .actor-weapon")).toHaveAttribute(
+      "data-weapon-frame",
+      String(6 + tier),
+    );
+  });
+}
+
+test("Thai mobile milestone previews respect reduced motion", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const p = fixture();
+  p.rpg!.equipment.find((e) => e.id === "sample-blade")!.enhancement = 14;
+  await seed(page, p);
+  await selectBlade(page);
+  await page.getByRole("button", { name: "TH", exact: true }).first().click();
+  const preview = page.locator(".weapon-evolution");
+  await expect(preview).toContainText("เหนือสรรพสิ่ง");
+  await expect(preview).toContainText("+15");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 2,
+    ),
+  ).toBe(true);
+  await preview.screenshot({
+    path: info.outputPath("evolution-mobile-th.png"),
+  });
+});
 test("inventory sorts, filters, compares, protects and equips unique gear", async ({
   page,
 }, info) => {
@@ -179,7 +280,7 @@ test("enhancement failure preserves rank and displays newly accumulated pity", a
     id,
   );
   const p = fixture();
-  p.rpg!.equipment.find((e) => e.id === "sample-blade")!.enhancement = 4;
+  p.rpg!.equipment.find((e) => e.id === "sample-blade")!.enhancement = 5;
   await seed(page, p);
   await selectBlade(page);
   await page.getByRole("button", { name: "BLACKSMITH", exact: true }).click();
@@ -190,12 +291,63 @@ test("enhancement failure preserves rank and displays newly accumulated pity", a
     .getByRole("button", { name: "CONFIRM", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Enhancement failed: +4" }),
+    page.getByRole("status").filter({ hasText: "Enhancement failed: +5" }),
   ).toBeVisible();
   await expect(page.locator(".rpg-chance")).toContainText("PITY +2%");
   await expect(page.locator(".rpg-chance")).toContainText("72%");
   const s = await saved(page);
   expect(s.rpg!.equipment.find((e) => e.id === "sample-blade")!.pity).toBe(1);
+  await expect(
+    page.locator(".rpg-details .weapon-evolution .weapon-sprite").first(),
+  ).toHaveAttribute("data-weapon-frame", "7");
+  await expect(
+    page.getByRole("dialog", { name: "Weapon evolved" }),
+  ).toHaveCount(0);
+});
+test("a real downgrade returns Mythic to Ascendant without an evolution celebration", async ({
+  page,
+}) => {
+  let id = "";
+  for (let i = 0; i < 100; i++) {
+    const rng = seeded(hash("action-downgrade-" + i));
+    if (rng() >= 0.25 && rng() < 0.5) {
+      id = "downgrade-" + i;
+      break;
+    }
+  }
+  expect(id).not.toBe("");
+  await page.addInitScript(
+    (id) =>
+      Object.defineProperty(Crypto.prototype, "randomUUID", {
+        value: () => id,
+      }),
+    id,
+  );
+  const p = fixture();
+  p.rpg!.equipment.find((e) => e.id === "sample-blade")!.enhancement = 12;
+  await seed(page, p);
+  await selectBlade(page);
+  await page.getByRole("button", { name: "BLACKSMITH", exact: true }).click();
+  await page
+    .getByRole("button", { name: "ENHANCE EQUIPMENT", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Confirm enhancement" })
+    .getByRole("button", { name: "CONFIRM", exact: true })
+    .click();
+  await expect(page.locator(".rpg-notices")).toContainText(
+    "Enhancement failed: +11",
+  );
+  await expect(
+    page.locator(".weapon-evolution .weapon-sprite").first(),
+  ).toHaveAttribute("data-weapon-tier", "3");
+  await expect(
+    page.getByRole("dialog", { name: "Weapon evolved" }),
+  ).toHaveCount(0);
+  expect(
+    (await saved(page)).rpg!.equipment.find((e) => e.id === "sample-blade")!
+      .enhancement,
+  ).toBe(11);
 });
 test("shop purchases, material crafting, sales and transaction history", async ({
   page,

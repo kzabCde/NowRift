@@ -103,13 +103,19 @@ function definition(source: (typeof ASSET_SOURCES)[number]): PixelAsset {
     };
   } else if (path.startsWith("/assets/characters/")) {
     kind = "spritesheet";
-    category = name === "weapons" ? "weapon" : "character";
-    bundle = name === "weapons" ? "common" : "appearance";
+    const weapon = name === "weapons" || name === "weapon-evolution";
+    category = weapon ? "weapon" : "character";
+    bundle = weapon ? "common" : "appearance";
     frameWidth = frameHeight = 32;
     pivot = [0.5, 0.75];
-    key = name === "weapons" ? "equipment-weapons" : `character-${name}`;
+    key =
+      name === "weapons"
+        ? "equipment-weapons"
+        : name === "weapon-evolution"
+          ? name
+          : `character-${name}`;
     compatibility = ["wanderer", "sentinel", "strider"];
-    if (name !== "weapons") audit = "UNUSED";
+    if (!weapon) audit = "UNUSED";
   } else if (path === "/assets/items/atlas.png") {
     kind = "spritesheet";
     category = "item";

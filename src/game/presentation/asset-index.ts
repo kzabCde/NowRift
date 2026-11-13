@@ -1828,6 +1828,13 @@ export const ASSET_SOURCES = [
     sha256: "d59cf22ee564b3f86eb41905459ca5459d3118e5cb756fb112ac3df0164c60e3",
   },
   {
+    path: "/assets/characters/weapon-evolution.png",
+    width: 192,
+    height: 128,
+    bytes: 4640,
+    sha256: "c4e00fa5749cb0582d8d32869a82c823b2e78d81257218ec71af7776613736bc",
+  },
+  {
     path: "/assets/characters/weapons.png",
     width: 576,
     height: 32,

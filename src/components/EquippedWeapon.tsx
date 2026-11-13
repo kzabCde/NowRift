@@ -4,6 +4,11 @@ import { RARITIES } from "@/game/rpg/content";
 import { useI18n } from "@/i18n/useI18n";
 import ItemIcon from "./ItemIcon";
 import { attackRange } from "@/game/content/forest";
+import {
+  resolveWeaponVisual,
+  nextEvolution,
+  EVOLUTION_TIERS,
+} from "@/game/presentation/weapon-visual";
 export default function EquippedWeapon({
   weapon,
   onInventory,
@@ -12,6 +17,8 @@ export default function EquippedWeapon({
   onInventory?: () => void;
 }) {
   const { t, text } = useI18n();
+  const visual = resolveWeaponVisual(weapon),
+    next = weapon ? nextEvolution(weapon.enhancement) : null;
   return (
     <section
       className="equipped-weapon"
@@ -22,7 +29,7 @@ export default function EquippedWeapon({
       {weapon ? (
         <>
           <div className="equipped-weapon-title">
-            <ItemIcon id={weapon.definitionId} />
+            <ItemIcon id={weapon.definitionId} weapon={weapon} />
             <div>
               <strong style={{ color: RARITIES[weapon.rarity].color }}>
                 {text(weapon.name)} +{weapon.enhancement}
@@ -42,6 +49,18 @@ export default function EquippedWeapon({
               </small>
             </div>
           </div>
+          {visual && (
+            <small className="weapon-evolution-label">
+              {text(EVOLUTION_TIERS[visual.tier])} ·{" "}
+              {next ? (
+                <>
+                  {t("equipment", "Next evolution")} +{next.enhancement}
+                </>
+              ) : (
+                t("equipment", "Final evolution")
+              )}
+            </small>
+          )}
           <p>
             {t("equipment", "Damage")} {weapon.stats.damage.toFixed(1)} ·{" "}
             {t("equipment", "Attack interval")}{" "}

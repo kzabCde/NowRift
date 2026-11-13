@@ -463,7 +463,7 @@ export default function ProfileScreen({
                         <span>{text(slot.toUpperCase())}</span>
                         {item ? (
                           <>
-                            <ItemIcon id={item.definitionId} />
+                            <ItemIcon id={item.definitionId} weapon={item} />
                             <small>
                               {text(ITEMS[item.definitionId].name)} +
                               {item.enhancement}
