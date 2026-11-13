@@ -175,7 +175,7 @@ export function applyCommand(
       if (cost === null) throw new Error("Bag is already at maximum capacity.");
       spend(p, cost);
       r.capacity += BAG_STEP;
-      entry.message = `Bag expanded to ${r.capacity} slots.`;
+      entry.message = "Bag expanded successfully.";
       break;
     }
     case "bulkSell": {
@@ -200,7 +200,7 @@ export function applyCommand(
       gold(p, total);
       entry.items = sales.map(({ owned, count }) =>
         `Sold ${ITEMS[owned.definitionId].name} ×${count}`);
-      entry.message = `Sold ${sales.length} entries for ${total} gold.`;
+      entry.message = "Bulk sale complete.";
       break;
     }
     case "bulkDismantle": {
@@ -229,7 +229,7 @@ export function applyCommand(
         ...Object.entries(rewards).filter(([, count]) => count > 0)
           .map(([id, count]) => `Obtained ${ITEMS[id].name} ×${count}`),
       ];
-      entry.message = `Dismantled ${targets.length} equipment items.`;
+      entry.message = "Bulk dismantle complete.";
       break;
     }
     case "sell": {

@@ -631,3 +631,49 @@ test.describe("live campaign build and consumables", () => {
     expect(retry.focus).toBe(0);
   });
 });
+
+test("Gold bag expansion persists with one receipt and updates inventory slots", async ({ page }) => {
+  await seed(page);
+  await expect(page.getByTestId("bag-capacity")).toContainText("60");
+  await page.getByTestId("expand-backpack").click();
+  await page.getByRole("dialog", { name: "Confirm bag expansion" })
+    .getByRole("button", { name: "CONFIRM" }).click();
+  await expect(page.getByTestId("bag-capacity")).toContainText("70");
+  const progress = await saved(page);
+  expect(progress.rpg!.capacity).toBe(70);
+  expect(progress.gold).toBe(14500);
+  expect(progress.rpg!.history.at(-1)?.kind).toBe("expandBag");
+});
+test("right-click context actions and Ctrl multi-selection sell two equipment items once", async ({ page }) => {
+  await seed(page);
+  const blade = page.locator(".rpg-grid")
+    .getByRole("button", { name: /Sunsteel Blade/ }).first();
+  const ring = page.locator(".rpg-grid")
+    .getByRole("button", { name: /Sapphire Loop/ }).first();
+  await blade.click({ button: "right" });
+  const menu = page.getByRole("menu", { name: "Item actions" });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "SELL" })).toBeEnabled();
+  await menu.getByRole("menuitem", { name: "VIEW DETAILS" }).click();
+  await blade.click({ modifiers: ["Control"] });
+  await ring.click({ modifiers: ["Control"] });
+  await expect(page.locator(".rpg-cell.multi-selected")).toHaveCount(2);
+  await page.getByRole("button", { name: /SELL SELECTED/ }).click();
+  await page.getByRole("dialog", { name: "Confirm bulk sale" })
+    .getByRole("button", { name: "CONFIRM" }).click();
+  const state = await saved(page);
+  expect(state.rpg!.equipment.some((e) => e.id === "sample-blade" || e.id === "sample-ring")).toBe(false);
+  expect(state.rpg!.history.at(-1)?.kind).toBe("bulkSell");
+  await expect(page.locator(".rpg-cell.multi-selected")).toHaveCount(0);
+});
+test("mobile layout exposes a visible multi-select control", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 760 });
+  await seed(page);
+  await page.getByRole("button", { name: "SELECT ITEMS" }).click();
+  await page.locator(".rpg-grid")
+    .getByRole("button", { name: /Sunsteel Blade/ }).first().click();
+  await expect(page.locator(".rpg-cell.multi-selected")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /SELL SELECTED/ })).toBeVisible();
+  await page.getByRole("button", { name: "CANCEL SELECTION" }).click();
+  await expect(page.locator(".rpg-cell.multi-selected")).toHaveCount(0);
+});
