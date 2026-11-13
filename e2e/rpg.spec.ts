@@ -640,7 +640,7 @@ test("Gold bag expansion persists with one receipt and updates inventory slots",
   await page.getByTestId("expand-backpack").click();
   await page
     .getByRole("dialog", { name: "Confirm bag expansion" })
-    .getByRole("button", { name: "CONFIRM" })
+    .getByRole("button", { name: "CONFIRM", exact: true })
     .click();
   await expect(page.getByTestId("bag-capacity")).toContainText("70");
   const progress = await saved(page);
@@ -671,7 +671,7 @@ test("right-click context actions and Ctrl multi-selection sell two equipment it
   await page.getByRole("button", { name: /SELL SELECTED/ }).click();
   await page
     .getByRole("dialog", { name: "Confirm bulk sale" })
-    .getByRole("button", { name: "CONFIRM" })
+    .getByRole("button", { name: "CONFIRM", exact: true })
     .click();
   const state = await saved(page);
   expect(
