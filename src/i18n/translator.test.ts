@@ -92,3 +92,24 @@ describe("offline internationalization", () => {
         expect(value.trim().length).toBeGreaterThan(0);
   });
 });
+
+it("localizes QoL action labels, captured hints, calendar details and persisted history templates", () => {
+  for (const label of [
+    "Move up",
+    "Full map",
+    "Hide / show HUD",
+    "Cycle battle speed",
+    "Swap bindings",
+    "Combat speed",
+    "Monthly provisions",
+    "Date locked",
+    "Only today's calendar reward can be claimed.",
+  ])
+    expect(translateText("th", label)).not.toBe(label);
+  expect(translateText("th", "Monthly check-in: 2026-11-10")).toBe(
+    "เช็กอินประจำเดือน: 2026-11-10",
+  );
+  expect(
+    translate("th", "qol", "Combat speed {speed}x", { speed: 4 }),
+  ).toContain("4");
+});

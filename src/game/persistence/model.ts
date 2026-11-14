@@ -74,6 +74,11 @@ export type SlotState = {
   checkpoint: RunCheckpoint | null;
 };
 export type SaveData = Progress & { local: SlotState };
+/** Legacy cycle claims are retained byte-for-byte; new rewards identify their frozen calendar schedule. */
+export type Checkin = { day: string; slotId: string; at: number } & (
+  | { cycle: number; calendarVersion?: never }
+  | { calendarVersion: 1; cycle?: never }
+);
 export type PlayerProfile = {
   schema: 2;
   id: string;
@@ -82,7 +87,7 @@ export type PlayerProfile = {
   revision: number;
   activeSlotId: string;
   slots: { id: string; key: string }[];
-  checkins: { day: string; cycle: number; slotId: string; at: number }[];
+  checkins: Checkin[];
 };
 export type PlayerView = {
   player: PlayerProfile;

@@ -1,0 +1,17 @@
+[WebServer] (node:85281) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:85294) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:85309) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/calendar.spec.ts:39:1 › monthly calendar aligns real dates, exposes honest reward states and stays readable on desktop/mobile (8.7s)
+  ✓  2 e2e/calendar.spec.ts:99:1 › Bangkok midnight rolls the real month forward after an atomic final-day bonus; Thai and history remain Gregorian (10.9s)
+  ✓  3 e2e/calendar.spec.ts:165:1 › competing real tabs cannot grant a second calendar reward (8.5s)
+  ✓  4 e2e/city.spec.ts:464:1 › production Town Map travels, reloads and preserves the character without test instrumentation (15.2s)
+  ✓  5 e2e/controls.spec.ts:3:1 › holding Escape after cancelling key capture cannot close its owning Settings dialog (5.6s)
+  ✓  6 e2e/controls.spec.ts:27:1 › a wide touch-only screen does not imply a keyboard; an actual physical key enables rebinding (4.4s)
+
+  6 passed (59.6s)

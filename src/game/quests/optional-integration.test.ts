@@ -334,13 +334,11 @@ test("quest rewards honor a purchased larger backpack and reload with more than 
 test("real daily material gifts progress explicitly Haven-eligible collection without progressing Main", async () => {
   let p = await seeded();
   p = await command(p, "side-desert-2", "accept");
-  const now = Date.now(),
-    clock = vi.spyOn(Date, "now");
+  const clock = vi.spyOn(Date, "now");
   try {
-    for (let day = 0; day < 5; day++) {
-      clock.mockReturnValue(now + day * 86400000);
-      p = await repo.claim("checkin", "", p.local.revision, p.local.id);
-    }
+    // The 21st is the monthly rare-material milestone, independent of login count.
+    clock.mockReturnValue(Date.UTC(2026, 10, 21, 12));
+    p = await repo.claim("checkin", "2026-11-21", p.local.revision, p.local.id);
   } finally {
     clock.mockRestore();
   }

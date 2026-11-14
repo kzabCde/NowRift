@@ -1,4 +1,6 @@
 "use client";
+import { useSettings } from "@/state/settings";
+import { keyHint } from "@/game/input/bindings";
 import { useI18n } from "@/i18n/useI18n";
 import type { SaveData } from "@/game/persistence/model";
 import {
@@ -34,6 +36,7 @@ export default function SanctuaryPanel({
   onClose: () => void;
   onMenu: () => void;
 }) {
+  const prefs = useSettings();
   const { t, text } = useI18n(),
     j = (key: Parameters<typeof t<"journey">>[1]) => t("journey", key),
     stats = calculateStats(save, save.local.weapon, save.local.character);
@@ -41,7 +44,7 @@ export default function SanctuaryPanel({
     <Modal title={j("Sanctuary")} onClose={onClose}>
       <span className="eyebrow">{j("Your place between journeys.")}</span>
       <h2>
-        {j("Sanctuary")} <kbd>H</kbd>
+        {j("Sanctuary")} <kbd>{keyHint(prefs, "sanctuary")}</kbd>
       </h2>
       <section
         className="sanctuary-summary"

@@ -1,3 +1,5 @@
+import { attachMovementInput } from "../input/keyboard";
+import { keyHint } from "../input/bindings";
 import Phaser from "phaser";
 import { districtAt } from "../world/city";
 import { HavenCity } from "./haven-city";
@@ -17,7 +19,7 @@ import { cityBounds, regionalCity } from "../world/regional-city";
 import { emptyFog, validFog, revealFog } from "../world/exploration";
 import { regionById } from "../world/regions";
 import type { HavenStart } from "../world/bridge";
-import { translateText } from "../../i18n/translator";
+import { translate, translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
 import { useSettings } from "../../state/settings";
 import { audio } from "../audio/engine";
@@ -62,7 +64,7 @@ export class HavenScene extends Phaser.Scene {
   positionEpoch = 0;
   locked = false;
   moving = false;
-  keys: Record<string, Phaser.Input.Keyboard.Key> = {};
+  inputSource?: ReturnType<typeof attachMovementInput>;
   pointer: number | null = null;
   drag: { x: number; y: number; dx: number; dy: number } | null = null;
   ring!: Phaser.GameObjects.Graphics;
@@ -140,9 +142,18 @@ export class HavenScene extends Phaser.Scene {
     const locale = () => {
       this.game.canvas.setAttribute(
         "aria-label",
-        translateText(
+        translate(
           useLocale.getState().locale,
-          "Rift Heaven. Move with WASD, arrows or touch. E interacts; H opens Sanctuary.",
+          "qol",
+          "Move {up}/{left}/{down}/{right} or touch. Interact {interact}; Sanctuary {sanctuary}.",
+          {
+            up: keyHint(useSettings.getState(), "up"),
+            left: keyHint(useSettings.getState(), "left"),
+            down: keyHint(useSettings.getState(), "down"),
+            right: keyHint(useSettings.getState(), "right"),
+            interact: keyHint(useSettings.getState(), "interact"),
+            sanctuary: keyHint(useSettings.getState(), "sanctuary"),
+          },
         ),
       );
       for (const label of this.labels) {
@@ -152,10 +163,6 @@ export class HavenScene extends Phaser.Scene {
     };
     locale();
     const offLocale = useLocale.subscribe(locale);
-    this.keys = this.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT",
-      false,
-    ) as typeof this.keys;
     const interact = () => {
       if (this.locked) return;
       const target = this.nearest(this.position);
@@ -167,35 +174,34 @@ export class HavenScene extends Phaser.Scene {
         });
       }
     };
-    const shortcut = (name: "inventory" | "map" | "quests" | "pause") => () => {
-      if (!this.locked) this.bridge.emit("haven-shortcut", name);
-    };
-    const shortcuts = {
-      "keydown-E": interact,
-      "keydown-I": shortcut("inventory"),
-      "keydown-M": shortcut("map"),
-      "keydown-Q": shortcut("quests"),
-      "keydown-ESC": shortcut("pause"),
-    };
-    for (const [key, fn] of Object.entries(shortcuts))
-      this.input.keyboard!.on(key, fn);
+    this.inputSource = attachMovementInput({
+      preferences: () => useSettings.getState(),
+      enabled: () => !this.locked,
+      interact,
+    });
     const off = this.bridge.on("command", (c) => this.command(c, interact));
     const canvas = this.game.canvas;
     canvas.classList.add("game-canvas");
-    canvas.setAttribute(
-      "aria-label",
-      translateText(
-        useLocale.getState().locale,
-        "Rift Heaven. Move with WASD, arrows or touch. E interacts; H opens Sanctuary.",
-      ),
-    );
+    locale();
     const clear = () => {
       this.pointer = null;
       this.drag = null;
       this.input.keyboard?.resetKeys();
+      this.inputSource?.clear();
       canvas.dataset.touchActive = "false";
       this.stick.clear();
     };
+    const offInputSettings = useSettings.subscribe((next, previous) => {
+      if (
+        next.keyboard !== previous.keyboard ||
+        JSON.stringify(next.keymap.keys) !==
+          JSON.stringify(previous.keymap.keys) ||
+        next.rebinding !== previous.rebinding
+      ) {
+        clear();
+        locale();
+      }
+    });
     const point = (e: PointerEvent) => {
       const b = canvas.getBoundingClientRect();
       return {
@@ -243,19 +249,11 @@ export class HavenScene extends Phaser.Scene {
     const visibility = () => {
       if (document.hidden) interrupt();
     };
-    const scroll = (e: KeyboardEvent) => {
-      if (
-        !this.locked &&
-        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
-      )
-        e.preventDefault();
-    };
     canvas.addEventListener("pointerdown", down);
     canvas.addEventListener("pointermove", drag);
     canvas.addEventListener("pointerup", up);
     canvas.addEventListener("pointercancel", up);
     canvas.addEventListener("lostpointercapture", up);
-    window.addEventListener("keydown", scroll, { passive: false });
     window.addEventListener("blur", interrupt);
     window.addEventListener("pagehide", interrupt);
     document.addEventListener("visibilitychange", visibility);
@@ -271,14 +269,13 @@ export class HavenScene extends Phaser.Scene {
       offLocale();
       audio.setDistrict(null);
       clear();
-      for (const [key, fn] of Object.entries(shortcuts))
-        this.input.keyboard?.off(key, fn);
+      offInputSettings();
+      this.inputSource?.destroy();
       canvas.removeEventListener("pointerdown", down);
       canvas.removeEventListener("pointermove", drag);
       canvas.removeEventListener("pointerup", up);
       canvas.removeEventListener("pointercancel", up);
       canvas.removeEventListener("lostpointercapture", up);
-      window.removeEventListener("keydown", scroll);
       window.removeEventListener("blur", interrupt);
       window.removeEventListener("pagehide", interrupt);
       document.removeEventListener("visibilitychange", visibility);
@@ -377,6 +374,7 @@ export class HavenScene extends Phaser.Scene {
         this.drag = null;
         this.pointer = null;
         this.input.keyboard?.resetKeys();
+        this.inputSource?.clear();
         this.game.canvas.dataset.touchActive = "false";
         this.actor.setPosition(c.position.x, c.position.y);
         this.cameras.main.centerOn(c.position.x, c.position.y);
@@ -401,6 +399,7 @@ export class HavenScene extends Phaser.Scene {
       audio.setScene("exploration", regionById(this.region).worldId, c.locked);
       this.locked = c.locked;
       this.input.keyboard?.resetKeys();
+      this.inputSource?.clear();
       if (!c.locked) {
         if (!this.didEnter) {
           this.didEnter = true;
@@ -421,6 +420,7 @@ export class HavenScene extends Phaser.Scene {
         this.drag = null;
         this.pointer = null;
         this.input.keyboard?.resetKeys();
+        this.inputSource?.clear();
         this.game.canvas.dataset.touchActive = "false";
       }
       this.publish();
@@ -551,18 +551,9 @@ export class HavenScene extends Phaser.Scene {
       Math.min(120, delta),
       document.hidden,
     );
-    const k = this.keys,
-      preset = useSettings.getState().keyboard,
-      w = preset !== "arrows",
-      a = preset !== "wasd";
-    const x =
-        Number((w && k.D?.isDown) || (a && k.RIGHT?.isDown)) -
-        Number((w && k.A?.isDown) || (a && k.LEFT?.isDown)) +
-        (this.drag?.dx ?? 0),
-      y =
-        Number((w && k.S?.isDown) || (a && k.DOWN?.isDown)) -
-        Number((w && k.W?.isDown) || (a && k.UP?.isDown)) +
-        (this.drag?.dy ?? 0);
+    const axis = this.inputSource?.axis() ?? { x: 0, y: 0 },
+      x = axis.x + (this.drag?.dx ?? 0),
+      y = axis.y + (this.drag?.dy ?? 0);
     this.moving = !this.locked && Math.hypot(x, y) > 0.05;
     if (!this.locked)
       this.position = move(

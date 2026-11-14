@@ -155,11 +155,6 @@
   padding: 14px;
 }
 .quest-tracker {
-  position: absolute;
-  z-index: 13;
-  right: 16px;
-  top: 100px;
-  max-width: min(330px, 42%);
   padding: 13px;
   background: #19312dec;
   border: 1px solid #8d9d77;
@@ -193,9 +188,6 @@
     font-size: 20px;
   }
   .quest-tracker {
-    top: 160px;
-    max-width: 44%;
-    right: 8px;
     padding: 8px;
   }
   .quest-tracker strong {
@@ -210,11 +202,6 @@
   justify-content: flex-start;
   padding: 24px;
   z-index: 90;
-}
-.arena .quest-tracker {
-  top: auto;
-  bottom: 80px;
-  max-width: min(320px, 42%);
 }
 .story-result-notice {
   position: absolute;

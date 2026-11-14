@@ -25,6 +25,7 @@ export type Command =
       hold?: boolean;
     }
   | { type: "pause" }
+  | { type: "battle-speed"; speed: import("./simulation-clock").CombatSpeed }
   | { type: "checkpoint" | "storage-blocked" }
   | { type: "storage-ready"; sequence?: number }
   | { type: "upgrade"; id: UpgradeId }
@@ -46,6 +47,7 @@ export type RunResult = {
   gold: number;
   level: number;
   seconds: number;
+  realSeconds?: number;
   weapon: WeaponId;
 };
 export type GameEvents = {

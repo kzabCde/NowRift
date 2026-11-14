@@ -1,6 +1,9 @@
 import { beginStory, finishStory } from "./helpers/story";
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(Date.UTC(2026, 10, 10, 12));
+});
 import { emptyProgress } from "../src/game/campaign/progression";
 import { initializeRpg } from "../src/game/rpg/profile";
 import { seededEquipment } from "../src/game/rpg/items";
@@ -205,7 +208,7 @@ test("profile-wide check-in pays once across characters and achievements claim o
   await expect(
     page.getByRole("button", { name: "CLAIMED TODAY", exact: true }),
   ).toBeDisabled();
-  expect((await slot(page)).gold).toBe(500);
+  expect((await slot(page)).gold).toBe(400);
   expect((await player(page)).checkins).toHaveLength(1);
   await page.getByRole("button", { name: "SAVE SLOTS", exact: true }).click();
   await page.getByLabel("New character name").fill("Second Light");
@@ -218,7 +221,7 @@ test("profile-wide check-in pays once across characters and achievements claim o
     page.getByRole("button", { name: "CLAIMED TODAY", exact: true }),
   ).toBeDisabled();
   expect((await slot(page)).gold).toBe(0);
-  expect((await slot(page, first.local.id)).gold).toBe(500);
+  expect((await slot(page, first.local.id)).gold).toBe(400);
   await page.getByRole("button", { name: "ACHIEVEMENTS", exact: true }).click();
   const outfit = page
     .locator(".profile-objectives article")
@@ -341,7 +344,7 @@ test("another tab selecting a different slot cannot redirect a pending reward to
     await expect(
       page.getByRole("button", { name: "CLAIMED TODAY", exact: true }),
     ).toBeDisabled();
-    expect((await slot(page, first.local.id)).gold).toBe(500);
+    expect((await slot(page, first.local.id)).gold).toBe(400);
     expect((await slot(other, second.local.id)).gold).toBe(0);
     expect((await player(page)).checkins[0].slotId).toBe(first.local.id);
   } finally {
@@ -425,7 +428,7 @@ test("daily claims and JSON export work offline and survive an offline reload", 
   await page.getByRole("button", { name: /^Practice & legacy tools/ }).click();
   await profile(page);
   expect((await player(page)).id).toBe(id);
-  expect((await slot(page)).gold).toBe(500);
+  expect((await slot(page)).gold).toBe(400);
 });
 test("Thai profile navigation preserves identity and save-slot contents", async ({
   page,

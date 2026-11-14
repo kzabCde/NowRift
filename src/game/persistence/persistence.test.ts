@@ -5,7 +5,8 @@ import {
   playerId,
   resetClientSelectionForTests,
 } from "./repository";
-import { gameDay, CHECKINS } from "./daily";
+import { gameDay } from "./daily";
+import { calendarReward, calendarDay } from "./calendar";
 import { exportSave, importSave, checksum } from "./backup";
 import {
   captureCheckpoint,
@@ -141,7 +142,7 @@ describe("local guest profiles and three isolated characters", () => {
     await expect(repo.create("Fourth")).rejects.toThrow("three");
     await repo.select(first.local.id);
     const loaded = await repo.load();
-    expect(loaded.gold).toBe(500 + won.reward!.gold);
+    expect(loaded.gold).toBe(400 + won.reward!.gold);
     expect(loaded.clears).toContain("forest-1:normal");
     expect(loaded.local.name).toBe("Rift Wanderer");
     expect((await repo.load(second.local.id)).gold).toBe(0);
@@ -201,28 +202,154 @@ describe("Bangkok check-ins, objectives and achievements", () => {
         repo.claim("checkin", "", p.local.revision, p.local.id),
       ]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect((await repo.load()).gold).toBe(500);
+    expect((await repo.load()).gold).toBe(400);
     const second = await repo.create("Second");
     await expect(
       repo.claim("checkin", "", second.local.revision, second.local.id),
     ).rejects.toThrow("already");
     expect((await repo.view()).player.checkins).toHaveLength(1);
   });
-  test("seven-day rewards progress through materials and a real Epic equipment chest", async () => {
-    for (let i = 0; i < 7; i++) {
-      at(NOW + i * DAY);
-      const p = await repo.load();
-      await repo.claim("checkin", "", p.local.revision, p.local.id);
+  test("a real November calendar grants dated provisions and exactly one final-day Epic chest", async () => {
+    const gifts = [];
+    for (let day = 1; day <= 30; day++) {
+      at(Date.UTC(2026, 10, day, 12));
+      const p = await repo.load(),
+        key = calendarDay("2026-11", day);
+      gifts.push(calendarReward(key).gift);
+      await repo.claim("checkin", key, p.local.revision, p.local.id);
     }
     const v = await repo.view(),
       p = v.active!;
-    expect(v.player.checkins.map((c) => c.cycle)).toEqual([
-      0, 1, 2, 3, 4, 5, 6,
-    ]);
-    expect(p.gold).toBe(CHECKINS.reduce((n, r) => n + (r.gift.gold ?? 0), 0));
-    expect(p.materials["enhancement-stone"]).toBe(5);
-    expect(p.rpg!.equipment.some((e) => e.rarity === "epic")).toBe(true);
+    expect(v.player.checkins.map((c) => c.day)).toEqual(
+      Array.from({ length: 30 }, (_, i) => calendarDay("2026-11", i + 1)),
+    );
+    expect(
+      v.player.checkins.every(
+        (c) => c.calendarVersion === 1 && c.cycle === undefined,
+      ),
+    ).toBe(true);
+    expect(p.gold).toBe(gifts.reduce((n, gift) => n + (gift.gold ?? 0), 0));
+    expect(p.materials["enhancement-stone"]).toBe(
+      gifts.reduce(
+        (n, gift) => n + (gift.materials?.["enhancement-stone"] ?? 0),
+        0,
+      ),
+    );
+    expect(p.rpg!.equipment.filter((e) => e.rarity === "epic")).toHaveLength(1);
+    expect(
+      p.rpg!.history.filter((h) => h.id.startsWith("checkin:")),
+    ).toHaveLength(30);
+    expect(p.receipts.filter((id) => id.startsWith("checkin:"))).toHaveLength(
+      30,
+    );
     expect(p.local.daily.progress.gold ?? 0).toBe(0);
+  });
+  test("legacy seven-day history and today's receipt survive calendar migration, exports and restores", async () => {
+    let p = await repo.load();
+    const v = await repo.view(),
+      legacy = { day: gameDay(NOW), cycle: 6, slotId: p.local.id, at: NOW },
+      receipt = `checkin:${v.player.id}:${legacy.day}`;
+    v.player.checkins.push(legacy);
+    p.receipts.push(receipt);
+    p.gold = 1750;
+    p.xp = 1234;
+    await rawPut("player", v.player);
+    await rawPut("profile", p);
+    await expect(
+      repo.claim("checkin", legacy.day, p.local.revision, p.local.id),
+    ).rejects.toThrow("already");
+    at(NOW + DAY);
+    p = await repo.load();
+    await repo.claim("checkin", gameDay(), p.local.revision, p.local.id);
+    const next = await repo.view();
+    expect(next.player.checkins[0]).toEqual(legacy);
+    expect(next.active!.receipts).toContain(receipt);
+    expect(next.active!.gold).toBe(1750);
+    expect(next.active!.materials.wood).toBe(4);
+    expect(next.active!.xp).toBe(1234);
+    const backup = (await repo.backups()).find(
+      (b) => b.reason === "Before monthly calendar rewards",
+    )!;
+    expect(backup.player.checkins).toEqual([legacy]);
+    expect(backup.save.receipts).toContain(receipt);
+    const imported = await importSave(
+      await exportSave(next.player, next.active!),
+    );
+    expect(imported.player.checkins).toEqual(next.player.checkins);
+    await repo.replace(
+      imported.save,
+      imported.player.checkins,
+      next.active!.local.revision,
+      next.active!.local.id,
+      imported.player,
+    );
+    const reloaded = await repo.view();
+    expect(reloaded.player.checkins).toEqual(next.player.checkins);
+    await expect(
+      repo.claim(
+        "checkin",
+        gameDay(),
+        reloaded.active!.local.revision,
+        reloaded.active!.local.id,
+      ),
+    ).rejects.toThrow("already");
+  });
+  test("skipping dates never shifts the offered reward and explicit past/future claims are rejected atomically", async () => {
+    let p = await repo.load();
+    await expect(
+      repo.claim("checkin", "2026-11-09", p.local.revision, p.local.id),
+    ).rejects.toThrow("today");
+    await expect(
+      repo.claim("checkin", "2026-11-11", p.local.revision, p.local.id),
+    ).rejects.toThrow("today");
+    expect((await repo.view()).player.checkins).toEqual([]);
+    expect((await repo.load()).gold).toBe(0);
+    at(Date.UTC(2026, 10, 14, 12));
+    p = await repo.load();
+    p = await repo.claim("checkin", "2026-11-14", p.local.revision, p.local.id);
+    expect(p.gold).toBe(750);
+    expect(p.materials["enhancement-stone"]).toBe(3);
+    expect((await repo.view()).player.checkins.map((c) => c.day)).toEqual([
+      "2026-11-14",
+    ]);
+  });
+  test("February 28 combines weekly and month-end rewards in one atomic gift, even under competing claims", async () => {
+    at(Date.UTC(2026, 1, 28, 12));
+    const p = await repo.load();
+    const attempts = await Promise.allSettled([
+      repo.claim("checkin", "2026-02-28", p.local.revision, p.local.id),
+      repo.claim("checkin", "2026-02-28", p.local.revision, p.local.id),
+    ]);
+    expect(attempts.filter((a) => a.status === "fulfilled")).toHaveLength(1);
+    const saved = await repo.load();
+    expect(saved.gold).toBe(2500);
+    expect(saved.materials["enhancement-stone"]).toBe(5);
+    expect(
+      saved.rpg!.equipment.filter((e) => e.rarity === "epic"),
+    ).toHaveLength(1);
+    expect(saved.rpg!.history.filter((h) => h.kind === "gift")).toHaveLength(1);
+    expect((await repo.view()).player.checkins).toHaveLength(1);
+  });
+  test("a failed check-in root write rolls back wallet, receipt, inventory and player history together", async () => {
+    const p = await repo.load(),
+      original = IDBObjectStore.prototype.put;
+    const spy = vi
+      .spyOn(IDBObjectStore.prototype, "put")
+      .mockImplementation(function (
+        this: IDBObjectStore,
+        value: unknown,
+        key?: IDBValidKey,
+      ) {
+        if (key === "player")
+          throw new DOMException("Disk full", "QuotaExceededError");
+        return original.call(this, value, key);
+      });
+    await expect(
+      repo.claim("checkin", gameDay(), p.local.revision, p.local.id),
+    ).rejects.toThrow();
+    spy.mockRestore();
+    expect(await repo.load()).toEqual(p);
+    expect((await repo.view()).player.checkins).toEqual([]);
   });
   test("a device clock rollback cannot repeat a check-in", async () => {
     let p = await repo.load();
@@ -358,6 +485,46 @@ describe("consistent run checkpoints and writer ownership", () => {
     await settle("ignored", resumed.run);
     expect((await repo.load()).gold).toBe(gold);
     expect((await repo.load()).local.checkpoint).toBeNull();
+  });
+  test("accelerated combat saves actual playtime across recovery and settles rewards exactly once", async () => {
+    const { g, run, p } = await simulation();
+    g.time = 40;
+    g.realTime = 10;
+    g.kills = 20;
+    g.campaign!.enemies = 20;
+    await repo.checkpoint(
+      captureCheckpoint(g, { ...run, sequence: 1 }, 32, {
+        stageId: "forest-1",
+        difficulty: "normal",
+        seed: 32,
+        clears: [],
+      }),
+    );
+    expect((await repo.load()).local.stats.seconds).toBe(10);
+    const recovered = await repo.beginRun(p.local.id, true);
+    expect(restoreCheckpoint(recovered.checkpoint!).realTime).toBe(10);
+    const result = {
+      id: recovered.run.id,
+      run: recovered.run,
+      stageId: "forest-1",
+      difficulty: "normal" as const,
+      seed: 32,
+      victory: true,
+      enemies: 120,
+      elites: 2,
+      bosses: 0,
+      seconds: 480,
+      realSeconds: 120,
+    };
+    const settled = await repo.settle(result);
+    const saved = await repo.load();
+    expect(saved.local.stats.seconds).toBe(120);
+    expect(saved.local.stats.kills).toBe(122);
+    expect(saved.clears).toContain("forest-1:normal");
+    expect(settled.reward!.gold).toBeGreaterThan(0);
+    expect((await repo.settle(result)).reward).toBeNull();
+    expect((await repo.load()).gold).toBe(saved.gold);
+    expect((await repo.load()).local.stats.seconds).toBe(120);
   });
   test("taking over a checkpoint rejects old-tab checkpoint and reward writes", async () => {
     const { g, run, p } = await simulation();
@@ -501,8 +668,8 @@ describe("backup validation, corruption recovery and atomic failures", () => {
       second.local.id,
     );
     expect((await repo.load()).local.id).toBe(second.local.id);
-    expect((await repo.load()).gold).toBe(500);
-    expect((await repo.load(p.local.id)).gold).toBe(500);
+    expect((await repo.load()).gold).toBe(400);
+    expect((await repo.load(p.local.id)).gold).toBe(400);
     expect((await repo.backups()).length).toBe(1);
     const current = await repo.load();
     await expect(

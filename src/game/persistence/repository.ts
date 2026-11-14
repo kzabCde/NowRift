@@ -33,7 +33,6 @@ import type {
   Backup,
 } from "./model";
 import {
-  CHECKINS,
   QUESTS,
   ACHIEVEMENTS,
   gameDay,
@@ -42,6 +41,7 @@ import {
   recordMetrics,
   grantGift,
 } from "./daily";
+import { calendarReward, CALENDAR_VERSION } from "./calendar";
 import { validCheckpoint, type RunCheckpoint } from "./checkpoint";
 import { applyWorldCommand } from "../world/actions";
 import { districtAt } from "../world/city";
@@ -605,6 +605,9 @@ export const profileRepository = {
       rollDay(p, at);
       reconcile(p, at);
       if (kind === "checkin") {
+        // Empty IDs are the legacy 'today' command; explicit dates can never backclaim.
+        if (id !== "" && id !== day)
+          throw new Error("Only today's calendar reward can be claimed.");
         if (root.checkins.some((c) => c.day === day))
           throw new Error(
             "Today's check-in has already been claimed for this local player.",
@@ -613,15 +616,27 @@ export const profileRepository = {
           throw new Error(
             "The device clock is earlier than your last check-in. Correct the clock before claiming.",
           );
-        const cycle = root.checkins.length % 7;
+        if (
+          root.checkins.length &&
+          !root.checkins.some(
+            (claim) => claim.calendarVersion === CALENDAR_VERSION,
+          )
+        )
+          backup(store, root, before, at, "Before monthly calendar rewards");
+        const { gift } = calendarReward(day);
         grantGift(
           p,
-          CHECKINS[cycle].gift,
+          gift,
           "checkin:" + root.id + ":" + day,
           at,
-          "Daily check-in: " + CHECKINS[cycle].name,
+          "Monthly check-in: " + day,
         );
-        root.checkins.push({ day, cycle, slotId: p.local.id, at });
+        root.checkins.push({
+          day,
+          calendarVersion: CALENDAR_VERSION,
+          slotId: p.local.id,
+          at,
+        });
         root.revision++;
         store.put(root, "player");
       } else if (kind === "quest") {
@@ -746,7 +761,7 @@ export const profileRepository = {
           ? {
               kills: c!.state.kills,
               bosses: c!.environment?.bosses ?? 0,
-              seconds: c!.state.time,
+              seconds: c!.state.realTime ?? c!.state.time,
             }
           : { kills: 0, bosses: 0, seconds: 0 },
       };
@@ -795,7 +810,7 @@ export const profileRepository = {
         {
           kills: c.state.kills,
           bosses: c.environment?.bosses ?? 0,
-          seconds: c.state.time,
+          seconds: c.state.realTime ?? c.state.time,
         },
         at,
       );
@@ -870,7 +885,7 @@ export const profileRepository = {
           {
             kills: result.enemies + result.elites + result.bosses,
             bosses: result.bosses,
-            seconds: result.seconds,
+            seconds: result.realSeconds ?? result.seconds,
           },
           at,
         );
@@ -899,7 +914,7 @@ export const profileRepository = {
                 kills: result.enemies + result.elites + result.bosses,
                 bestKills: result.enemies + result.elites + result.bosses,
                 bosses: result.bosses,
-                seconds: result.seconds,
+                seconds: result.realSeconds ?? result.seconds,
               }
             : {}),
           stages: result.victory && !result.activity ? 1 : 0,
@@ -934,6 +949,11 @@ export const profileRepository = {
     return [...p.local.records].sort((a, b) => b.at - a.at).slice(0, 20);
   },
   async record(run: RunResult) {
+    if (
+      run.realSeconds !== undefined &&
+      (!Number.isFinite(run.realSeconds) || run.realSeconds < 0)
+    )
+      throw new Error("Invalid gameplay metric.");
     return update((p, root, store, _, at) => {
       if (p.local.records.some((r) => r.id === run.id)) return;
       if (!run.campaign) {
@@ -944,7 +964,7 @@ export const profileRepository = {
             {
               kills: run.kills,
               bosses: run.outcome === "victory" ? 1 : 0,
-              seconds: run.seconds,
+              seconds: run.realSeconds ?? run.seconds,
             },
             at,
           );
@@ -954,7 +974,7 @@ export const profileRepository = {
             {
               kills: run.kills,
               bosses: run.outcome === "victory" ? 1 : 0,
-              seconds: run.seconds,
+              seconds: run.realSeconds ?? run.seconds,
             },
             at,
           );

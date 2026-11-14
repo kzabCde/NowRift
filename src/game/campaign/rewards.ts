@@ -34,6 +34,8 @@ export type CampaignResult = {
   elites: number;
   bosses: number;
   seconds: number;
+  /** Unscaled active wall time. Legacy 1x results omit this field. */
+  realSeconds?: number;
 };
 export function resolveRewards(
   run: CampaignResult,

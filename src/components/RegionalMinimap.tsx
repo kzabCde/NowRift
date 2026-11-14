@@ -1,4 +1,6 @@
 "use client";
+import { useSettings } from "@/state/settings";
+import { keyHint } from "@/game/input/bindings";
 import { useMemo } from "react";
 import type { WorldSave } from "@/game/world/save";
 import type { Point } from "@/game/world/city";
@@ -29,6 +31,7 @@ export default function RegionalMinimap({
   disabled: boolean;
   onOpen: () => void;
 }) {
+  const prefs = useSettings();
   const { text } = useI18n(),
     region = currentRegion(world);
   const markers = useMemo(
@@ -69,7 +72,7 @@ export default function RegionalMinimap({
         />
         <span>
           <b>{text(regionById(region).name)}</b>
-          <kbd>M</kbd>
+          <kbd>{keyHint(prefs, "map")}</kbd>
         </span>
       </button>
       {target && (

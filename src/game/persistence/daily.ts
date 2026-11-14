@@ -9,6 +9,8 @@ export function gameDay(at = Date.now()): string {
   if (!Number.isFinite(at)) throw new Error("Invalid game clock.");
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: GAME_TIMEZONE,
+    calendar: "gregory",
+    numberingSystem: "latn",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

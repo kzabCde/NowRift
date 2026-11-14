@@ -424,3 +424,308 @@
 [data-reduced-motion="true"] .profile-claimed {
   animation: none;
 }
+
+/* Real-calendar provisions. Seven readable columns at every width. */
+.calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.calendar-heading h2 {
+  margin: 8px 0;
+}
+.calendar-zone {
+  color: #a8bda4;
+  font: 10px/1.8 var(--font-mono, monospace);
+  text-align: right;
+}
+.calendar-intro {
+  color: #aebaa5;
+  font-size: 12px;
+  max-width: 720px;
+}
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+.calendar-month-nav h3 {
+  font-size: 24px;
+  min-width: 220px;
+  text-align: center;
+  margin: 0;
+}
+.calendar-month-nav > button {
+  min-height: 44px;
+  min-width: 44px;
+}
+.calendar-month-nav .calendar-today {
+  min-width: 64px;
+  margin-left: 8px;
+  font-size: 11px;
+}
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 0.32fr);
+  gap: 24px;
+}
+.calendar-table {
+  table-layout: fixed;
+  width: 100%;
+  border-spacing: 5px;
+  margin: -5px;
+  width: calc(100% + 10px);
+}
+.calendar-table th {
+  color: #a8b39d;
+  font-size: 11px;
+  height: 30px;
+  font-weight: 400;
+}
+.calendar-table abbr {
+  text-decoration: none;
+}
+.calendar-table td {
+  padding: 0;
+  vertical-align: top;
+}
+.calendar-date {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #71836555;
+  box-shadow: inset 0 -3px #08181377;
+  background: #182720;
+  color: #c3c9b4;
+  padding: 8px 4px;
+}
+.calendar-date .rpg-icon {
+  image-rendering: pixelated;
+}
+.calendar-day-number {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  font: 11px var(--font-mono, monospace);
+}
+.calendar-reward-amount {
+  font: 10px var(--font-mono, monospace);
+  color: #c8ba87;
+  margin-top: 4px;
+}
+.calendar-date.future {
+  background: #12201b;
+  color: #7e8b7b;
+}
+.calendar-date.future .rpg-icon {
+  opacity: 0.45;
+}
+.calendar-date.missed {
+  opacity: 0.55;
+}
+.calendar-date.claimed {
+  background: #234039;
+  border-color: #729c83;
+}
+.calendar-date.claimed .rpg-icon {
+  opacity: 0.65;
+}
+.calendar-date.today {
+  border-color: #e2c77b;
+  background: #4b44298c;
+}
+.calendar-date.milestone {
+  box-shadow: inset 0 -3px #b99a4f55;
+}
+.calendar-date.final-day {
+  border-color: #bf91d3;
+  background: #332644;
+}
+.calendar-date[aria-pressed="true"] {
+  outline: 2px solid #e6cd92;
+  outline-offset: -4px;
+}
+.calendar-state-symbol {
+  position: absolute;
+  right: 5px;
+  top: 4px;
+  font-size: 11px;
+  color: #a4d1be;
+}
+.calendar-milestone {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: #ddbd75;
+  font-size: 9px;
+}
+.calendar-detail {
+  min-width: 0;
+  background: #101d17;
+  border: 1px solid #b19e6155;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.calendar-detail h3 {
+  margin: 0;
+  font-size: 23px;
+}
+.calendar-detail p {
+  color: #d6ccab;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 0;
+}
+.calendar-detail small {
+  font-size: 10px;
+  color: #a8b89e;
+  line-height: 1.8;
+}
+.calendar-detail .rpg-primary {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 8px;
+  font-size: 10px;
+}
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 0;
+  color: #aebca4;
+  font-size: 10px;
+}
+.calendar-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.calendar-legend i {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #83957d;
+}
+.calendar-legend [data-state="claimed"] {
+  background: #75aa8a;
+}
+.calendar-legend [data-state="today"] {
+  background: #d6bc76;
+}
+.calendar-legend [data-state="missed"] {
+  opacity: 0.4;
+}
+.calendar-history {
+  border-top: 1px solid #83956744;
+  padding-top: 14px;
+}
+.calendar-history summary {
+  min-height: 44px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.calendar-history p {
+  font-size: 11px;
+  color: #aeb99f;
+}
+@media (max-width: 900px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .calendar-detail {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px 18px;
+  }
+  .calendar-detail h3,
+  .calendar-detail > span,
+  .calendar-detail > small {
+    grid-column: 1/-1;
+  }
+  .calendar-detail button {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 500px) {
+  .monthly-checkin.rpg-panel {
+    padding: 16px 12px;
+  }
+  .calendar-heading {
+    gap: 8px;
+  }
+  .calendar-heading h2 {
+    font-size: 26px;
+  }
+  .calendar-zone {
+    font-size: 8px;
+  }
+  .calendar-month-nav {
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 16px 0 8px;
+  }
+  .calendar-month-nav h3 {
+    font-size: 19px;
+    min-width: 0;
+    flex: 1;
+  }
+  .calendar-month-nav .calendar-today {
+    flex-basis: 100%;
+    min-height: 36px;
+    margin: 0;
+  }
+  .calendar-table {
+    border-spacing: 3px;
+    margin: -3px;
+    width: calc(100% + 6px);
+  }
+  .calendar-table th {
+    font-size: 9px;
+  }
+  .calendar-date {
+    min-height: 78px;
+    padding: 18px 1px 7px;
+    gap: 1px;
+  }
+  .calendar-day-number {
+    top: 4px;
+    left: 4px;
+    font-size: 10px;
+  }
+  .calendar-date .rpg-icon {
+    width: 24px !important;
+    height: 24px !important;
+  }
+  .calendar-reward-amount {
+    font-size: 8px;
+    margin-top: 3px;
+  }
+  .calendar-state-symbol {
+    font-size: 8px;
+    right: 3px;
+    top: 4px;
+  }
+  .calendar-milestone {
+    font-size: 7px;
+    right: 3px;
+    bottom: 2px;
+  }
+  .calendar-detail {
+    padding: 16px 12px;
+  }
+  .calendar-detail h3 {
+    font-size: 20px;
+  }
+}

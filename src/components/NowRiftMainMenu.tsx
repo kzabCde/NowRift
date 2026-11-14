@@ -47,8 +47,10 @@ import {
 import { runRepository } from "@/game/services/saves";
 import type { RunResult } from "@/game/bridge";
 import { useSettings } from "@/state/settings";
+import { keyHint } from "@/game/input/bindings";
 export default function NowRiftMainMenu() {
   const { t, text, date, plural } = useI18n();
+  const prefs = useSettings();
   const [flow, dispatch] = useReducer(flowReducer, initialFlow),
     screen = flow.screen;
   const setScreen = useCallback(
@@ -639,8 +641,14 @@ export default function NowRiftMainMenu() {
             <strong>{t("main", "MOVE")}</strong>
             <span>
               {t(
-                "main",
-                "WASD, arrow keys, or touch and drag anywhere on the arena. Movement is normalized diagonally.",
+                "qol",
+                "Move with {up}, {left}, {down}, {right}, or touch and drag on the arena. Movement is normalized diagonally.",
+                {
+                  up: keyHint(prefs, "up"),
+                  left: keyHint(prefs, "left"),
+                  down: keyHint(prefs, "down"),
+                  right: keyHint(prefs, "right"),
+                },
               )}{" "}
             </span>
           </div>
@@ -666,8 +674,9 @@ export default function NowRiftMainMenu() {
             <strong>{t("main", "SURVIVE")}</strong>
             <span>
               {t(
-                "main",
-                "Use Pause or Escape. Focus mode fills your screen. Red root circles warn before the Guardian strikes.",
+                "qol",
+                "Use {pause} or Escape. Focus mode fills your screen. Red root circles warn before the Guardian strikes.",
+                { pause: keyHint(prefs, "pause") },
               )}{" "}
             </span>
           </div>

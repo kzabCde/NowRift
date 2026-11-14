@@ -1,3 +1,6 @@
+import { attachMovementInput } from "../input/keyboard";
+import { CombatClock, COMBAT_SPEEDS } from "../simulation-clock";
+import { keyHint } from "../input/bindings";
 import { wildernessNavigation } from "../world/wilderness-map";
 import {
   captureCheckpoint,
@@ -13,7 +16,7 @@ import {
   missionReceipt,
 } from "../story/runtime";
 import { applyBuild } from "../engine";
-import { translateText } from "../../i18n/translator";
+import { translate, translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
 import { applyLoadout, type Loadout } from "../loadout";
 import { CombatVfx } from "./combat-vfx";
@@ -690,10 +693,11 @@ export class GameScene extends Phaser.Scene {
   simulation!: Simulation;
   visuals!: ForestRenderer;
   bridge!: GameBridge;
-  keys?: Record<string, Phaser.Input.Keyboard.Key>;
+  inputSource?: ReturnType<typeof attachMovementInput>;
   joystick: { x: number; y: number; dx: number; dy: number } | null = null;
   pointer: number | null = null;
   lastFrameAt = 0;
+  combatClock = new CombatClock();
   renderFrames = 0;
   lastHud = 0;
   lastPhase = "";
@@ -756,6 +760,9 @@ export class GameScene extends Phaser.Scene {
           this.stage?.outfit ?? "moss",
         );
     this.pendingGather = [];
+    this.combatClock.reset();
+    this.simulation.battleSpeed = 1;
+    this.simulation.realTime ??= this.simulation.time;
     this.lastFrameAt = performance.now();
     this.renderFrames = 0;
     this.lastHud = 0;
@@ -826,23 +833,19 @@ export class GameScene extends Phaser.Scene {
     cam.setBounds(0, 0, FOREST.width, FOREST.height);
     cam.startFollow(this.visuals.player, true, 0.12, 0.12);
     this.resize();
-    this.keys = this.input.keyboard?.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,ESC",
-      false,
-    ) as Record<string, Phaser.Input.Keyboard.Key>;
-    const escape = () => {
-      if (this.tonicPending || this.storageBlocked || this.transitionLocked)
-        return;
-      togglePause(g);
-      this.clearInput();
-      this.publish();
-    };
-    this.keys?.ESC.on("down", escape);
     const farmInteract = () =>
       this.command({
         type: g.campaign?.mission ? "mission-interact" : "expedition-interact",
       });
-    this.input.keyboard?.on("keydown-E", farmInteract);
+    this.inputSource = attachMovementInput({
+      preferences: () => useSettings.getState(),
+      enabled: () =>
+        g.phase === "playing" &&
+        !this.tonicPending &&
+        !this.storageBlocked &&
+        !this.transitionLocked,
+      interact: farmInteract,
+    });
     const interrupt = () => {
       if (g.phase === "playing") togglePause(g);
       this.clearInput();
@@ -859,27 +862,29 @@ export class GameScene extends Phaser.Scene {
       this.checkpoint();
     };
     window.addEventListener("pagehide", pagehide);
-    const preventScroll = (event: KeyboardEvent) => {
-      if (
-        g.phase === "playing" &&
-        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(
-          event.key,
-        ) &&
-        !event.ctrlKey &&
-        !event.metaKey
-      )
-        event.preventDefault();
-    };
-    window.addEventListener("keydown", preventScroll);
     window.addEventListener("blur", interrupt);
     document.addEventListener("visibilitychange", visibility);
     const off = this.bridge.on("command", (command) => this.command(command));
     const canvas = this.game.canvas;
     canvas.className = "game-canvas";
-    canvas.setAttribute(
-      "aria-label",
-      `${g.campaign?.world.name ?? "Forest"} arena. WASD, arrow keys, or touch drag to move. Weapons attack automatically.`,
-    );
+    const describeControls = () =>
+      canvas.setAttribute(
+        "aria-label",
+        translate(
+          useLocale.getState().locale,
+          "qol",
+          "Move {up}/{left}/{down}/{right} or touch. Interact {interact}. Weapons attack automatically.",
+          {
+            up: keyHint(useSettings.getState(), "up"),
+            left: keyHint(useSettings.getState(), "left"),
+            down: keyHint(useSettings.getState(), "down"),
+            right: keyHint(useSettings.getState(), "right"),
+            interact: keyHint(useSettings.getState(), "interact"),
+          },
+        ),
+      );
+    describeControls();
+    const offInputLocale = useLocale.subscribe(describeControls);
     canvas.setAttribute("data-touch-active", "false");
     const point = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
@@ -932,16 +937,24 @@ export class GameScene extends Phaser.Scene {
       );
     setQuality();
     const unsubSettings = useSettings.subscribe((next, previous) => {
+      if (
+        next.keyboard !== previous.keyboard ||
+        JSON.stringify(next.keymap.keys) !==
+          JSON.stringify(previous.keymap.keys) ||
+        next.rebinding !== previous.rebinding
+      ) {
+        this.clearInput();
+        describeControls();
+      }
       if (next.zoom !== previous.zoom) this.resize();
       if (next.quality !== previous.quality) setQuality();
     });
     onSceneEnd(this, () => {
       off();
       unsubSettings();
+      offInputLocale();
       this.clearInput();
-      this.keys?.ESC.off("down", escape);
-      this.input.keyboard?.off("keydown-E", farmInteract);
-      window.removeEventListener("keydown", preventScroll);
+      this.inputSource?.destroy();
       window.removeEventListener("blur", interrupt);
       window.removeEventListener("pagehide", pagehide);
       document.removeEventListener("visibilitychange", visibility);
@@ -1053,6 +1066,8 @@ export class GameScene extends Phaser.Scene {
     );
   }
   clearInput() {
+    this.combatClock.reset();
+    this.lastFrameAt = performance.now();
     const id = this.pointer;
     this.pointer = null;
     this.joystick = null;
@@ -1062,6 +1077,7 @@ export class GameScene extends Phaser.Scene {
     canvas.dataset.touchActive = "false";
     this.bridge?.emit("touch", false);
     this.input.keyboard?.resetKeys();
+    this.inputSource?.clear();
   }
   checkpoint() {
     const g = this.simulation;
@@ -1087,6 +1103,21 @@ export class GameScene extends Phaser.Scene {
     }
   }
   command(command: Command) {
+    if (command.type === "battle-speed") {
+      if (
+        !this.transitionLocked &&
+        !this.storageBlocked &&
+        !this.tonicPending &&
+        ["playing", "paused"].includes(this.simulation.phase) &&
+        COMBAT_SPEEDS.includes(command.speed)
+      ) {
+        this.simulation.battleSpeed = command.speed;
+        this.combatClock.reset();
+        this.lastFrameAt = performance.now();
+        this.publish();
+      }
+      return;
+    }
     if (command.type === "map-target") {
       const navigation = wildernessNavigation(this.simulation);
       if (
@@ -1340,31 +1371,35 @@ export class GameScene extends Phaser.Scene {
     }
   }
   update(_time: number, _delta: number) {
-    // Phaser smooths and accumulates delta when FPS-limited. Combat uses elapsed
-    // monotonic wall time so Low quality changes rendering, never game speed.
+    // Render FPS stays independent. Only the bounded fixed-step simulation
+    // budget scales; wall time, audio, persistence and the calendar do not.
     const now = performance.now();
     const delta = Math.max(0, now - this.lastFrameAt);
     this.lastFrameAt = now;
     const time = now;
     this.renderFrames++;
-    const g = this.simulation,
-      k = this.keys;
+    const g = this.simulation;
     if (this.transitionLocked) {
+      this.combatClock.reset();
       this.visuals.draw(g, 0, null);
       return;
     }
-    const preset = useSettings.getState().keyboard,
-      wasd = preset !== "arrows",
-      arrows = preset !== "wasd";
-    const x =
-      Number((wasd && k?.D.isDown) || (arrows && k?.RIGHT.isDown)) -
-      Number((wasd && k?.A.isDown) || (arrows && k?.LEFT.isDown)) +
-      (this.joystick?.dx ?? 0);
-    const y =
-      Number((wasd && k?.S.isDown) || (arrows && k?.DOWN.isDown)) -
-      Number((wasd && k?.W.isDown) || (arrows && k?.UP.isDown)) +
-      (this.joystick?.dy ?? 0);
-    advanceGame(g, delta / 1000, x, y);
+    const axis = this.inputSource?.axis() ?? { x: 0, y: 0 },
+      x = axis.x + (this.joystick?.dx ?? 0),
+      y = axis.y + (this.joystick?.dy ?? 0);
+    const frame = this.combatClock.advance(
+      delta / 1000,
+      g.battleSpeed ?? 1,
+      g.phase === "playing" &&
+        !document.hidden &&
+        !this.storageBlocked &&
+        !this.tonicPending,
+      (seconds) => {
+        advanceGame(g, seconds, x, y);
+        return g.phase === "playing";
+      },
+    );
+    g.realTime = (g.realTime ?? g.time) + frame.realSeconds;
     drainFeedback(g, (event) => this.visuals.consume(event));
     audio.setScene(
       g.phase === "victory"
@@ -1418,6 +1453,7 @@ export class GameScene extends Phaser.Scene {
           gold: g.gold,
           level: g.level,
           seconds: Math.floor(g.time),
+          realSeconds: g.realTime,
           weapon: g.weaponId,
           campaign: g.campaign
             ? {
@@ -1452,6 +1488,7 @@ export class GameScene extends Phaser.Scene {
                 elites: g.campaign.elites,
                 bosses: g.campaign.bosses,
                 seconds: g.time,
+                realSeconds: g.realTime,
               }
             : undefined,
         });

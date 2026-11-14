@@ -1,0 +1,64 @@
+
+> nowrift@0.1.0 prebuild
+> node scripts/generate-branding.mjs && npm run assets:check && npm run typecheck && npm test
+
+
+> nowrift@0.1.0 assets:check
+> node scripts/generate-asset-index.mjs --check && tsx scripts/validate-assets.ts
+
+Asset source index matches all 532 public PNGs.
+Validated 532 public PNGs, frame grids, animation tracks, texture keys and 50 item references.
+
+> nowrift@0.1.0 typecheck
+> tsc --noEmit
+
+
+> nowrift@0.1.0 pretest
+> node scripts/generate-branding.mjs
+
+
+> nowrift@0.1.0 test
+> vitest run
+
+
+ RUN  v5.1.0 /workspace/NowRift-qol-production
+
+
+ Test Files  37 passed (37)
+      Tests  690 passed (690)
+   Start at  12:17:31
+   Duration  38.00s (tests 70%, import 17%, transform 12%, worker 1%)
+
+    Isolate  37 workers spawned · ~212ms startup each (spawn + environment, per file)
+             at least ~7.64s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> nowrift@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.29
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 30.9s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                     144 kB         352 kB
+├ ○ /_not-found                            992 B         104 kB
+└ ○ /manifest.webmanifest                  123 B         103 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/195-e8e48b6be068a4d1.js       46.4 kB
+  ├ chunks/672e0ad1-8197124baff6e4df.js  54.2 kB
+  └ other shared chunks (total)          2.03 kB
+
+
+○  (Static)  prerendered as static content
+

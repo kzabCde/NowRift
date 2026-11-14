@@ -14,15 +14,12 @@ import { validRunStageIdentity } from "../campaign/identity";
 import { validJournal } from "../quests/validation";
 import { QUEST_CATALOG } from "../quests/catalog";
 import { migrateJournal } from "../quests/save";
+import { validCalendarDay } from "./calendar";
 export const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 export const count = (v: unknown, max = Number.MAX_SAFE_INTEGER): v is number =>
   typeof v === "number" && Number.isSafeInteger(v) && v >= 0 && v <= max;
-const validDay = (value: unknown): boolean =>
-  typeof value === "string" &&
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  Number.isFinite(Date.parse(value + "T00:00:00Z")) &&
-  new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+const validDay = validCalendarDay;
 const date = (v: unknown): v is number => count(v, 8640000000000000);
 export function safeJson(
   value: unknown,
@@ -152,7 +149,8 @@ export function validPlayer(v: unknown): v is PlayerProfile {
       (c) =>
         record(c) &&
         validDay(c.day) &&
-        count(c.cycle, 6) &&
+        ((c.calendarVersion === undefined && count(c.cycle, 6)) ||
+          (c.calendarVersion === 1 && c.cycle === undefined)) &&
         date(c.at) &&
         typeof c.slotId === "string",
     ) &&
@@ -237,6 +235,10 @@ export function validLocal(v: unknown): v is SlotState {
         record(r) &&
         typeof r.id === "string" &&
         date(r.at) &&
+        (r.realSeconds === undefined ||
+          (typeof r.realSeconds === "number" &&
+            Number.isFinite(r.realSeconds) &&
+            r.realSeconds >= 0)) &&
         ["victory", "gameover"].includes(r.outcome) &&
         Object.hasOwn(WEAPONS, r.weapon) &&
         [r.kills, r.gold, r.level, r.seconds].every((n) => count(n)),
