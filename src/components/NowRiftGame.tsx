@@ -3,7 +3,13 @@ import ExpeditionAtlas from "./ExpeditionAtlas";
 import HudRail from "./HudRail";
 import SaveIndicator from "./SaveIndicator";
 import RiftTransition from "./RiftTransition";
-import { shortcutAllowed } from "@/game/navigation/flow";
+import { useGameplayShortcuts } from "./useGameplayShortcuts";
+import { hasModal, modalDepth, requestModalBack } from "@/game/input/keyboard";
+import { keyHint } from "@/game/input/bindings";
+import { useSettings } from "@/state/settings";
+import HudToggle from "./HudToggle";
+import { nextCombatSpeed } from "@/game/simulation-clock";
+import CombatSpeedControl from "./CombatSpeedControl";
 import { profileRepository } from "@/game/persistence/repository";
 import QuestNotice from "./QuestNotice";
 import QuestJournal, { QuestTracker } from "./QuestJournal";
@@ -76,6 +82,7 @@ export default function NowRiftGame({
   characterName,
 }: Props) {
   const { t, text } = useI18n();
+  const prefs = useSettings();
   const [revealed, setRevealed] = useState(!returnToHaven),
     [rendererError, setRendererError] = useState(""),
     [attempt, setAttempt] = useState(0),
@@ -290,46 +297,72 @@ export default function NowRiftGame({
       off.forEach((fn) => fn());
     };
   }, [autoStart, bridge, weapon, stage, loadout]);
-  useEffect(() => {
-    const key = (event: KeyboardEvent) => {
-      if (
-        event.key.toLowerCase() === "m" &&
-        shortcutAllowed(event, event.target)
-      ) {
-        event.preventDefault();
-        if (mapOpen) closeMap();
-        else openMap();
-      }
-      if (
-        event.key.toLowerCase() === "q" &&
-        shortcutAllowed(event, event.target)
-      ) {
-        event.preventDefault();
-        if (journalOpen) closeJournal();
-        else openJournal();
-      }
-      if (
-        event.key.toLowerCase() === "h" &&
-        shortcutAllowed(event, event.target)
-      )
-        setShortcutNotice(
-          t(
-            "journey",
-            "Return to Rift Heaven to open Sanctuary. Finish or abandon your adventure first.",
-          ),
-        );
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [
-    t,
-    journalOpen,
-    mapOpen,
-    questSave,
-    hud.phase,
-    storyDialogue,
-    hud.mission?.phase,
-  ]);
+  useGameplayShortcuts((action, event) => {
+    if (action === "pause" && hasModal()) {
+      if (event.code === "Escape") return false;
+      requestModalBack();
+      return true;
+    }
+    if (action === "map" && mapOpen && modalDepth() <= 1) {
+      closeMap();
+      return true;
+    }
+    if (action === "journal" && journalOpen && modalDepth() <= 1) {
+      closeJournal();
+      return true;
+    }
+    if (
+      !ready ||
+      !revealed ||
+      hasModal() ||
+      !["playing", "paused"].includes(hud.phase) ||
+      storyDialogue ||
+      settings ||
+      hud.mission?.phase === "INTRO_DIALOGUE"
+    )
+      return false;
+    if (action === "map") {
+      openMap();
+      return true;
+    }
+    if (action === "journal") {
+      openJournal();
+      return true;
+    }
+    if (action === "pause") {
+      pause();
+      return true;
+    }
+    if (action === "speed") {
+      bridge.emit("command", {
+        type: "battle-speed",
+        speed: nextCombatSpeed(hud.battleSpeed),
+      });
+      return true;
+    }
+    if (action === "hud" && farming) {
+      prefs.set({ hideHud: !prefs.hideHud });
+      return true;
+    }
+    if (action === "sanctuary") {
+      setShortcutNotice(
+        t(
+          "journey",
+          "Return to Rift Heaven to open Sanctuary. Finish or abandon your adventure first.",
+        ),
+      );
+      return true;
+    }
+    if (action === "inventory") {
+      setShortcutNotice(
+        text(
+          "Return to the city to change equipment. Combat tonics remain available.",
+        ),
+      );
+      return true;
+    }
+    return false;
+  });
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
@@ -534,8 +567,19 @@ export default function NowRiftGame({
     resume.current = false;
   }, [bridge]);
   const terminal = hud.phase === "gameover" || hud.phase === "victory";
+  const hudConcealed =
+    farming &&
+    prefs.hideHud &&
+    !mapOpen &&
+    !journalOpen &&
+    !settings &&
+    !storyDialogue &&
+    !confirmLeave &&
+    hud.phase === "playing";
   return (
-    <main className={`site-shell ${immersive ? "immersive" : ""}`}>
+    <main
+      className={`site-shell ${immersive ? "immersive" : ""} ${hudConcealed ? "qol-exploration-hidden" : ""}`}
+    >
       {returnToHaven && (!revealed || rendererError) && (
         <RiftTransition
           key={attempt}
@@ -641,8 +685,9 @@ export default function NowRiftGame({
               </span>
             </div>
             <div className="game-actions">
+              {farming && <HudToggle />}
               <button
-                className="action-button"
+                className="action-button combat-pause"
                 onClick={pause}
                 disabled={
                   saveBlocked ||
@@ -728,6 +773,17 @@ export default function NowRiftGame({
               </span>
             </div>
             <div className="hud-stats">
+              <CombatSpeedControl
+                speed={hud.battleSpeed}
+                disabled={
+                  !ready ||
+                  saveBlocked ||
+                  !["playing", "paused"].includes(hud.phase)
+                }
+                onChange={(speed) =>
+                  bridge.emit("command", { type: "battle-speed", speed })
+                }
+              />
               {[
                 [t("game", "TIME"), clock(hud.time)],
                 [t("game", "KILLS"), hud.kills],
@@ -893,7 +949,8 @@ export default function NowRiftGame({
                           ? "Rescue"
                           : "Activate",
                   )}{" "}
-                  · {text(missionObject.label.en)} <kbd>E</kbd>
+                  · {text(missionObject.label.en)}{" "}
+                  <kbd>{keyHint(prefs, "interact")}</kbd>
                 </button>
               </div>
             )}
@@ -978,7 +1035,7 @@ export default function NowRiftGame({
                             .item
                         ].name,
                       )}{" "}
-                    <kbd>E</kbd>
+                    <kbd>{keyHint(prefs, "interact")}</kbd>
                   </button>
                 ) : (
                   <p>
@@ -1055,7 +1112,7 @@ export default function NowRiftGame({
                   <span className="eyebrow">{t("game", "TAKE A BREATH")}</span>
                   {questSave && (
                     <button className="quiet-button" onClick={openJournal}>
-                      {text("Quest Journal")} · Q
+                      {text("Quest Journal")} · {keyHint(prefs, "journal")}
                     </button>
                   )}
                   <h2>{t("game", "Paused")}</h2>
@@ -1337,12 +1394,12 @@ export default function NowRiftGame({
               </span>
             </div>
             <div className="control-hint">
-              <kbd>W</kbd>
-              <kbd>A</kbd>
-              <kbd>S</kbd>
-              <kbd>D</kbd>
+              <kbd>{keyHint(prefs, "up")}</kbd>
+              <kbd>{keyHint(prefs, "left")}</kbd>
+              <kbd>{keyHint(prefs, "down")}</kbd>
+              <kbd>{keyHint(prefs, "right")}</kbd>
               <span>{t("game", "MOVE")}</span>
-              <kbd>ESC</kbd>
+              <kbd>{keyHint(prefs, "pause")}</kbd>
               <span>{t("game", "PAUSE")}</span>
             </div>
             <span className="auto-attack">

@@ -11,6 +11,11 @@ import { validFog } from "../world/exploration";
 import { regionForWorld } from "../world/regions";
 export function applyResult(progress: Progress, run: CampaignResult) {
   if (
+    run.realSeconds !== undefined &&
+    (!Number.isFinite(run.realSeconds) || run.realSeconds < 0)
+  )
+    throw new Error("Invalid result");
+  if (
     typeof run.id !== "string" ||
     !run.id.length ||
     typeof run.victory !== "boolean" ||

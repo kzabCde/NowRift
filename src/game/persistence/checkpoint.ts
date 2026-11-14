@@ -27,6 +27,7 @@ type State = Pick<
   | "player"
   | "weapon"
   | "time"
+  | "realTime"
   | "wave"
   | "kills"
   | "gold"
@@ -85,6 +86,7 @@ const fields = [
   "player",
   "weapon",
   "time",
+  "realTime",
   "wave",
   "kills",
   "gold",
@@ -206,6 +208,7 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
+  if (s?.realTime !== undefined && !finite(s.realTime)) return false;
   if (
     c.environment?.explored !== undefined ||
     c.stage?.mapExplored !== undefined
@@ -591,6 +594,8 @@ export function restoreCheckpoint(checkpoint: RunCheckpoint): Game {
         )
       : makeGame(FOREST.width, FOREST.height, c.weapon, rng);
   Object.assign(g, c.state);
+  g.realTime = c.state.realTime ?? c.state.time;
+  g.battleSpeed = 1;
   g.id = c.run.id;
   if (g.campaign && c.environment) Object.assign(g.campaign, c.environment);
   rng.setState(c.random);

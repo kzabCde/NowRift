@@ -9,6 +9,8 @@ import {
 import { Brand, Modal, clock } from "./GameUi";
 import { ItemIcon } from "./RpgScreen";
 import { storageError } from "@/game/persistence/status";
+import MonthlyCheckinCalendar from "./MonthlyCheckinCalendar";
+import { useGameDay } from "./useGameDay";
 import SaveIndicator from "./SaveIndicator";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/useI18n";
@@ -20,13 +22,7 @@ import type {
   SaveBundle,
 } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
-import {
-  CHECKINS,
-  QUESTS,
-  ACHIEVEMENTS,
-  gameDay,
-  type Gift,
-} from "@/game/persistence/daily";
+import { QUESTS, ACHIEVEMENTS, type Gift } from "@/game/persistence/daily";
 import {
   exportSave,
   importSave,
@@ -80,7 +76,6 @@ export default function ProfileScreen({
     [createName, setCreateName] = useState(""),
     [archetype, setArchetype] = useState<CharacterId>("wanderer"),
     guard = useRef(false),
-    day = useRef(gameDay()),
     file = useRef<HTMLInputElement>(null);
   const refresh = useCallback(async () => {
     const next = await profileRepository.view();
@@ -121,15 +116,14 @@ export default function ProfileScreen({
       }),
     [],
   );
+  const dayKey = useGameDay(),
+    previousDay = useRef(dayKey);
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (gameDay() !== day.current) {
-        day.current = gameDay();
-        void refresh().catch((e) => setError(String(e)));
-      }
-    }, 30000);
-    return () => clearInterval(timer);
-  }, [refresh]);
+    if (previousDay.current !== dayKey) {
+      previousDay.current = dayKey;
+      void refresh().catch((e) => setError(String(e)));
+    }
+  }, [dayKey, refresh]);
   useEffect(() => {
     if (view) {
       setUsername(view.player.username);
@@ -159,10 +153,7 @@ export default function ProfileScreen({
       setBusy(false);
     }
   }
-  const active = view?.active ?? null,
-    dayKey = gameDay(),
-    today = view?.player.checkins.some((c) => c.day === dayKey) ?? false,
-    cycle = (view?.player.checkins.length ?? 0) % 7;
+  const active = view?.active ?? null;
   const fmt = (at: number) =>
     new Intl.DateTimeFormat(locale === "th" ? "th-TH" : "en-GB", {
       timeZone: "Asia/Bangkok",
@@ -693,91 +684,25 @@ export default function ProfileScreen({
           </>
         )}
         {view && tab === "daily" && (
-          <section className="rpg-panel">
-            <span className="eyebrow">{text("A LIGHT TO RETURN TO")}</span>
-            <h2>{text("Seven days of provisions.")}</h2>
-            <p>
-              {text(
-                "One claim per local player each Bangkok game-day. Rewards go to the active character. Missed days do not reset the cycle.",
-              )}
-            </p>
-            <div className="profile-checkins">
-              {CHECKINS.map((c, index) => (
-                <article
-                  key={index}
-                  className={index === cycle ? "selected" : ""}
-                >
-                  <span>
-                    {text("DAY")} {index + 1}
-                  </span>
-                  <ItemIcon
-                    id={
-                      c.gift.epic
-                        ? "forest-weapon"
-                        : c.gift.materials
-                          ? Object.keys(c.gift.materials)[0]
-                          : "gold-ore"
-                    }
-                    size={52}
-                  />
-                  <h3>{text(c.name)}</h3>
-                  <p>{gift(c.gift)}</p>
-                  {index === cycle && (
-                    <small>
-                      {text(today ? "Next reward" : "AVAILABLE TODAY")}
-                    </small>
-                  )}
-                </article>
-              ))}
-            </div>
-            <button
-              className="rpg-primary"
-              disabled={
-                busy ||
-                today ||
-                !active ||
-                view.player.checkins.some((c) => c.day > dayKey)
-              }
-              onClick={() =>
-                active &&
-                void perform(
-                  () =>
-                    profileRepository.claim(
-                      "checkin",
-                      "",
-                      active.local.revision,
-                      active.local.id,
-                    ),
-                  "Daily check-in claimed.",
-                )
-              }
-            >
-              {text(today ? "CLAIMED TODAY" : "CLAIM DAILY REWARD")}
-            </button>
-            <p className="muted">
-              {text(
-                "Resets at midnight Asia/Bangkok. An offline device clock can be changed; this is not server-grade anti-cheat.",
-              )}
-            </p>
-            {view.player.checkins.some((c) => c.day > dayKey) && (
-              <p className="notice">
-                {text(
-                  "The device clock is earlier than your last check-in. Correct the clock before claiming.",
-                )}
-              </p>
-            )}
-            <details>
-              <summary>{text("Claim history")}</summary>
-              {view.player.checkins
-                .slice(-30)
-                .reverse()
-                .map((c) => (
-                  <p key={c.day}>
-                    {c.day} · {text("DAY")} {c.cycle + 1} · {fmt(c.at)}
-                  </p>
-                ))}
-            </details>
-          </section>
+          <MonthlyCheckinCalendar
+            today={dayKey}
+            claims={view.player.checkins}
+            busy={busy}
+            canClaim={!!active}
+            onClaim={(date) =>
+              active &&
+              void perform(
+                () =>
+                  profileRepository.claim(
+                    "checkin",
+                    date,
+                    active.local.revision,
+                    active.local.id,
+                  ),
+                "Daily check-in claimed.",
+              )
+            }
+          />
         )}
         {active && tab === "quests" && (
           <section className="rpg-panel">

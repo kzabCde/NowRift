@@ -134,6 +134,9 @@ export type Game = FeedbackQueue & {
   width: number;
   height: number;
   time: number;
+  /** Active wall time; simulation time above may advance at 2x or 4x. */
+  realTime?: number;
+  battleSpeed?: import("./simulation-clock").CombatSpeed;
   wave: number;
   kills: number;
   gold: number;
@@ -192,6 +195,8 @@ export type Game = FeedbackQueue & {
   };
 };
 export type Snapshot = {
+  realSeconds: number;
+  battleSpeed: import("./simulation-clock").CombatSpeed;
   navigation?: import("./world/wilderness-map").WildernessNavigation;
   questEvidence?: {
     runId?: string;
@@ -308,6 +313,8 @@ export function togglePause(g: Game) {
 export function snapshot(g: Game): Snapshot {
   const boss = g.enemies.find((e) => e.kind === "boss");
   return {
+    realSeconds: Math.floor(g.realTime ?? g.time),
+    battleSpeed: g.battleSpeed ?? 1,
     navigation: wildernessNavigation(g),
     mission: missionSummary(g),
     questEvidence: g.campaign
