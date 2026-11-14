@@ -167,3 +167,16 @@ checks asynchronous preparation boundaries, and cleans up a cancelled new prepar
 without discarding a recovered checkpoint. The regression now asserts no active run or
 checkpoint remains after abandonment before starting Story again. Neither failure was
 handled by changing its expected gameplay behavior.
+
+## Final validation and evidence
+
+All 690 unit/integration tests, the complete 160-case instrumented browser pass,
+6 ordinary-production smoke checks, TypeScript, lint, formatting, asset validation,
+both production builds and the seeded survival/boss playthrough passed. The one
+bundle-conditional production case excluded from the instrumented run passed in the
+ordinary build. The implementation remains on its dedicated branch for a Draft PR;
+no production deployment or merge is authorized.
+
+See [executed outputs and measured limitations](evidence/qol/validation.md),
+[responsive screenshots](evidence/qol/README.md) and the
+[complete modified-file inventory](evidence/qol/changed-files.txt).

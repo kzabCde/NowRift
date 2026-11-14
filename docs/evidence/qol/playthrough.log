@@ -1,0 +1,5 @@
+
+> nowrift@0.1.0 test:playthrough
+> tsx scripts/playthrough.ts
+
+{"phase":"victory","seconds":527.8499999998486,"hp":175,"level":23,"kills":911,"gold":2749,"stacks":{"rapid":5,"regen":5,"power":3,"multishot":4,"vitality":3,"stride":1,"critical":1}}
