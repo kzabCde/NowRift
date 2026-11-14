@@ -4,17 +4,17 @@ import { applyResult } from "./commands";
 import { loadStage } from "./loader";
 import { enemyScale } from "./scaling";
 import { characterLevel, calculateStats, totalXpForLevel } from "../rpg/stats";
-import { STAGES, DIFFICULTIES } from "./content";
+import { STAGES } from "./content";
 
 describe("shared Story / Free Mode RPG progression", () => {
-  test("all authored maps are enterable in Free Mode without Story unlocks", () => {
+  test("all accessible maps are enterable in Free Mode with shared Story unlocks", () => {
     for (const stage of STAGES) {
       const g = loadStage({
         mode: "free",
         stageId: stage.id,
         difficulty: "normal",
         seed: 42,
-        clears: [],
+        clears: STAGES.map((s) => s.id + ":normal"),
       });
       expect(g.phase).toBe("playing");
       expect(g.campaign?.mode).toBe("free");
@@ -50,7 +50,7 @@ describe("shared Story / Free Mode RPG progression", () => {
 
     const farm = loadStage({
       mode: "free",
-      stageId: "infernal-5",
+      stageId: "forest-1",
       difficulty: "normal",
       seed: 8,
       clears: [],
@@ -62,7 +62,7 @@ describe("shared Story / Free Mode RPG progression", () => {
     const settled = applyResult(initial, {
       id: "free-run",
       mode: "free",
-      stageId: "infernal-5",
+      stageId: "forest-1",
       difficulty: "normal",
       seed: 8,
       victory: false,
@@ -91,16 +91,16 @@ describe("shared Story / Free Mode RPG progression", () => {
     const run = {
       id: "free-repeat-1",
       mode: "free" as const,
-      stageId: "desert-5",
+      stageId: "forest-1",
+      activity: "farming" as const,
+      harvested: [],
       difficulty: "normal" as const,
       seed: 1,
       victory: true,
-      enemies: 0,
+      enemies: 5,
       elites: 0,
-      bosses: 1,
-      seconds:
-        STAGES.find((s) => s.id === "desert-5")!.clear.seconds *
-        DIFFICULTIES.normal.duration,
+      bosses: 0,
+      seconds: 35,
       earnedXp: 250,
     };
     const first = applyResult(p, run);

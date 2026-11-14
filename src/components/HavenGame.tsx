@@ -52,6 +52,11 @@ import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import { shortcutAllowed } from "@/game/navigation/flow";
 import { DISTRICTS, cityMilestones } from "@/game/world/city";
 import { ACTIVITIES } from "@/game/world/activities";
+import QuestNotice from "./QuestNotice";
+import QuestJournal, { QuestGiver, QuestTracker } from "./QuestJournal";
+import type { QuestCommand } from "@/game/quests/commands";
+import { questGiverStates } from "@/game/quests/presentation";
+import { missionById } from "@/game/story/content";
 type Panel =
   | InteractionKind
   | "map"
@@ -161,6 +166,7 @@ export default function HavenGame({
           weapon: resolveEquippedWeapon(next),
           visualAppearance: resolveAppearance(next),
           milestones: cityMilestones(next),
+          questStates: questGiverStates(next.local.journal!, w.quest),
         });
         if (w.tutorial) setPanel("tutorial");
       })
@@ -262,9 +268,20 @@ export default function HavenGame({
         !!townTravel ||
         !!error ||
         !!rendererError ||
-        !revealed,
+        !revealed ||
+        !!(p?.local.journal?.returns.length && !panel),
     });
-  }, [panel, busy, townTravel, error, rendererError, revealed, bridge, ready]);
+  }, [
+    panel,
+    busy,
+    townTravel,
+    error,
+    rendererError,
+    revealed,
+    bridge,
+    ready,
+    p?.local.journal?.returns.length,
+  ]);
   useEffect(() => {
     if (p && ready)
       bridge.emit("command", {
@@ -273,8 +290,44 @@ export default function HavenGame({
         weapon: resolveEquippedWeapon(p),
         visualAppearance: resolveAppearance(p),
         milestones: cityMilestones(p),
+        questStates: questGiverStates(p.local.journal!, p.local.world?.quest),
       });
   }, [p, ready, bridge]);
+  async function questAction(command: QuestCommand) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await pending.current;
+      const next = await profileRepository.quest(slotId, command);
+      profileRef.current = next;
+      setP(next);
+      onChanged(next);
+    } catch (e) {
+      setError(storageError(e));
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+  const giverPanel = (id: string | null) =>
+    p?.local.journal && id ? (
+      <QuestGiver
+        giver={id}
+        journal={p.local.journal}
+        busy={busy}
+        onTrack={(questId) => void questAction({ type: "track", questId })}
+        onAction={(c) =>
+          void questAction({
+            ...c,
+            writer: writer.current,
+            epoch: positionEpoch.current,
+            position: current.current.position,
+          })
+        }
+      />
+    ) : null;
   const close = useCallback(() => {
     setPanels((previous) => previous.slice(0, -1));
     void reload().catch((e) => setError(storageError(e)));
@@ -379,7 +432,11 @@ export default function HavenGame({
       );
       return;
     }
-    const reason = travelReason(selection, p.clears);
+    const reason = travelReason(
+      selection,
+      p.clears,
+      p.local.journal?.legacyAccess,
+    );
     if (reason) {
       setError(reason);
       return;
@@ -410,7 +467,7 @@ export default function HavenGame({
           : panel === "crafting"
             ? "shop"
             : "inventory";
-  const journal = () => (
+  const legacyJournal = () => (
     <>
       <span className="eyebrow">{h("Mara’s request")}</span>
       <h2>{h("A path home")}</h2>
@@ -452,11 +509,6 @@ export default function HavenGame({
           {h(w?.quest === "claimed" ? "Claimed" : "Active")}
         </p>
       )}
-      <p className="muted">
-        {h(
-          "No additional story chapters are included in this foundation release. The twenty campaign challenges remain available at the portal.",
-        )}
-      </p>
       <button
         className="quiet-button"
         onClick={() => setPanels((previous) => [...previous, "profile"])}
@@ -465,10 +517,15 @@ export default function HavenGame({
       </button>
     </>
   );
+  const returnMission =
+    revealed && !panel && !busy && p?.local.journal?.returns[0]
+      ? missionById(p.local.journal.returns[0])
+      : undefined;
   return (
     <main
       className={`haven-page ${revealed ? "world-revealed" : "world-loading"}`}
     >
+      {p?.local.journal && <QuestNotice journal={p.local.journal} />}
       <div className="haven-canvas">
         {initial && (
           <PhaserHost
@@ -544,15 +601,24 @@ export default function HavenGame({
           </small>
         </div>
       </aside>
-      {w && w.quest !== "available" && w.quest !== "claimed" && (
-        <button className="haven-tracker" onClick={() => setPanel("journal")}>
-          <span>{h("A path home")}</span>
-          <small>
-            {h("Extract once from Whispering Forest")}{" "}
-            {Math.min(1, w.extractions)}/1
-          </small>
-        </button>
+      {p?.local.journal?.tracked && (
+        <QuestTracker
+          journal={p.local.journal}
+          onOpen={() => setPanel("journal")}
+        />
       )}
+      {!p?.local.journal?.tracked &&
+        w &&
+        w.quest !== "available" &&
+        w.quest !== "claimed" && (
+          <button className="haven-tracker" onClick={() => setPanel("journal")}>
+            <span>{h("A path home")}</span>
+            <small>
+              {h("Extract once from Whispering Forest")}{" "}
+              {Math.min(1, w.extractions)}/1
+            </small>
+          </button>
+        )}
       {p?.local.checkpoint && (
         <button className="haven-recovery" onClick={() => void leave(true)}>
           {h(
@@ -723,6 +789,7 @@ export default function HavenGame({
             )}
             onClose={close}
           >
+            {giverPanel(stationId)}
             <RpgScreen
               initialTab={stationTab}
               initialMerchantCategory={
@@ -761,6 +828,28 @@ export default function HavenGame({
             onBack={() => setPanel("portal")}
             onStart={(s) => void travel(s)}
           />
+        </DialogSurface>
+      )}
+      {returnMission && (
+        <DialogSurface
+          className="mission-dialogue"
+          title={text("Return to Rift Haven")}
+        >
+          <span className="eyebrow">{text("Mission complete")}</span>
+          <h2>{text(returnMission.questTitle.en)}</h2>
+          <p>{text(returnMission.returnDialogue.en)}</p>
+          <button
+            className="primary-button"
+            disabled={busy}
+            onClick={() =>
+              void questAction({
+                type: "read-return",
+                stageId: returnMission.id,
+              })
+            }
+          >
+            {text("Continue")}
+          </button>
         </DialogSurface>
       )}
       {revealed && panel === "settings" && <Settings onClose={close} />}
@@ -803,6 +892,7 @@ export default function HavenGame({
             }
             onClose={close}
           >
+            {panel === "rest" && giverPanel("inn")}
             {panel === "tutorial" && (
               <>
                 <h2>{h("A place to return to.")}</h2>
@@ -837,7 +927,24 @@ export default function HavenGame({
                     )}
                   </p>
                 )}
-                {journal()}
+                {panel === "journal" && p?.local.journal ? (
+                  <QuestJournal
+                    journal={p.local.journal}
+                    busy={busy}
+                    onCommand={(c) => void questAction(c)}
+                  />
+                ) : (
+                  giverPanel(stationId)
+                )}
+                <details className="legacy-supply-quest">
+                  <summary>
+                    {w?.quest === "completed"
+                      ? `${text("Reward ready")} · `
+                      : ""}
+                    {text("Supply route · Mara's first request")}
+                  </summary>
+                  {legacyJournal()}
+                </details>
               </>
             )}
             {panel === "lore" &&
@@ -863,7 +970,7 @@ export default function HavenGame({
               <>
                 <span className="eyebrow">{text("Adventurer’s Guild")}</span>
                 <h2>{text("Story missions & guardian records")}</h2>
-                {journal()}
+                {giverPanel("guild")}
                 <div className="haven-guild-records">
                   {WORLDS.map((world) => (
                     <article key={world.id}>
@@ -877,7 +984,12 @@ export default function HavenGame({
                               p?.clears.includes(stage.id + ":normal"),
                           ).length
                         }{" "}
-                        / 5 {text("Story stages cleared")}
+                        /{" "}
+                        {
+                          STAGES.filter((stage) => stage.worldId === world.id)
+                            .length
+                        }{" "}
+                        {text("Story stages cleared")}
                       </strong>
                       <small>
                         {text("Guardian records")}:{" "}
@@ -971,7 +1083,12 @@ export default function HavenGame({
                         }
                       </small>
                       {p &&
-                        lockedReason(world.id + "-1", "normal", p.clears) && (
+                        lockedReason(
+                          world.id + "-1",
+                          "normal",
+                          p.clears,
+                          p.local.journal?.legacyAccess,
+                        ) && (
                           <small>
                             {text(
                               lockedReason(
@@ -1022,17 +1139,38 @@ export default function HavenGame({
                     "Successful extraction banks enemy loot and gathered supplies. Defeat or abandonment loses unbanked loot. Your owned equipment is safe.",
                   )}
                 </p>
-                {p && lockedReason(FARM.stageId, difficulty, p.clears) && (
-                  <p role="status">
-                    {text(lockedReason(FARM.stageId, difficulty, p.clears)!)}
-                  </p>
-                )}
+                {p &&
+                  lockedReason(
+                    FARM.stageId,
+                    difficulty,
+                    p.clears,
+                    p.local.journal?.legacyAccess,
+                  ) && (
+                    <p role="status">
+                      {text(
+                        lockedReason(
+                          FARM.stageId,
+                          difficulty,
+                          p.clears,
+                          p.local.journal?.legacyAccess,
+                        )!,
+                      )}
+                    </p>
+                  )}
                 <button
                   className="primary-button"
                   disabled={
                     busy ||
                     !equipped ||
-                    !!(p && lockedReason(FARM.stageId, difficulty, p.clears))
+                    !!(
+                      p &&
+                      lockedReason(
+                        FARM.stageId,
+                        difficulty,
+                        p.clears,
+                        p.local.journal?.legacyAccess,
+                      )
+                    )
                   }
                   onClick={() =>
                     p &&

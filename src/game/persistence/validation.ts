@@ -10,6 +10,10 @@ import { gameDay, reconcile, QUESTS, ACHIEVEMENTS } from "./daily";
 import { validCheckpoint } from "./checkpoint";
 import { defaultWorld, validWorld, migrateWorld } from "../world/save";
 import { calculateStats } from "../rpg/stats";
+import { validRunStageIdentity } from "../campaign/identity";
+import { validJournal } from "../quests/validation";
+import { QUEST_CATALOG } from "../quests/catalog";
+import { migrateJournal } from "../quests/save";
 export const record = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object" && !Array.isArray(v);
 export const count = (v: unknown, max = Number.MAX_SAFE_INTEGER): v is number =>
@@ -57,7 +61,7 @@ export function assertProgress(value: unknown): Progress {
     )
       throw new Error();
     const p = initializeRpg(value);
-    if (!validRpg(p.rpg) || usedSlots(p) > 60) throw new Error();
+    if (!validRpg(p.rpg) || usedSlots(p) > p.rpg!.capacity) throw new Error();
     for (const e of [
       ...p.rpg!.equipment,
       ...p.rpg!.overflow.flatMap((o) => (o.equipment ? [o.equipment] : [])),
@@ -159,6 +163,13 @@ export function validLocal(v: unknown): v is SlotState {
   if (!record(v)) return false;
   const s = v as unknown as SlotState;
   if (s.world !== undefined && !validWorld(s.world)) return false;
+  if (s.journal !== undefined && !validJournal(s.journal, QUEST_CATALOG))
+    return false;
+  if (
+    s.activeRun?.stage !== undefined &&
+    !validRunStageIdentity(s.activeRun.stage)
+  )
+    return false;
   if (
     s.schema !== 2 ||
     typeof s.id !== "string" ||
@@ -263,6 +274,15 @@ export function migrateSave(
 ): SaveData {
   const p = structuredClone(assertProgress(value)) as SaveData;
   if (p.local !== undefined) {
+    if (!record(p.local))
+      throw new Error(
+        "Character save metadata is damaged. Original data was preserved.",
+      );
+    p.local.journal = migrateJournal(
+      p.local.journal,
+      p.clears,
+      Number.isFinite(p.local.lastPlayed) ? p.local.lastPlayed : at,
+    );
     // A stale map coordinate is recoverable; retain every other field and validate it normally.
     if (p.local.world) {
       const migrated = migrateWorld(p.local.world);
@@ -321,5 +341,6 @@ export function migrateSave(
   reconcile(p, at);
   p.local.world = defaultWorld();
   p.local.world.hp = calculateStats(p, p.local.weapon, p.local.character).maxHp;
+  p.local.journal = migrateJournal(undefined, p.clears, at);
   return p;
 }

@@ -28,7 +28,9 @@ import {
 } from "@/game/campaign/progression";
 import { campaignRepository } from "@/game/campaign/persistence";
 import type { StageSelection } from "@/game/campaign/loader";
+import { CHAPTERS, missionById } from "@/game/story/content";
 import { enemyScale } from "@/game/campaign/scaling";
+import { ITEMS } from "@/game/rpg/content";
 export default function WorldMap({
   onStart,
   onBack,
@@ -70,6 +72,9 @@ export default function WorldMap({
   useEffect(() => {
     audio.setScene("character", world);
   }, [world]);
+  const legacyAccess = progress.local?.journal?.legacyAccess ?? [];
+  const mission = missionById(selected);
+  const chapter = CHAPTERS.find((c) => c.id === world)!;
   const w = worldById(world),
     equipped = resolveEquippedWeapon(progress, character),
     stage = STAGES.find((s) => s.id === selected)!,
@@ -86,10 +91,7 @@ export default function WorldMap({
       stage.number,
       "boss",
     ).level,
-    reason =
-      mode === "free"
-        ? null
-        : lockedReason(selected, difficulty, progress.clears);
+    reason = lockedReason(selected, difficulty, progress.clears, legacyAccess);
   return (
     <section className="world-map">
       <div className="hub-heading">
@@ -107,7 +109,7 @@ export default function WorldMap({
       </div>
       <div
         role="group"
-        aria-label="Game mode"
+        aria-label={text("Game mode")}
         style={{ display: "flex", gap: 12, marginBottom: 16 }}
       >
         <button
@@ -115,14 +117,14 @@ export default function WorldMap({
           aria-pressed={mode === "story"}
           onClick={() => setMode("story")}
         >
-          Story Mode
+          {text("Story Mode")}
         </button>
         <button
           className={mode === "free" ? "primary-button" : "quiet-button"}
           aria-pressed={mode === "free"}
           onClick={() => setMode("free")}
         >
-          Free Mode · Supply Expeditions
+          {text("Free Mode · Supply Expeditions")}
         </button>
       </div>
       <div className="world-cards">
@@ -148,15 +150,23 @@ export default function WorldMap({
               <Atmosphere world={w.id} />
               <span>
                 {t("world", "WORLD")} 0{i + 1} ·{" "}
-                {mode !== "free" &&
-                lockedReason(`${w.id}-1`, difficulty, progress.clears)
+                {lockedReason(
+                  `${w.id}-1`,
+                  difficulty,
+                  progress.clears,
+                  legacyAccess,
+                )
                   ? t("world", "LOCKED")
                   : t("world", "OPEN")}
               </span>
               <strong>{text(w.name)}</strong>
               <small>
-                {done * 20}% {t("world", "COMPLETE")} · {t("world", "POWER")}{" "}
-                {10 + i * 30}+
+                {Math.round(
+                  (done / STAGES.filter((s) => s.worldId === w.id).length) *
+                    100,
+                )}
+                % {t("world", "COMPLETE")} · {t("world", "POWER")} {10 + i * 30}
+                +
               </small>
             </button>
           );
@@ -167,6 +177,12 @@ export default function WorldMap({
           <span className="eyebrow">{text(w.architecture.toUpperCase())}</span>
           <h2>{text(w.name)}</h2>
           <p>{text(w.description)}</p>
+          {mode === "story" && (
+            <>
+              <h3>{text(chapter.title.en)}</h3>
+              <p>{text(chapter.introduction.en)}</p>
+            </>
+          )}
           <div
             className="difficulty-tabs"
             aria-label={t("world", "Difficulty")}
@@ -198,10 +214,12 @@ export default function WorldMap({
           <h3>{t("world", "Stage selection")}</h3>
           <div className="stage-list">
             {STAGES.filter((s) => s.worldId === world).map((s) => {
-              const lock =
-                mode === "free"
-                  ? null
-                  : lockedReason(s.id, difficulty, progress.clears);
+              const lock = lockedReason(
+                s.id,
+                difficulty,
+                progress.clears,
+                legacyAccess,
+              );
               return (
                 <button
                   key={s.id}
@@ -220,7 +238,7 @@ export default function WorldMap({
                             ? t("world", "CLEARED · REPLAY AVAILABLE")
                             : s.clear.kind === "boss"
                               ? t("world", "BOSS ENCOUNTER")
-                              : t("world", "SURVIVAL"))}
+                              : text("Story mission"))}
                     </small>
                   </span>
                 </button>
@@ -239,7 +257,7 @@ export default function WorldMap({
           <EquippedWeapon weapon={equipped} onInventory={onInventory} />
           <div
             role="img"
-            aria-label={text(w.boss.name)}
+            aria-label={text(mission?.finale?.name.en ?? w.boss.name)}
             className="boss-preview"
             style={{
               backgroundImage: `url(/assets/worlds/${world}/boss.png)`,
@@ -248,7 +266,7 @@ export default function WorldMap({
             }}
           />
           <span className="eyebrow">{t("world", "WORLD GUARDIAN")}</span>
-          <h3>{text(w.boss.name)}</h3>
+          <h3>{text(mission?.finale?.name.en ?? w.boss.name)}</h3>
           <p>{w.boss.patterns.map(text).join(" · ")}</p>
           <span className="eyebrow">{t("world", "LOCAL ENEMIES")}</span>
           <p>{w.enemies.map((e) => text(e.name)).join(" · ")}</p>
@@ -259,28 +277,41 @@ export default function WorldMap({
             {enemyMinimum} – {enemyMaximum}
           </p>
           <p>
-            {t("world", "Recommended power")} {stage.recommendedPower} ·{" "}
-            {Math.round(
-              (stage.clear.seconds * DIFFICULTIES[difficulty].duration) / 60,
-            )}{" "}
-            {t("world", "minutes")}
-            <br />
-            {mode === "free"
-              ? t(
-                  "haven",
-                  "Gather supplies, survive 20 seconds and defeat 5 enemies, then return through the extraction portal.",
-                )
-              : stage.clear.kind === "boss"
-                ? t("world", "Survive, then defeat the world guardian.")
-                : t("world", "Survive until the stage timer completes.")}
+            {t("world", "Recommended power")} {stage.recommendedPower}
           </p>
+          {mode === "free" ? (
+            <p>
+              {t(
+                "haven",
+                "Gather supplies, survive 20 seconds and defeat 5 enemies, then return through the extraction portal.",
+              )}
+            </p>
+          ) : (
+            mission && (
+              <>
+                <p>{text(mission.briefing.en)}</p>
+                <ol className="map-mission-objectives">
+                  {mission.objectives.map((o) => (
+                    <li key={o.id}>{text(o.text.en)}</li>
+                  ))}
+                </ol>
+                {mission.finale && (
+                  <small>{text("Three-phase chapter finale")}</small>
+                )}
+              </>
+            )
+          )}
           <span className="eyebrow">
             {t("world", "POSSIBLE FARMING REWARDS")}
           </span>
           <p>
-            {w.materials.map(text).join(" · ")}
+            {w.materials.map((id) => text(ITEMS[id].name)).join(" · ")}
             <br />
-            {t("world", "Guardian relic:")} {text(w.boss.reward)}
+            {mode === "story" && (
+              <>
+                {t("world", "Guardian relic:")} {text(w.boss.reward)}
+              </>
+            )}
           </p>
           <p className="muted">
             {mode === "free"
@@ -310,9 +341,8 @@ export default function WorldMap({
           </div>
           {mode === "free" && (
             <p className="notice" role="status">
-              {t(
-                "haven",
-                "Choose any stage to gather biome supplies and extract back to Rift Heaven. Story progression is not changed.",
+              {text(
+                "Choose an accessible area to gather supplies and extract. Story progression is not changed.",
               )}
             </p>
           )}
@@ -331,12 +361,18 @@ export default function WorldMap({
             disabled={!ready || !!reason || !equipped}
             onClick={() => {
               if (
-                mode === "free" ||
-                !lockedReason(stage.id, difficulty, progress.clears)
+                !lockedReason(
+                  stage.id,
+                  difficulty,
+                  progress.clears,
+                  legacyAccess,
+                )
               )
                 onStart({
                   stageId: stage.id,
                   mode,
+                  missionVersion: mode === "story" ? 1 : 0,
+                  legacyAccess,
                   ...(mode === "free" ? { activity: "farming" as const } : {}),
                   difficulty,
                   seed: crypto.getRandomValues(new Uint32Array(1))[0],

@@ -1,4 +1,6 @@
 import "fake-indexeddb/auto";
+import { questGiverStates } from "../quests/presentation";
+import { transact } from "../persistence/storage";
 import { beforeEach, describe, expect, test, vi, afterEach } from "vitest";
 import {
   HAVEN,
@@ -59,18 +61,27 @@ async function visit(p: SaveData, id: string) {
     position: l.entrance,
   });
 }
-async function expedition() {
+async function expedition(stageId: string = FARM.stageId) {
   let p = await enter();
+  if (stageId !== FARM.stageId) {
+    p.clears = STAGES.filter(
+      (s) => s.worldId === "forest" || s.id === "desert-1",
+    ).map((s) => s.id + ":normal");
+    await transact((_, store) => {
+      store.put(p, "profile");
+    });
+  }
   p = await repo.world(p.local.id, { type: "accept", writer: "hub-test" });
   p = await visit(p, "portal");
   await repo.world(p.local.id, { type: "travel", writer: "hub-test" });
   const prepared = await repo.beginRun(p.local.id),
     g = loadStage({
       activity: "farming",
-      stageId: FARM.stageId,
+      stageId,
       difficulty: "normal",
       seed: 55,
-      clears: [],
+      clears: p.clears,
+      mode: "free",
       build: calculateStats(p),
       outfit: "ember",
       startingHp: 50,
@@ -80,13 +91,16 @@ async function expedition() {
   g.time = 35;
   g.kills = 10;
   g.campaign!.enemies = 10;
-  g.campaign!.harvested = ["fallen-wood", "slime-nest"];
+  g.campaign!.harvested = expeditionLayout(stageId)
+    .nodes.slice(0, 2)
+    .map((n) => n.id);
   const c = captureCheckpoint(g, { ...prepared.run, sequence: 1 }, 55, {
     activity: "farming",
-    stageId: FARM.stageId,
+    stageId,
     difficulty: "normal",
     seed: 55,
-    clears: [],
+    clears: p.clears,
+    mode: "free",
     outfit: "ember",
     returnTo: "haven",
   });
@@ -95,7 +109,7 @@ async function expedition() {
     id: prepared.run.id,
     run: prepared.run,
     activity: "farming" as const,
-    stageId: FARM.stageId,
+    stageId,
     difficulty: "normal" as const,
     seed: 55,
     victory: true,
@@ -103,7 +117,7 @@ async function expedition() {
     elites: 0,
     bosses: 0,
     seconds: 35,
-    harvested: ["fallen-wood", "slime-nest"],
+    harvested: g.campaign!.harvested,
     hp: 50,
   };
   return { p, g, c, result };
@@ -164,7 +178,7 @@ describe("authored safe world and movement", () => {
         },
         [],
       ),
-    ).toContain("five NORMAL");
+    ).toContain("10 NORMAL");
   });
   test("every doorway, spawn and return position is collision-safe", () => {
     expect(validPosition(HAVEN.spawn)).toBe(true);
@@ -390,7 +404,7 @@ describe("expedition, extraction and a path home", () => {
     expect(validHarvest(["fallen-wood", "fallen-wood"])).toBe(false);
     expect(validHarvest(["invented-node"])).toBe(false);
   });
-  test("Free Mode supply expeditions can enter all 20 maps without Story unlocks", () => {
+  test("Free Mode supply expeditions can enter all 40 accessible maps", () => {
     for (const stage of STAGES) {
       const g = loadStage({
         activity: "farming",
@@ -398,7 +412,7 @@ describe("expedition, extraction and a path home", () => {
         stageId: stage.id,
         difficulty: "normal",
         seed: 3,
-        clears: [],
+        clears: STAGES.map((s) => s.id + ":normal"),
       });
       expect(g.campaign!.activity).toBe("farming");
       expect(g.campaign!.mode).toBe("free");
@@ -481,7 +495,7 @@ describe("expedition, extraction and a path home", () => {
     expect((await repo.load()).gold).toBe(next.gold);
   });
   test("distant Free Mode supply trips do not complete the forest quest or Story", async () => {
-    const { result } = await expedition();
+    const { result, p } = await expedition("desert-2");
     const node = expeditionLayout("desert-2").nodes[0];
     const returned = await repo.settle({
       ...result,
@@ -493,7 +507,7 @@ describe("expedition, extraction and a path home", () => {
     expect(returned.progress.materials[node.item]).toBeGreaterThanOrEqual(
       node.amount,
     );
-    expect(returned.progress.clears).toEqual([]);
+    expect(returned.progress.clears).toEqual(p.clears);
     expect(returned.progress.local.world!.location).toBe("haven");
     expect(returned.progress.local.world!.quest).toBe("active");
   });
@@ -520,6 +534,9 @@ describe("expedition, extraction and a path home", () => {
     const { p, result } = await expedition();
     await repo.settle(result);
     const before = await repo.load();
+    expect(
+      questGiverStates(before.local.journal!, before.local.world!.quest).mara,
+    ).toBe("ready");
     const crafted = await repo.act({
       id: "after-expedition-craft",
       slotId: p.local.id,

@@ -457,7 +457,7 @@ export default function NowRiftMainMenu() {
               className="primary-button campaign-entry"
               onClick={() => setScreen("worlds")}
             >
-              {t("main", "OPEN WORLD MAP · 20 STAGES →")}{" "}
+              {t("main", "OPEN WORLD MAP · 40 STAGES →")}{" "}
             </button>
             <div className="loadout-heading">
               <div>

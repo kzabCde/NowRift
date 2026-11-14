@@ -9,7 +9,7 @@ export const ACTIVITIES = [
   {
     id: "campaign",
     name: "Campaign worlds",
-    description: "Four worlds, twenty stages and their bosses.",
+    description: "Four worlds, forty Story missions and their guardians.",
     landmark: "portal",
   },
   {

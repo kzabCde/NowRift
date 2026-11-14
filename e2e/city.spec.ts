@@ -4,6 +4,7 @@ import { CITY, DISTRICTS } from "../src/game/world/city";
 import { HAVEN } from "../src/game/world/content";
 import { WAYPOINTS, waypointLanding } from "../src/game/world/waypoints";
 import { calculateStats } from "../src/game/rpg/stats";
+import { STAGES } from "../src/game/campaign/content";
 import {
   citySave,
   enterCity,
@@ -240,7 +241,7 @@ test.describe("expanded city and authoritative town travel", () => {
       page.getByRole("heading", { name: "Story missions & guardian records" }),
     ).toBeVisible();
     await expect(page.locator(".haven-guild-records").first()).toContainText(
-      "5 / 5",
+      `${STAGES.filter((s) => s.worldId === "forest").length} / ${STAGES.filter((s) => s.worldId === "forest").length}`,
     );
     await closeCityPanel(page);
     await cityStation(page, "workshop");
@@ -365,11 +366,14 @@ test.describe("expanded city and authoritative town travel", () => {
     await expect(page.locator(".haven-district")).toContainText(
       "Lantern hours",
     );
-    const night = await cornerBrightness();
+    // The HUD describes the clock before the throttled canvas paint completes.
+    // Wait for the actual pixels, retaining the same threshold at every corner.
     for (let i = 0; i < 4; i++)
-      expect(night[i], `Night overlay at canvas corner ${i}`).toBeLessThan(
-        daylight[i] * 0.95,
-      );
+      await expect
+        .poll(async () => (await cornerBrightness())[i], {
+          message: `Night overlay at canvas corner ${i}`,
+        })
+        .toBeLessThan(daylight[i] * 0.95);
     await placeCity(page, WAYPOINTS.find((w) => w.id === "gate")!.spawn);
     await page.evaluate(() => window.__NOWRIFT_HAVEN__!.setCityTime(0.75));
     await expect

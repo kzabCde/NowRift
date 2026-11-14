@@ -1,3 +1,4 @@
+import { beginStory } from "./helpers/story";
 import { test, expect, type Page } from "@playwright/test";
 import type { PlayerProfile, SaveData } from "../src/game/persistence/model";
 import { LANDMARKS } from "../src/game/world/content";
@@ -554,6 +555,7 @@ test.describe("instrumented journey boundaries", () => {
       })
       .toBe(0);
     await expect(page.locator(".rift-transition")).toHaveCount(0);
+    await beginStory(page);
     await page.keyboard.press("h");
     await expect(
       page

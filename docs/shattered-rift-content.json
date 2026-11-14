@@ -1,0 +1,3318 @@
+{
+  "schema": 1,
+  "counts": {
+    "main": 40,
+    "side": 40,
+    "guild": 24,
+    "npc": 16
+  },
+  "missions": [
+    {
+      "id": "forest-1",
+      "title": "Mossbound Trail",
+      "questTitle": "The Heartwood's First Wound",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "ranger-sera",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "wounded-oak",
+          "count": 1
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "slime",
+          "count": 4
+        },
+        {
+          "type": "CollectItem",
+          "target": "wood",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "forest-2",
+      "title": "Ruined Crossing",
+      "questTitle": "A Voice Beneath the Bridge",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "forest-2-bell",
+          "count": 1
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "wolf",
+          "count": 3
+        },
+        {
+          "type": "RescueNPC",
+          "target": "forest-2-tovin",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-3",
+      "title": "Thornwatch",
+      "questTitle": "Keep the Signal Alive",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "forest-3-sera",
+          "count": 1
+        },
+        {
+          "type": "DefendLocation",
+          "target": "forest-3-beacon",
+          "count": 22
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "forest-3-answer",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-4",
+      "title": "The Deepwood",
+      "questTitle": "The Language of Roots",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "forest-4-stones",
+          "count": 1
+        },
+        {
+          "type": "ActivateMechanism",
+          "target": "forest-4-root",
+          "count": 3
+        },
+        {
+          "type": "CollectItem",
+          "target": "slime-core",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-5",
+      "title": "Heart of the Grove",
+      "questTitle": "The Guardian's Burden",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "forest-5-heart",
+          "count": 1
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-6",
+      "title": "Rootglass Aqueduct",
+      "questTitle": "Water from Another Sky",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "forest-6-tovin",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "forest-6-sluice",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "copper-ore",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "forest-7",
+      "title": "The Black Sap Works",
+      "questTitle": "Cut the Poison's Supply",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "goblin",
+          "count": 5
+        },
+        {
+          "type": "DestroyObject",
+          "target": "forest-7-siphon",
+          "count": 3
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "forest-7-stream",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-8",
+      "title": "Lantern Refuge",
+      "questTitle": "No One Left in the Dark",
+      "objectives": [
+        {
+          "type": "RescueNPC",
+          "target": "forest-8-ilen",
+          "count": 1
+        },
+        {
+          "type": "EscortNPC",
+          "target": "forest-8-tovin",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-9",
+      "title": "Briar Captain's Hollow",
+      "questTitle": "The Keeper of Stolen Names",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "forest-9-hollow",
+          "count": 1
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "elite",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "wood",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "forest-10",
+      "title": "The Heartwood Conduit",
+      "questTitle": "A Heart That Can Let Go",
+      "objectives": [
+        {
+          "type": "ActivateMechanism",
+          "target": "forest-10-seals",
+          "count": 3
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "forest-10-memory",
+          "count": 1
+        }
+      ],
+      "finale": "Heartwood Echo"
+    },
+    {
+      "id": "desert-1",
+      "title": "Dune Approach",
+      "questTitle": "The City the Sand Remembers",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "desert-1-yara",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "desert-1-mile",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "ancient-shard",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "desert-2",
+      "title": "Buried Causeway",
+      "questTitle": "A Caravan Worth More Than Gold",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "goblin",
+          "count": 5
+        },
+        {
+          "type": "EscortNPC",
+          "target": "desert-2-nim",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-3",
+      "title": "Sunken Citadel",
+      "questTitle": "Three Hours of Sunlight",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "desert-3-clock",
+          "count": 1
+        },
+        {
+          "type": "ActivateMechanism",
+          "target": "desert-3-mirrors",
+          "count": 3
+        },
+        {
+          "type": "CollectItem",
+          "target": "desert-relic",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-4",
+      "title": "Sands of Trial",
+      "questTitle": "Let the Record Speak",
+      "objectives": [
+        {
+          "type": "DefendLocation",
+          "target": "desert-4-yara",
+          "count": 24
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "caster",
+          "count": 3
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "desert-4-valve",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-5",
+      "title": "Throne of the Sun",
+      "questTitle": "A Throne Cannot Drink",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "desert-5-throne",
+          "count": 1
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-6",
+      "title": "The Buried Archive",
+      "questTitle": "The Pages They Removed",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "desert-6-yara",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "desert-6-shelf",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "ancient-shard",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "desert-7",
+      "title": "Sunforge Reservoir",
+      "questTitle": "Open the People's Well",
+      "objectives": [
+        {
+          "type": "DestroyObject",
+          "target": "desert-7-pump",
+          "count": 3
+        },
+        {
+          "type": "DefendLocation",
+          "target": "desert-7-yara",
+          "count": 22
+        }
+      ]
+    },
+    {
+      "id": "desert-8",
+      "title": "Caravan of Names",
+      "questTitle": "Carry the Living Record",
+      "objectives": [
+        {
+          "type": "RescueNPC",
+          "target": "desert-8-amel",
+          "count": 1
+        },
+        {
+          "type": "EscortNPC",
+          "target": "desert-8-amel",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-9",
+      "title": "The Gilded Sentinel",
+      "questTitle": "An Order Without a King",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "desert-9-checkpoint",
+          "count": 1
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "elite",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "gold-ore",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "desert-10",
+      "title": "The Last Meridian",
+      "questTitle": "Share the Dawn",
+      "objectives": [
+        {
+          "type": "ActivateMechanism",
+          "target": "desert-10-light",
+          "count": 3
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "desert-10-dawn",
+          "count": 1
+        }
+      ],
+      "finale": "Meridian Keeper"
+    },
+    {
+      "id": "frozen-1",
+      "title": "Snowfall Reach",
+      "questTitle": "The Voice Inside the Ice",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "frozen-1-lamps",
+          "count": 1
+        },
+        {
+          "type": "RescueNPC",
+          "target": "frozen-1-edda",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "frost-crystal",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "frozen-2",
+      "title": "Fractured Lake",
+      "questTitle": "Across the Years Between Us",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "slime",
+          "count": 4
+        },
+        {
+          "type": "EscortNPC",
+          "target": "frozen-2-edda",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen-3",
+      "title": "Icebound Hall",
+      "questTitle": "Consent of the Sleeping",
+      "objectives": [
+        {
+          "type": "ActivateMechanism",
+          "target": "frozen-3-questions",
+          "count": 3
+        },
+        {
+          "type": "RescueNPC",
+          "target": "frozen-3-teth",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen-4",
+      "title": "Blizzard Pass",
+      "questTitle": "A Signal Through the White",
+      "objectives": [
+        {
+          "type": "DefendLocation",
+          "target": "frozen-4-edda",
+          "count": 24
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "wolf",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "id": "frozen-5",
+      "title": "The Silent Warden",
+      "questTitle": "The Oath Beneath the Frost",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "frozen-5-watch",
+          "count": 1
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen-6",
+      "title": "Hall of Witnesses",
+      "questTitle": "Who Held the Door",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "frozen-6-teth",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "frozen-6-lanterns",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "frozen-essence",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "frozen-7",
+      "title": "The Broken Lens",
+      "questTitle": "Stop the False Winter",
+      "objectives": [
+        {
+          "type": "DestroyObject",
+          "target": "frozen-7-prism",
+          "count": 3
+        },
+        {
+          "type": "DefeatEnemy",
+          "target": "caster",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "id": "frozen-8",
+      "title": "Pilgrim's Thaw",
+      "questTitle": "The Slow Road Home",
+      "objectives": [
+        {
+          "type": "RescueNPC",
+          "target": "frozen-8-renn",
+          "count": 1
+        },
+        {
+          "type": "EscortNPC",
+          "target": "frozen-8-teth",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen-9",
+      "title": "The White Marshal",
+      "questTitle": "An Oath Turned Inward",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "elite",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "frozen-9-oath",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "frost-crystal",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "frozen-10",
+      "title": "The Unsealed Truth",
+      "questTitle": "Let the Witnesses Walk",
+      "objectives": [
+        {
+          "type": "DefendLocation",
+          "target": "frozen-10-edda",
+          "count": 18
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        },
+        {
+          "type": "ActivateMechanism",
+          "target": "frozen-10-release",
+          "count": 3
+        }
+      ],
+      "finale": "Witness of Winter"
+    },
+    {
+      "id": "infernal-1",
+      "title": "Ashen Gate",
+      "questTitle": "A Workshop Still Warm",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "infernal-1-neri",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "infernal-1-furnace",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "obsidian",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "infernal-2",
+      "title": "Obsidian Crossing",
+      "questTitle": "The Last Shift",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "goblin",
+          "count": 5
+        },
+        {
+          "type": "RescueNPC",
+          "target": "infernal-2-cairn",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "infernal-3",
+      "title": "Burning Sanctum",
+      "questTitle": "Hands Steadier Than Fire",
+      "objectives": [
+        {
+          "type": "DefendLocation",
+          "target": "infernal-3-neri",
+          "count": 24
+        },
+        {
+          "type": "CollectItem",
+          "target": "infernal-core",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "infernal-4",
+      "title": "Ember Crucible",
+      "questTitle": "Teach the Furnace to Breathe",
+      "objectives": [
+        {
+          "type": "ActivateMechanism",
+          "target": "infernal-4-vents",
+          "count": 3
+        },
+        {
+          "type": "DestroyObject",
+          "target": "infernal-4-clamp",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "infernal-5",
+      "title": "Sovereign’s Fall",
+      "questTitle": "The Crown Above the Engine",
+      "objectives": [
+        {
+          "type": "DiscoverArea",
+          "target": "infernal-5-room",
+          "count": 1
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "infernal-6",
+      "title": "The First Workshop",
+      "questTitle": "The Name Under the Crown",
+      "objectives": [
+        {
+          "type": "TalkToNPC",
+          "target": "infernal-6-aven",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "infernal-6-bench",
+          "count": 1
+        },
+        {
+          "type": "CollectItem",
+          "target": "epic-gear-materials",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "infernal-7",
+      "title": "Chains of the Engine",
+      "questTitle": "No More Single Shoulders",
+      "objectives": [
+        {
+          "type": "DestroyObject",
+          "target": "infernal-7-chain",
+          "count": 3
+        },
+        {
+          "type": "SurviveEncounter",
+          "target": "infernal-7-release",
+          "count": 18
+        }
+      ]
+    },
+    {
+      "id": "infernal-8",
+      "title": "The Way Back",
+      "questTitle": "Leave a Door Open",
+      "objectives": [
+        {
+          "type": "EscortNPC",
+          "target": "infernal-8-neri",
+          "count": 1
+        },
+        {
+          "type": "DefendLocation",
+          "target": "infernal-8-cairn",
+          "count": 18
+        }
+      ]
+    },
+    {
+      "id": "infernal-9",
+      "title": "The Ashbound Architect",
+      "questTitle": "The Last Wrong Answer",
+      "objectives": [
+        {
+          "type": "DefeatEnemy",
+          "target": "elite",
+          "count": 1
+        },
+        {
+          "type": "TalkToNPC",
+          "target": "infernal-9-aven",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "infernal-10",
+      "title": "The First Fracture",
+      "questTitle": "A Rift Held by Everyone",
+      "objectives": [
+        {
+          "type": "ActivateMechanism",
+          "target": "infernal-10-returns",
+          "count": 3
+        },
+        {
+          "type": "DefeatBoss",
+          "target": "boss",
+          "count": 1
+        },
+        {
+          "type": "DiscoverArea",
+          "target": "infernal-10-home",
+          "count": 1
+        }
+      ],
+      "finale": "The Fractured Heart"
+    }
+  ],
+  "quests": [
+    {
+      "id": "main-forest-1",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 95,
+        "xp": 125,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-1"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-2",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 110,
+        "xp": 150,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-2"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-3",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-2",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 125,
+        "xp": 175,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-3"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-4",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-3",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 140,
+        "xp": 200,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-4"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-5",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-4",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 155,
+        "xp": 225,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-5"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-6",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 170,
+        "xp": 250,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-6"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-7",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 185,
+        "xp": 275,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-7"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-8",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-7",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 300,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-8"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-9",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-8",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 215,
+        "xp": 325,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-9"
+        ]
+      }
+    },
+    {
+      "id": "main-forest-10",
+      "category": "main",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-9",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 350,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "story:forest-10"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-1",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 95,
+        "xp": 125,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-1"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-2",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 110,
+        "xp": 150,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-2"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-3",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-2",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 125,
+        "xp": 175,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-3"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-4",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-3",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 140,
+        "xp": 200,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-4"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-5",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-4",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 155,
+        "xp": 225,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-5"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-6",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 170,
+        "xp": 250,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-6"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-7",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 185,
+        "xp": 275,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-7"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-8",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-7",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 300,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-8"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-9",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-8",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 215,
+        "xp": 325,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-9"
+        ]
+      }
+    },
+    {
+      "id": "main-desert-10",
+      "category": "main",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-9",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 350,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "story:desert-10"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-1",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 95,
+        "xp": 125,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-1"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-2",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 110,
+        "xp": 150,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-2"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-3",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-2",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 125,
+        "xp": 175,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-3"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-4",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-3",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 140,
+        "xp": 200,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-4"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-5",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-4",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 155,
+        "xp": 225,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-5"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-6",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 170,
+        "xp": 250,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-6"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-7",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 185,
+        "xp": 275,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-7"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-8",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-7",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 300,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-8"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-9",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-8",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 215,
+        "xp": 325,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-9"
+        ]
+      }
+    },
+    {
+      "id": "main-frozen-10",
+      "category": "main",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-9",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 350,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "story:frozen-10"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-1",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 95,
+        "xp": 125,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-1"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-2",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 110,
+        "xp": 150,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-2"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-3",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-2",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 125,
+        "xp": 175,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-3"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-4",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-3",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 140,
+        "xp": 200,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-4"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-5",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-4",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 155,
+        "xp": 225,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-5"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-6",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 170,
+        "xp": 250,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-6"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-7",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 185,
+        "xp": 275,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-7"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-8",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-7",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 300,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-8"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-9",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-8",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 215,
+        "xp": 325,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-9"
+        ]
+      }
+    },
+    {
+      "id": "main-infernal-10",
+      "category": "main",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-9",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 350,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "story:infernal-10"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-1",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 108,
+        "xp": 92,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-2",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 116,
+        "xp": 104,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-3",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 124,
+        "xp": 116,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-4",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 132,
+        "xp": 128,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-5",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 140,
+        "xp": 140,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-5:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-6",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 148,
+        "xp": 152,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-6:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-7",
+      "category": "side",
+      "giver": "inn",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 156,
+        "xp": 164,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-7:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-8",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 164,
+        "xp": 176,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-8:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-9",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-5",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 172,
+        "xp": 188,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-9:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-forest-10",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "forest-5",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 180,
+        "xp": 200,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "side-forest-10:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-1",
+      "category": "side",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 153,
+        "xp": 132,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-2",
+      "category": "side",
+      "giver": "market",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 161,
+        "xp": 144,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-3",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 169,
+        "xp": 156,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-4",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 177,
+        "xp": 168,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-5",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 185,
+        "xp": 180,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-5:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-6",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 193,
+        "xp": 192,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-6:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-7",
+      "category": "side",
+      "giver": "market",
+      "prerequisites": [],
+      "requiredClear": "desert-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 201,
+        "xp": 204,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-7:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-8",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "desert-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 209,
+        "xp": 216,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-8:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-9",
+      "category": "side",
+      "giver": "inn",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 217,
+        "xp": 228,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-9:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-desert-10",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "desert-5",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 225,
+        "xp": 240,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "side-desert-10:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-1",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 198,
+        "xp": 172,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-2",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 206,
+        "xp": 184,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-3",
+      "category": "side",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 214,
+        "xp": 196,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-4",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 222,
+        "xp": 208,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-5",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 220,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-5:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-6",
+      "category": "side",
+      "giver": "inn",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 238,
+        "xp": 232,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-6:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-7",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "frozen-5",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 246,
+        "xp": 244,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-7:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-8",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "frozen-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 254,
+        "xp": 256,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-8:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-9",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-5",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 262,
+        "xp": 268,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-9:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-frozen-10",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "frozen-5",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 270,
+        "xp": 280,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "side-frozen-10:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-1",
+      "category": "side",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 243,
+        "xp": 212,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-2",
+      "category": "side",
+      "giver": "market",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 251,
+        "xp": 224,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-3",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 259,
+        "xp": 236,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-4",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 267,
+        "xp": 248,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-5",
+      "category": "side",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 275,
+        "xp": 260,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-5:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-6",
+      "category": "side",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "infernal-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 283,
+        "xp": 272,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-6:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-7",
+      "category": "side",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "infernal-5",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 291,
+        "xp": 284,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-7:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-8",
+      "category": "side",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-6",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 299,
+        "xp": 296,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-8:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-9",
+      "category": "side",
+      "giver": "inn",
+      "prerequisites": [],
+      "requiredClear": "infernal-5",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 307,
+        "xp": 308,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-9:helped"
+        ]
+      }
+    },
+    {
+      "id": "side-infernal-10",
+      "category": "side",
+      "giver": "board",
+      "prerequisites": [],
+      "requiredClear": "infernal-5",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 315,
+        "xp": 320,
+        "materials": {
+          "obsidian": 2
+        },
+        "flags": [
+          "side-infernal-10:helped"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-1",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 160,
+        "xp": 130,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:forest:slime"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-2",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 160,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:forest:goblin"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-3",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 240,
+        "xp": 190,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:forest:wolf"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-4",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 280,
+        "xp": 220,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:forest:caster"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-5",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 320,
+        "xp": 250,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:forest:elite"
+        ]
+      }
+    },
+    {
+      "id": "guild-forest-6",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 360,
+        "xp": 280,
+        "materials": {
+          "enhancement-stone": 2
+        },
+        "flags": [
+          "guild:forest:boss"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-1",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 160,
+        "xp": 130,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:desert:slime"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-2",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 160,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:desert:goblin"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-3",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 240,
+        "xp": 190,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:desert:wolf"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-4",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 280,
+        "xp": 220,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:desert:caster"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-5",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 320,
+        "xp": 250,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:desert:elite"
+        ]
+      }
+    },
+    {
+      "id": "guild-desert-6",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "desert-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 360,
+        "xp": 280,
+        "materials": {
+          "enhancement-stone": 2
+        },
+        "flags": [
+          "guild:desert:boss"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-1",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 160,
+        "xp": 130,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:frozen:slime"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-2",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 160,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:frozen:goblin"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-3",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 240,
+        "xp": 190,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:frozen:wolf"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-4",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 280,
+        "xp": 220,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:frozen:caster"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-5",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 320,
+        "xp": 250,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:frozen:elite"
+        ]
+      }
+    },
+    {
+      "id": "guild-frozen-6",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 360,
+        "xp": 280,
+        "materials": {
+          "enhancement-stone": 2
+        },
+        "flags": [
+          "guild:frozen:boss"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-1",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 160,
+        "xp": 130,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:infernal:slime"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-2",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 200,
+        "xp": 160,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:infernal:goblin"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-3",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 240,
+        "xp": 190,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:infernal:wolf"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-4",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 280,
+        "xp": 220,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:infernal:caster"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-5",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 320,
+        "xp": 250,
+        "materials": {
+          "enhancement-stone": 1
+        },
+        "flags": [
+          "guild:infernal:elite"
+        ]
+      }
+    },
+    {
+      "id": "guild-infernal-6",
+      "category": "guild",
+      "giver": "guild",
+      "prerequisites": [],
+      "requiredClear": "infernal-1",
+      "modes": [
+        "story"
+      ],
+      "reward": {
+        "gold": 360,
+        "xp": 280,
+        "materials": {
+          "enhancement-stone": 2
+        },
+        "flags": [
+          "guild:infernal:boss"
+        ]
+      }
+    },
+    {
+      "id": "npc-forest-1",
+      "category": "npc",
+      "giver": "mara",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 108,
+        "xp": 92,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "npc-forest-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-desert-1",
+      "category": "npc",
+      "giver": "mara",
+      "prerequisites": [
+        "npc-forest-1"
+      ],
+      "requiredClear": "desert-5",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 153,
+        "xp": 132,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "npc-desert-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-frozen-1",
+      "category": "npc",
+      "giver": "mara",
+      "prerequisites": [
+        "npc-desert-1"
+      ],
+      "requiredClear": "frozen-6",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 198,
+        "xp": 172,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "npc-frozen-1:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-infernal-1",
+      "category": "npc",
+      "giver": "mara",
+      "prerequisites": [
+        "npc-frozen-1"
+      ],
+      "requiredClear": "infernal-6",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 450,
+        "xp": 650,
+        "materials": {
+          "enhancement-stone": 5
+        },
+        "flags": [
+          "npc:mara:keeper-oath"
+        ]
+      }
+    },
+    {
+      "id": "npc-forest-2",
+      "category": "npc",
+      "giver": "forge",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 116,
+        "xp": 104,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "npc-forest-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-desert-2",
+      "category": "npc",
+      "giver": "forge",
+      "prerequisites": [
+        "npc-forest-2"
+      ],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 161,
+        "xp": 144,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "npc-desert-2:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-frozen-2",
+      "category": "npc",
+      "giver": "forge",
+      "prerequisites": [
+        "npc-desert-2"
+      ],
+      "requiredClear": "frozen-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 230,
+        "xp": 280,
+        "materials": {},
+        "equipment": {
+          "definitionId": "frozen-weapon",
+          "rarity": "rare",
+          "level": 15
+        },
+        "flags": [
+          "npc:orin:flexible-steel"
+        ]
+      }
+    },
+    {
+      "id": "npc-infernal-2",
+      "category": "npc",
+      "giver": "forge",
+      "prerequisites": [
+        "npc-frozen-2"
+      ],
+      "requiredClear": "infernal-8",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 400,
+        "xp": 500,
+        "materials": {
+          "enhancement-stone": 4
+        },
+        "equipment": {
+          "definitionId": "infernal-weapon",
+          "rarity": "epic",
+          "level": 20
+        },
+        "flags": [
+          "npc:orin:shared-bench"
+        ]
+      }
+    },
+    {
+      "id": "npc-forest-3",
+      "category": "npc",
+      "giver": "market",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 124,
+        "xp": 116,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "npc-forest-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-desert-3",
+      "category": "npc",
+      "giver": "market",
+      "prerequisites": [
+        "npc-forest-3"
+      ],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 169,
+        "xp": 156,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "npc-desert-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-frozen-3",
+      "category": "npc",
+      "giver": "market",
+      "prerequisites": [
+        "npc-desert-3"
+      ],
+      "requiredClear": "frozen-8",
+      "modes": [
+        "haven"
+      ],
+      "reward": {
+        "gold": 214,
+        "xp": 196,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "npc-frozen-3:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-infernal-3",
+      "category": "npc",
+      "giver": "market",
+      "prerequisites": [
+        "npc-frozen-3"
+      ],
+      "requiredClear": "infernal-8",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 550,
+        "xp": 450,
+        "materials": {
+          "health-tonic": 3
+        },
+        "flags": [
+          "npc:nim:return-route"
+        ]
+      }
+    },
+    {
+      "id": "npc-forest-4",
+      "category": "npc",
+      "giver": "workshop",
+      "prerequisites": [],
+      "requiredClear": "forest-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 132,
+        "xp": 128,
+        "materials": {
+          "wood": 2
+        },
+        "flags": [
+          "npc-forest-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-desert-4",
+      "category": "npc",
+      "giver": "workshop",
+      "prerequisites": [
+        "npc-forest-4"
+      ],
+      "requiredClear": "desert-1",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 177,
+        "xp": 168,
+        "materials": {
+          "ancient-shard": 2
+        },
+        "flags": [
+          "npc-desert-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-frozen-4",
+      "category": "npc",
+      "giver": "workshop",
+      "prerequisites": [
+        "npc-desert-4"
+      ],
+      "requiredClear": "frozen-6",
+      "modes": [
+        "story",
+        "haven"
+      ],
+      "reward": {
+        "gold": 222,
+        "xp": 208,
+        "materials": {
+          "frost-crystal": 2
+        },
+        "flags": [
+          "npc-frozen-4:helped"
+        ]
+      }
+    },
+    {
+      "id": "npc-infernal-4",
+      "category": "npc",
+      "giver": "workshop",
+      "prerequisites": [
+        "npc-frozen-4"
+      ],
+      "requiredClear": "infernal-8",
+      "modes": [
+        "haven",
+        "story",
+        "free"
+      ],
+      "reward": {
+        "gold": 400,
+        "xp": 500,
+        "materials": {
+          "health-tonic": 3,
+          "focus-tonic": 3
+        },
+        "flags": [
+          "npc:luma:four-seasons"
+        ]
+      }
+    }
+  ]
+}

@@ -283,6 +283,11 @@ const names = [
     "Thornwatch",
     "The Deepwood",
     "Heart of the Grove",
+    "Rootglass Aqueduct",
+    "The Black Sap Works",
+    "Lantern Refuge",
+    "Briar Captain's Hollow",
+    "The Heartwood Conduit",
   ],
   [
     "Dune Approach",
@@ -290,6 +295,11 @@ const names = [
     "Sunken Citadel",
     "Sands of Trial",
     "Throne of the Sun",
+    "The Buried Archive",
+    "Sunforge Reservoir",
+    "Caravan of Names",
+    "The Gilded Sentinel",
+    "The Last Meridian",
   ],
   [
     "Snowfall Reach",
@@ -297,6 +307,11 @@ const names = [
     "Icebound Hall",
     "Blizzard Pass",
     "The Silent Warden",
+    "Hall of Witnesses",
+    "The Broken Lens",
+    "Pilgrim's Thaw",
+    "The White Marshal",
+    "The Unsealed Truth",
   ],
   [
     "Ashen Gate",
@@ -304,6 +319,11 @@ const names = [
     "Burning Sanctum",
     "Ember Crucible",
     "Sovereign’s Fall",
+    "The First Workshop",
+    "Chains of the Engine",
+    "The Way Back",
+    "The Ashbound Architect",
+    "The First Fracture",
   ],
 ];
 function loot(
@@ -323,14 +343,14 @@ function loot(
   };
 }
 export const STAGES: StageDefinition[] = WORLDS.flatMap((w, wi) =>
-  Array.from({ length: 5 }, (_, i) => ({
+  Array.from({ length: 10 }, (_, i) => ({
     id: `${w.id}-${i + 1}`,
     worldId: w.id,
     number: i + 1,
     name: names[wi][i],
     environment: { seed: 109 + wi * 100 + i * 19, layout: w.architecture },
     spawn: {
-      interval: 1.35 - i * 0.16,
+      interval: Math.max(0.4, 1.35 - i * 0.16),
       composition: (i === 0
         ? ["slime", "goblin"]
         : i === 1
@@ -339,7 +359,10 @@ export const STAGES: StageDefinition[] = WORLDS.flatMap((w, wi) =>
     },
     recommendedPower: 10 + wi * 30 + i * 6,
     modifiers: { health: 1 + i * 0.12, pressure: 1 + i * 0.12 },
-    clear: { kind: i === 4 ? "boss" : "survive", seconds: 480 + i * 45 },
+    clear: {
+      kind: i === 4 || i === 9 ? "boss" : "survive",
+      seconds: 480 + i * 45,
+    },
     rewards: {
       enemy: loot("enemy", 1, 1, w.materials.slice(0, 1), 0.14),
       elite: loot("elite", 8, 8, w.materials.slice(0, 2), 0.65),
@@ -354,7 +377,7 @@ export const STAGES: StageDefinition[] = WORLDS.flatMap((w, wi) =>
       firstClear: loot("first-clear", 100, 75, w.materials, 1),
     },
     unlock: {
-      previous: i ? `${w.id}-${i}` : wi ? `${WORLDS[wi - 1].id}-5` : null,
+      previous: i ? `${w.id}-${i}` : wi ? `${WORLDS[wi - 1].id}-10` : null,
     },
   })),
 );

@@ -4,7 +4,20 @@ import { transact } from "./storage";
 import { preferences } from "./preferences";
 import { migrateSave, validPlayer, validLocal } from "./validation";
 import { emptyProgress } from "../campaign/progression";
+import { stageById } from "../campaign/content";
 import { applyResult, changeEquipment } from "../campaign/commands";
+import { stageIdentity, sameRunStage } from "../campaign/identity";
+import type { StageSelection } from "../campaign/loader";
+import { travelReason } from "../world/content";
+import { validMissionReceipt } from "../story/validation";
+import { applyQuestCommand, type QuestCommand } from "../quests/commands";
+import {
+  prepareRunQuests,
+  checkpointQuestEvidence,
+  settleQuestEvidence,
+  havenQuestVisit,
+  inventoryQuestGains,
+} from "../quests/events";
 import { applyCommand, type RpgCommand } from "../rpg/actions";
 import type { CampaignResult } from "../campaign/rewards";
 import type { RelicId, CharacterId } from "../loadout";
@@ -31,6 +44,7 @@ import {
 } from "./daily";
 import { validCheckpoint, type RunCheckpoint } from "./checkpoint";
 import { applyWorldCommand } from "../world/actions";
+import { districtAt } from "../world/city";
 import type { WorldCommand } from "../world/save";
 import { HAVEN } from "../world/content";
 import { characterName } from "./identity";
@@ -255,9 +269,22 @@ async function update<T>(
   return value;
 }
 export const profileRepository = {
+  async quest(slotId: string, command: QuestCommand) {
+    return update((p, root, store, _, at) => {
+      applyQuestCommand(p, command, at);
+      put(store, root, p, at);
+      return p;
+    }, slotId);
+  },
   async world(slotId: string, command: WorldCommand) {
     return update((p, root, store, _, at) => {
+      const before = ["claim", "treasure"].includes(command.type)
+        ? structuredClone(p)
+        : null;
       applyWorldCommand(p, command, at);
+      if (command.type === "visit")
+        havenQuestVisit(p, command.id, districtAt(command.position).id);
+      if (before) inventoryQuestGains(before, p, { mode: "haven" });
       put(store, root, p, at);
       return p;
     }, slotId);
@@ -563,6 +590,7 @@ export const profileRepository = {
     return update((p, root, store, _, at) => {
       checkRevision(p, revision);
       const day = gameDay(at);
+      const before = structuredClone(p);
       rollDay(p, at);
       reconcile(p, at);
       if (kind === "checkin") {
@@ -622,6 +650,7 @@ export const profileRepository = {
         );
         p.local.achievements[id].claimed = true;
       }
+      inventoryQuestGains(before, p, { mode: "haven" });
       put(store, root, p, at);
       return p;
     }, slotId);
@@ -632,6 +661,7 @@ export const profileRepository = {
       const result = applyCommand(p, command);
       const next = result.progress as SaveData;
       recordAction(p, next, result.entry, at);
+      inventoryQuestGains(p, next, { mode: "haven" });
       put(store, root, next, at);
       return { ...result, progress: next };
     }, command.slotId);
@@ -649,6 +679,7 @@ export const profileRepository = {
     resume = false,
     replaceId?: string,
     requireWeapon = false,
+    requestedStage?: StageSelection,
   ): Promise<{
     run: RunOwner;
     checkpoint: RunCheckpoint | null;
@@ -659,6 +690,14 @@ export const profileRepository = {
         c = p.local.checkpoint;
       if (!resume && requireWeapon && !resolveEquippedWeapon(p))
         throw new Error("Equip a weapon in Inventory before entering a stage.");
+      if (!resume && requestedStage) {
+        const reason = travelReason(
+          requestedStage,
+          p.clears,
+          p.local.journal?.legacyAccess,
+        );
+        if (reason) throw new Error(reason);
+      }
       if (resume && !c)
         throw new Error("No valid run checkpoint is available.");
       if (resume && (!validCheckpoint(c) || p.receipts.includes(c.run.id)))
@@ -686,6 +725,11 @@ export const profileRepository = {
       };
       p.local.activeRun = {
         ...run,
+        ...(resume && c?.stage
+          ? { stage: stageIdentity(c.stage) }
+          : requestedStage
+            ? { stage: stageIdentity(requestedStage, true) }
+            : {}),
         updatedAt: at,
         metrics: resume
           ? {
@@ -697,6 +741,8 @@ export const profileRepository = {
       };
       if (!resume) p.local.checkpoint = null;
       else p.local.checkpoint = { ...c!, run };
+      if (p.local.activeRun.stage)
+        prepareRunQuests(p, run.id, p.local.activeRun.stage, resume, at);
       put(store, root, p, at);
       return { run, checkpoint: resume ? p.local.checkpoint : null, save: p };
     }, slotId);
@@ -708,9 +754,30 @@ export const profileRepository = {
       );
     return update((p, root, store, _, at) => {
       assertOwner(p, c.run);
+      const identity = p.local.activeRun!.stage;
+      if (
+        identity &&
+        (!c.stage ||
+          !sameRunStage(identity, c.stage) ||
+          (c.stage.missionVersion ?? 0) !== identity.missionVersion)
+      )
+        throw new Error(
+          "The checkpoint belongs to a different activity or mission.",
+        );
       if (p.receipts.includes(c.run.id))
         throw new Error("This run has already finished.");
       if (c.run.sequence <= p.local.activeRun!.sequence) return p;
+      if (!identity && c.stage) {
+        const reason = travelReason(
+          c.stage,
+          p.clears,
+          p.local.journal?.legacyAccess,
+        );
+        if (reason) throw new Error(reason);
+        p.local.activeRun!.stage = stageIdentity(c.stage);
+      }
+      if (p.local.activeRun!.stage)
+        checkpointQuestEvidence(p, c, p.local.activeRun!.stage);
       milestone(
         p,
         c.run,
@@ -769,6 +836,18 @@ export const profileRepository = {
   async settle(result: CampaignResult) {
     return update((p, root, store, _, at) => {
       if (p.receipts.includes(result.id)) return { progress: p, reward: null };
+      if (result.run) assertOwner(p, result.run);
+      const identity = p.local.activeRun?.stage;
+      if (
+        identity &&
+        (!sameRunStage(identity, result) ||
+          (identity.missionVersion === 1 &&
+            result.victory &&
+            !validMissionReceipt(result.mission, result.stageId)))
+      )
+        throw new Error(
+          "The result does not match this run's activity and objectives.",
+        );
       if (result.run)
         milestone(
           p,
@@ -782,6 +861,15 @@ export const profileRepository = {
         );
       const settled = applyResult(p, result),
         next = settled.progress as SaveData;
+      if (identity) {
+        settleQuestEvidence(next, result, identity, p.local.checkpoint);
+        inventoryQuestGains(p, next, {
+          mode: identity.mode,
+          runId: result.id,
+          stageId: identity.stageId,
+          worldId: stageById(identity.stageId).worldId,
+        });
+      }
       const items =
         next.rpg!.equipment.length +
         next.rpg!.overflow.filter((o) => o.equipment).length -

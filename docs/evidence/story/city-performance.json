@@ -1,0 +1,32 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 1000,
+      "cpu": 1
+    },
+    "fps": 57.222819160898574,
+    "p95FrameMs": 16.799999999999272,
+    "phaserFps": 110.24656867980957,
+    "heapBytes": 28658576,
+    "textureBytes": 23948452,
+    "sprites": 335,
+    "visibleSprites": 62,
+    "motes": 8
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "cpu": 4
+    },
+    "fps": 21.5821984073836,
+    "p95FrameMs": 66.70000000000073,
+    "phaserFps": 45.34874308965118,
+    "heapBytes": 31195492,
+    "textureBytes": 23948452,
+    "sprites": 335,
+    "visibleSprites": 47,
+    "motes": 8
+  }
+]

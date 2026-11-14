@@ -1,3 +1,4 @@
+import { beginStory } from "./helpers/story";
 import { test, expect, type Page } from "@playwright/test";
 import { emptyProgress, type Progress } from "../src/game/campaign/progression";
 import { initializeRpg } from "../src/game/rpg/profile";
@@ -114,6 +115,7 @@ test("24 evolution frames match the live Phaser layer and React HUD after replac
   await page
     .getByRole("button", { name: "START STAGE →", exact: true })
     .click();
+  await beginStory(page);
   await expect(page.locator(".game-state")).toContainText("LIVE RUN");
   for (const [row, definition] of definitions.entries())
     for (let tier = 0; tier < 6; tier++) {
@@ -180,6 +182,7 @@ test("missing evolution atlas uses a marked family-correct React and Phaser fall
     await page
       .getByRole("button", { name: "START STAGE →", exact: true })
       .click();
+    await beginStory(page);
     await expect
       .poll(() =>
         page.evaluate(() => window.__NOWRIFT_TEST__?.appearance!().weaponAsset),
@@ -230,6 +233,7 @@ for (const character of Object.keys(CHARACTERS) as CharacterId[]) {
       await page
         .getByRole("button", { name: "START STAGE →", exact: true })
         .click();
+      await beginStory(page);
       await expect(page.locator(".game-state")).toContainText("LIVE RUN");
       await expect(page.locator(".active-weapon")).toContainText(
         ITEMS[definition].name + " +3",
@@ -267,6 +271,7 @@ for (const character of Object.keys(CHARACTERS) as CharacterId[]) {
         expect(actual.delay).toBeCloseTo(expected.stats.interval);
         // A stationary fixture target exercises the real automatic attack path.
         await page.evaluate(() => {
+          window.__NOWRIFT_TEST__!.scenario("target");
           const g = window.__NOWRIFT_TEST__!.state(),
             enemy = g.enemies[0];
           g.enemies = [enemy];
@@ -369,6 +374,7 @@ test("mobile equipment previews remain layered, change with owned gear, and surv
   await page
     .getByRole("button", { name: "START STAGE →", exact: true })
     .click();
+  await beginStory(page);
   await expect(page.locator(".game-state")).toContainText("LIVE RUN");
   await expect(page.locator(".active-weapon")).toContainText(
     "Sunsteel Blade +3",
@@ -396,6 +402,7 @@ test.describe("equipment checkpoint and live town rendering", () => {
     await page
       .getByRole("button", { name: "START STAGE →", exact: true })
       .click();
+    await beginStory(page);
     await expect(page.locator(".game-state")).toContainText("LIVE RUN");
     await page.getByRole("button", { name: "PAUSE", exact: true }).click();
     await expect

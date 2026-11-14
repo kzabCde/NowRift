@@ -88,7 +88,7 @@ export const journeyTh = {
   "Quest board": "กระดานภารกิจ",
   "Mara has a request. Track it in your journal.":
     "มารามีคำขอ ติดตามได้ในบันทึกภารกิจ",
-  "Four worlds, twenty stages and their bosses.":
+  "Four worlds, forty Story missions and their guardians.":
     "สี่โลก ยี่สิบด่าน และบอสประจำด่าน",
   "Gather supplies, survive and extract.": "เก็บเสบียง เอาชีวิตรอด แล้วถอนตัว",
   "Turn materials into useful supplies.":

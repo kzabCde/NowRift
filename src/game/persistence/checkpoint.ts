@@ -16,6 +16,8 @@ import { validHarvest } from "../world/farming";
 import { OUTFITS } from "../world/save";
 import { validAppearance as validCharacterAppearance } from "../presentation/appearance";
 import { validWeaponSnapshot } from "../rpg/weapon-validation";
+import { legacyCampaignAccess } from "../campaign/access";
+import { validMissionState } from "../story/validation";
 type State = Pick<
   Game,
   | "phase"
@@ -49,6 +51,8 @@ type State = Pick<
 type EnvironmentState = Pick<
   NonNullable<Game["campaign"]>,
   | "harvested"
+  | "mission"
+  | "enemyKills"
   | "timer"
   | "slow"
   | "burn"
@@ -130,6 +134,8 @@ export function captureCheckpoint(
             difficulty: g.campaign.difficulty.id,
             seed,
             clears: [],
+            mode: g.campaign.mode ?? "story",
+            missionVersion: g.campaign.mission ? 1 : 0,
           }
         : undefined),
     loadout,
@@ -137,6 +143,10 @@ export function captureCheckpoint(
     environment: g.campaign
       ? {
           ...(g.campaign.harvested ? { harvested: g.campaign.harvested } : {}),
+          ...(g.campaign.mission ? { mission: g.campaign.mission } : {}),
+          ...(g.campaign.enemyKills
+            ? { enemyKills: g.campaign.enemyKills }
+            : {}),
           timer: g.campaign.timer,
           slow: g.campaign.slow,
           burn: g.campaign.burn,
@@ -186,8 +196,37 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
+  if (
+    c.stage?.missionVersion !== undefined &&
+    ![0, 1].includes(c.stage.missionVersion)
+  )
+    return false;
+  if (
+    c.environment?.mission !== undefined &&
+    (!c.stage ||
+      c.stage.mode === "free" ||
+      !validMissionState(c.environment.mission, c.stage.stageId))
+  )
+    return false;
+  if (
+    c.stage?.missionVersion === 1 &&
+    c.stage.mode !== "free" &&
+    !c.environment?.mission
+  )
+    return false;
+  if (
+    c.environment?.enemyKills !== undefined &&
+    (!obj(c.environment.enemyKills) ||
+      Object.entries(c.environment.enemyKills).some(
+        ([id, n]) => !Object.hasOwn(ENEMIES, id) || !integer(n, 0, 50000),
+      ))
+  )
+    return false;
   if (c.stage?.activity !== undefined && c.stage.activity !== "farming")
     return false;
+  if (c.stage?.mode !== undefined && !["story", "free"].includes(c.stage.mode))
+    return false;
+  if (c.stage?.activity === "farming" && c.stage.mode === "story") return false;
   if (c.stage?.outfit !== undefined && !OUTFITS.includes(c.stage.outfit))
     return false;
   if (c.stage?.startingHp !== undefined && !finite(c.stage.startingHp, 1, 5000))
@@ -296,6 +335,33 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
     )
   )
     return false;
+  for (const e of s.enemies) {
+    if (
+      (e.missionRaider !== undefined && typeof e.missionRaider !== "boolean") ||
+      (e.missionFinale !== undefined && typeof e.missionFinale !== "boolean")
+    )
+      return false;
+    if (
+      (e.missionRaider || e.missionFinale || e.missionTarget) &&
+      !c.environment?.mission
+    )
+      return false;
+    if (e.missionFinale && e.kind !== "boss") return false;
+    if (e.missionTarget) {
+      const tag = e.missionTarget,
+        object = c.environment?.mission?.objects.find(
+          (o) => o.id === tag.objectId,
+        );
+      if (
+        !obj(tag) ||
+        !object ||
+        object.kind !== tag.kind ||
+        !["boss", "elite", "destructible"].includes(tag.kind) ||
+        e.kind !== (tag.kind === "boss" ? "boss" : "elite")
+      )
+        return false;
+    }
+  }
   if (new Set(s.enemies.map((e) => e.id)).size !== s.enemies.length)
     return false;
   if (
@@ -370,6 +436,14 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
       !Object.hasOwn(DIFFICULTIES, c.stage.difficulty) ||
       !validProgress({ ...emptyProgress(), clears: c.stage.clears }) ||
       c.stage.seed !== c.seed ||
+      (c.stage.legacyAccess !== undefined &&
+        (!Array.isArray(c.stage.legacyAccess) ||
+          c.stage.legacyAccess.some(
+            (k) =>
+              !/^(forest|desert|frozen|infernal):(entry|hard|nightmare)$/.test(
+                k,
+              ),
+          ))) ||
       !obj(c.environment) ||
       !numbers(
         c.environment,
@@ -469,7 +543,17 @@ export function restoreCheckpoint(checkpoint: RunCheckpoint): Game {
   const c = structuredClone(checkpoint),
     rng = seeded(c.seed),
     g = c.stage
-      ? loadStage(c.stage, c.weapon)
+      ? loadStage(
+          {
+            ...c.stage,
+            legacyAccess:
+              c.stage.legacyAccess ??
+              (c.stage.missionVersion === undefined
+                ? legacyCampaignAccess(c.stage.clears)
+                : []),
+          },
+          c.weapon,
+        )
       : makeGame(FOREST.width, FOREST.height, c.weapon, rng);
   Object.assign(g, c.state);
   g.id = c.run.id;

@@ -7,6 +7,7 @@ import "./journey.css";
 import "./equipment.css";
 import "./pixel.css";
 import "./outfitters.css";
+import "./story.css";
 
 export const metadata: Metadata = {
   applicationName: "NowRift",

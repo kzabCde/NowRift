@@ -1,0 +1,315 @@
+.mission-hud {
+  position: absolute;
+  z-index: 12;
+  top: 14px;
+  left: 14px;
+  max-width: min(360px, 70%);
+  padding: 14px 18px;
+  color: #ecdfbb;
+  background: #142c29ec;
+  border: 1px solid #b8a574;
+  pointer-events: none;
+  box-shadow: 0 6px 20px #08191b66;
+}
+.mission-hud small,
+.mission-hud strong {
+  display: block;
+}
+.mission-hud small {
+  font: 10px/1.7 var(--mono);
+  color: #bdc9ae;
+}
+.mission-hud strong {
+  font: 20px/1.3 var(--serif);
+  margin: 6px 0;
+}
+.mission-hud p {
+  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.mission-hud progress {
+  width: 100%;
+  height: 6px;
+  accent-color: #d2bb84;
+}
+.mission-dialogue {
+  z-index: 50;
+  padding: 28px;
+}
+.mission-dialogue p,
+.mission-dialogue ol {
+  width: min(560px, 95%);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.mission-dialogue ol {
+  padding-left: 22px;
+  color: #bac9ad;
+}
+.mission-dialogue button {
+  min-height: 48px;
+  margin-top: 16px;
+}
+@media (max-width: 650px) {
+  .mission-hud {
+    top: 8px;
+    left: 8px;
+    padding: 10px;
+    max-width: min(310px, 82%);
+  }
+  .mission-hud strong {
+    font-size: 16px;
+  }
+  .mission-hud p {
+    font-size: 11px;
+  }
+  .mission-dialogue {
+    padding: 18px;
+    overflow: auto;
+    justify-content: flex-start;
+  }
+  .mission-dialogue h2 {
+    font-size: 25px;
+    margin-top: 20px;
+  }
+}
+.quest-journal {
+  width: min(900px, 100%);
+  text-align: left;
+}
+.quest-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.quest-tabs button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #5c7567;
+  background: #18302c;
+  color: #e5d9b8;
+}
+.quest-tabs button[aria-pressed="true"] {
+  background: #d6c38d;
+  color: #18302c;
+}
+.quest-card {
+  border: 1px solid #52675c;
+  background: #122c28;
+  padding: 18px;
+  margin: 14px 0;
+  text-align: left;
+}
+.quest-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font: 11px/1.7 var(--mono);
+  color: #c6b98b;
+}
+.quest-card h3 {
+  margin: 10px 0;
+  font: 24px/1.3 var(--serif);
+  color: #efdfb3;
+}
+.quest-card p {
+  line-height: 1.8;
+  font-size: 13px;
+}
+.quest-objectives {
+  list-style: none;
+  padding: 0;
+}
+.quest-objectives li {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #6b786331;
+}
+.quest-objectives li.is-complete {
+  color: #9dbdad;
+}
+.quest-rewards {
+  display: block;
+  color: #d3c288;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.quest-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.quest-actions button {
+  min-height: 44px;
+}
+.quest-giver {
+  width: min(880px, 100%);
+  margin: 0 auto 20px;
+  padding: 14px;
+}
+.quest-tracker {
+  position: absolute;
+  z-index: 13;
+  right: 16px;
+  top: 100px;
+  max-width: min(330px, 42%);
+  padding: 13px;
+  background: #19312dec;
+  border: 1px solid #8d9d77;
+  text-align: left;
+  color: #ece0bb;
+}
+.quest-tracker strong,
+.quest-tracker small {
+  display: block;
+  line-height: 1.6;
+}
+.quest-tracker small {
+  font-size: 11px;
+  color: #bfcbb0;
+  margin-top: 5px;
+}
+.legacy-supply-quest {
+  border-top: 1px solid #657760;
+  margin-top: 24px;
+  padding-top: 16px;
+}
+.legacy-supply-quest summary {
+  cursor: pointer;
+  padding: 12px;
+}
+@media (max-width: 650px) {
+  .quest-card {
+    padding: 12px;
+  }
+  .quest-card h3 {
+    font-size: 20px;
+  }
+  .quest-tracker {
+    top: 160px;
+    max-width: 44%;
+    right: 8px;
+    padding: 8px;
+  }
+  .quest-tracker strong {
+    font-size: 11px;
+  }
+  .quest-tracker small {
+    font-size: 10px;
+  }
+}
+.quest-overlay {
+  overflow: auto;
+  justify-content: flex-start;
+  padding: 24px;
+  z-index: 90;
+}
+.arena .quest-tracker {
+  top: auto;
+  bottom: 80px;
+  max-width: min(320px, 42%);
+}
+.story-result-notice {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  color: #f2df9a;
+  background: #17352def;
+  padding: 10px 14px;
+  font-size: 12px;
+  text-align: center;
+}
+.map-mission-objectives {
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.8;
+  padding-left: 18px;
+}
+.quest-notice {
+  position: absolute;
+  z-index: 95;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  max-width: min(420px, 85%);
+  background: #18362ef5;
+  border: 1px solid #c7b075;
+  color: #f1dfb0;
+  padding: 12px 20px;
+  pointer-events: none;
+  box-shadow: 0 5px 20px #09191777;
+}
+.quest-notice small,
+.quest-notice strong {
+  display: block;
+  line-height: 1.7;
+}
+.quest-notice small {
+  font: 10px/1.7 var(--mono);
+  color: #a5c8b4;
+}
+@media (max-width: 650px) {
+  .quest-notice {
+    bottom: 76px;
+    padding: 9px 12px;
+    font-size: 11px;
+  }
+}
+.mission-direction {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+.mission-direction i {
+  display: inline-block;
+  font-size: 16px;
+  color: #f4d697;
+  font-style: normal;
+}
+/* The long journal keeps touch close/navigation controls available while its entries scroll. */
+.modal-panel:has(.quest-journal) {
+  width: min(960px, 100%);
+}
+.modal-panel:has(.quest-journal) > .modal-close,
+.journal-close {
+  position: sticky;
+  float: right;
+  top: 0;
+  z-index: 12;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin-top: -20px;
+  margin-right: -15px;
+  margin-bottom: -24px;
+  background: #18312d;
+  border: 1px solid #7c8a66;
+  color: #e9dbb1;
+  font-size: 24px;
+}
+.quest-tabs {
+  position: sticky;
+  top: 42px;
+  z-index: 8;
+  background: #20362b;
+  padding: 8px 0;
+}
+.quest-mode {
+  display: block;
+  color: #9fc3af;
+  font: 10px/1.7 var(--mono);
+}
+.quest-unlock {
+  border-top: 1px solid #52675c;
+  padding-top: 12px;
+  color: #d1c28d;
+}

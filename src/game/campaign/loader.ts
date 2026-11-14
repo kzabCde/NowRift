@@ -7,7 +7,11 @@ import { stageById, seeded, type DifficultyId } from "./content";
 import { lockedReason } from "./progression";
 import { stageRuntime } from "./runtime";
 import { characterLevel } from "../rpg/stats";
+import { missionById } from "../story/content";
+import { createMission } from "../story/runtime";
 export type StageSelection = {
+  missionVersion?: 0 | 1;
+  legacyAccess?: string[];
   visualAppearance?: CharacterAppearance;
   character?: CharacterId;
   weaponSnapshot?: WeaponSnapshot;
@@ -29,10 +33,18 @@ export function loadStage(
   selection: StageSelection,
   weapon: WeaponId = "arcane",
 ) {
-  const reason =
-    selection.mode === "free"
-      ? null
-      : lockedReason(selection.stageId, selection.difficulty, selection.clears);
+  if (
+    (selection.mode !== undefined &&
+      !["story", "free"].includes(selection.mode)) ||
+    (selection.activity === "farming" && selection.mode === "story")
+  )
+    throw new Error("Invalid expedition.");
+  const reason = lockedReason(
+    selection.stageId,
+    selection.difficulty,
+    selection.clears,
+    selection.legacyAccess,
+  );
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
     g = makeGame(
@@ -47,7 +59,14 @@ export function loadStage(
   if (selection.weaponSnapshot)
     g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
-  g.campaign.mode = selection.mode ?? "story";
+  g.campaign.mode =
+    selection.activity === "farming" ? "free" : (selection.mode ?? "story");
+  const mission =
+    (selection.missionVersion === 1 || stage.number > 5) &&
+    g.campaign.mode === "story"
+      ? missionById(stage.id)
+      : undefined;
+  if (mission) g.campaign.mission = createMission(mission, g.campaign.map);
   if (selection.activity === "farming") {
     g.campaign.activity = "farming";
     g.campaign.harvested = [];
@@ -66,6 +85,7 @@ export function loadStage(
   g.xpToNext = 100 + (g.level - 1) * 50;
   g.appearance = selection.appearance;
   beginGame(g);
+  if (mission) g.enemies.length = 0;
   if (selection.startingHp !== undefined)
     g.player.hp = Math.max(1, Math.min(g.player.maxHp, selection.startingHp));
   return g;

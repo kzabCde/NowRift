@@ -1,3 +1,4 @@
+import { beginStory, finishStory } from "./helpers/story";
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { emptyProgress } from "../src/game/campaign/progression";
@@ -99,17 +100,15 @@ async function startStage(page: Page) {
   await page
     .getByRole("button", { name: "START STAGE →", exact: true })
     .click();
+  await beginStory(page);
   await expect(page.locator(".game-state")).toContainText("LIVE RUN");
 }
 async function finishStage(page: Page) {
-  await page.evaluate(() => {
-    const g = window.__NOWRIFT_TEST__!.state();
-    g.player.invincible = 999;
-    g.time = g.campaign!.definition.clear.seconds - 0.01;
-  });
+  await finishStory(page);
   await expect(page.locator(".campaign-reward")).toContainText("FIRST CLEAR");
   await expect(page.locator(".save-message")).toContainText("saved");
 }
+
 test("guest identity, three save slots, selection, names and deletion persist independently", async ({
   page,
 }, info) => {

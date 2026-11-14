@@ -27,6 +27,7 @@ export function near(a: Point, b: Point, r: number = HAVEN.range) {
 export function travelReason(
   destination: StageSelection,
   clears: readonly string[],
+  legacyAccess: readonly string[] = [],
 ): string | null {
   if (
     !STAGES.some((s) => s.id === destination.stageId) ||
@@ -34,12 +35,19 @@ export function travelReason(
     !Number.isSafeInteger(destination.seed) ||
     destination.seed < 0 ||
     destination.seed > 4294967295 ||
-    (destination.activity !== undefined && destination.activity !== "farming")
+    (destination.activity !== undefined &&
+      destination.activity !== "farming") ||
+    (destination.mode !== undefined &&
+      !["story", "free"].includes(destination.mode)) ||
+    (destination.activity === "farming" && destination.mode === "story")
   )
     return "Invalid expedition.";
-  return destination.mode === "free"
-    ? null
-    : lockedReason(destination.stageId, destination.difficulty, clears);
+  return lockedReason(
+    destination.stageId,
+    destination.difficulty,
+    clears,
+    legacyAccess,
+  );
 }
 export function nearest(p: Point): Landmark | null {
   let found: Landmark | null = null,

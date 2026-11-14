@@ -1,4 +1,13 @@
 import type { CharacterAppearance } from "./presentation/appearance";
+import {
+  hurtMissionAlly,
+  missionAmbient,
+  missionEnemyDefeated,
+  missionEnemyKind,
+  missionEnemyTarget,
+  missionSummary,
+  stepMission,
+} from "./story/runtime";
 import { temporaryStats, incomingDamage } from "./rpg/stats";
 import { enemyScale } from "./campaign/scaling";
 import type { CharacterStats, Rarity, WeaponSnapshot } from "./rpg/model";
@@ -8,6 +17,7 @@ import { feedback, type FeedbackQueue } from "./feedback";
 import {
   environmentStep,
   campaignBossAttack,
+  finalePhase,
   type StageRuntime,
 } from "./campaign/runtime";
 import {
@@ -32,6 +42,9 @@ export type GamePhase =
   | "gameover"
   | "victory";
 export type Enemy = {
+  missionTarget?: { objectId: string; kind: "destructible" | "boss" | "elite" };
+  missionRaider?: boolean;
+  missionFinale?: boolean;
   damageScale?: number;
   level?: number;
   enraged?: boolean;
@@ -175,6 +188,13 @@ export type Game = FeedbackQueue & {
   };
 };
 export type Snapshot = {
+  questEvidence?: {
+    runId?: string;
+    seconds: number;
+    kills: Partial<Record<EnemyKind, number>>;
+    events: import("./story/types").MissionFact[];
+  };
+  mission?: ReturnType<typeof missionSummary>;
   equippedWeapon?: WeaponSnapshot;
   runId?: string;
   statuses: string[];
@@ -283,6 +303,15 @@ export function togglePause(g: Game) {
 export function snapshot(g: Game): Snapshot {
   const boss = g.enemies.find((e) => e.kind === "boss");
   return {
+    mission: missionSummary(g),
+    questEvidence: g.campaign
+      ? {
+          runId: g.id,
+          seconds: g.time,
+          kills: { ...g.campaign.enemyKills },
+          events: g.campaign.mission?.events.map((e) => ({ ...e })) ?? [],
+        }
+      : undefined,
     equippedWeapon: g.equippedWeapon,
     runId: g.id,
     statuses: g.campaign
@@ -322,8 +351,8 @@ export function snapshot(g: Game): Snapshot {
     boss: boss
       ? {
           hp: Math.ceil(boss.hp),
-          maxHp: boss.maxHp,
-          phase: boss.hp <= boss.maxHp / 2 ? 2 : 1,
+          maxHp: Math.ceil(boss.maxHp),
+          phase: finalePhase(boss),
         }
       : null,
   };
@@ -505,6 +534,9 @@ export function spawnEnemy(g: Game, kind: EnemyKind, x?: number, y?: number) {
     enraged: false,
     pattern: 0,
     charge: undefined,
+    missionTarget: undefined,
+    missionRaider: undefined,
+    missionFinale: undefined,
   });
   if (g.campaign) {
     const c = g.campaign,
@@ -596,7 +628,8 @@ function damage(g: Game, e: Enemy, amount: number, critical: boolean) {
 }
 function hurt(g: Game, amount: number, from: { x: number; y: number }) {
   const p = g.player;
-  if (g.phase !== "playing") return;
+  if (g.phase !== "playing" || g.campaign?.mission?.phase === "INTRO_DIALOGUE")
+    return;
   if (p.invincible > 0) {
     feedback(g, "shield", p.x, p.y, 0x9bbdcc, 22);
     return;
@@ -936,7 +969,8 @@ export function updateGame(
   inputX: number,
   inputY: number,
 ) {
-  if (g.phase !== "playing") return;
+  if (g.phase !== "playing" || g.campaign?.mission?.phase === "INTRO_DIALOGUE")
+    return;
   const step = Math.min(0.05, Math.max(0, dt));
   if (!step) return;
   const p = g.player;
@@ -969,7 +1003,7 @@ export function updateGame(
   });
   if (p.hp <= 0) return;
   const duration =
-    g.campaign?.activity === "farming"
+    g.campaign?.activity === "farming" || g.campaign?.mission
       ? Infinity
       : g.campaign
         ? g.campaign.definition.clear.seconds * g.campaign.difficulty.duration
@@ -989,16 +1023,17 @@ export function updateGame(
   }
   g.spawnCooldown -= step;
   if (g.spawnCooldown <= 0) {
-    if (!g.bossSpawned) {
+    if (!g.bossSpawned && missionAmbient(g)) {
       const kinds = g.campaign
         ? g.campaign.definition.spawn.composition
         : (Object.keys(ENEMIES) as EnemyKind[]).filter(
             (k) => k !== "boss" && ENEMIES[k].from <= g.time,
           );
       const kind =
-        g.campaign && g.rng() < g.campaign.difficulty.elites
+        missionEnemyKind(g) ??
+        (g.campaign && g.rng() < g.campaign.difficulty.elites
           ? "elite"
-          : kinds[Math.floor(g.rng() * kinds.length)];
+          : kinds[Math.floor(g.rng() * kinds.length)]);
       spawnEnemy(g, kind);
       if (g.time > 360)
         spawnEnemy(g, kinds[Math.floor(g.rng() * kinds.length)]);
@@ -1025,8 +1060,10 @@ export function updateGame(
     e.age = (e.age ?? 0) + step;
     e.hit = Math.max(0, (e.hit ?? 0) - step);
     e.slow = Math.max(0, (e.slow ?? 0) - step);
-    const dx = p.x - e.x,
-      dy = p.y - e.y,
+    if (e.missionTarget?.kind === "destructible") continue;
+    const aim = missionEnemyTarget(g, e) ?? p;
+    const dx = aim.x - e.x,
+      dy = aim.y - e.y,
       d = Math.max(0.001, Math.hypot(dx, dy));
     const behavior = g.campaign?.world.enemies.find(
       (d) => d.kind === e.kind,
@@ -1065,23 +1102,23 @@ export function updateGame(
         const push = Math.min(1.5, (r - dd) * 0.12);
         e.x += (ax / dd) * push;
         e.y += (ay / dd) * push;
-        other.x -= (ax / dd) * push;
-        other.y -= (ay / dd) * push;
+        if (other.missionTarget?.kind !== "destructible") {
+          other.x -= (ax / dd) * push;
+          other.y -= (ay / dd) * push;
+        }
       }
     });
     resolveObstacles(g, e);
     e.contact -= step;
-    if (dist2(e, p) < (e.r + p.r) ** 2 && e.contact <= 0) {
-      hurt(
-        g,
-        g.campaign
-          ? Math.round(
-              (g.campaign.world.enemies.find((d) => d.kind === e.kind)
-                ?.damage ?? 25) * g.campaign.difficulty.damage,
-            ) * (e.damageScale ?? 1)
-          : ENEMIES[e.kind].damage,
-        e,
-      );
+    if (dist2(e, aim) < (e.r + aim.r) ** 2 && e.contact <= 0) {
+      const amount = g.campaign
+        ? Math.round(
+            (g.campaign.world.enemies.find((d) => d.kind === e.kind)?.damage ??
+              25) * g.campaign.difficulty.damage,
+          ) * (e.damageScale ?? 1)
+        : ENEMIES[e.kind].damage;
+      if (aim !== p) hurtMissionAlly(g, amount);
+      else hurt(g, amount, e);
       e.contact = 0.7;
     }
     enemyAttacks(g, e, step);
@@ -1175,8 +1212,17 @@ export function updateGame(
   for (let i = g.enemies.length - 1; i >= 0; i--) {
     const e = g.enemies[i];
     if (e.hp > 0) continue;
+    missionEnemyDefeated(g, e);
+    if (e.missionTarget?.kind === "destructible") {
+      emit(g, e.x, e.y, "#adc9a8", 12);
+      g.pools.enemies.push(e);
+      g.enemies.splice(i, 1);
+      continue;
+    }
     g.kills++;
     if (g.campaign) {
+      g.campaign.enemyKills ??= {};
+      g.campaign.enemyKills[e.kind] = (g.campaign.enemyKills[e.kind] ?? 0) + 1;
       if (e.kind === "boss") g.campaign.bosses++;
       else if (e.kind === "elite") g.campaign.elites++;
       else g.campaign.enemies++;
@@ -1208,7 +1254,11 @@ export function updateGame(
       0,
       e.kind === "boss",
     );
-    if (e.kind === "boss" && g.campaign?.activity !== "farming") {
+    if (
+      e.kind === "boss" &&
+      g.campaign?.activity !== "farming" &&
+      !g.campaign?.mission
+    ) {
       g.phase = "victory";
       if (!g.campaign) g.gold += 150;
     }
@@ -1250,6 +1300,11 @@ export function updateGame(
       emit(g, d.x, d.y, "#bbefd4", 3);
     }
   }
+  if (g.phase === "playing")
+    stepMission(g, step, {
+      spawn: (kind, x, y) => spawnEnemy(g, kind, x, y),
+      collide: (point) => resolveObstacles(g, point),
+    });
   if (g.phase === "playing") checkLevel(g);
   advanceEffects(g, step);
 }

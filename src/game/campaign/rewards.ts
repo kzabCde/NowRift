@@ -15,6 +15,8 @@ export type Rewards = {
   firstClear: boolean;
 };
 export type CampaignResult = {
+  enemyKills?: Partial<Record<import("../content/forest").EnemyKind, number>>;
+  mission?: import("../story/types").MissionReceipt;
   /** XP collected in combat since the stage began, credited once on settlement. */
   earnedXp?: number;
   mode?: "story" | "free";

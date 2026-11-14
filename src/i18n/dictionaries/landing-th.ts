@@ -35,7 +35,7 @@ export const landingTh = {
   "Lost Desert world artwork": "ภาพดินแดนทะเลทรายสาบสูญ",
   "Equipped character and inventory": "ตัวละครและอุปกรณ์ที่สวมใส่",
   "A HOME BETWEEN ADVENTURES": "บ้านระหว่างการผจญภัย",
-  "FOUR WORLDS · TWENTY STAGES": "4 โลก · 20 ด่าน",
+  "FOUR WORLDS · FORTY STAGES": "4 โลก · 40 ด่าน",
   "SUPPLY EXPEDITIONS · EXTRACT TO KEEP LOOT":
     "สำรวจเสบียง · ถอนตัวเพื่อนำของกลับ",
   "SIX EQUIPMENT SLOTS · LOCAL PROGRESSION":
