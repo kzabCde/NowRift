@@ -7,6 +7,8 @@ import { resolveRewards, type CampaignResult } from "./rewards";
 import { DIFFICULTIES, stageById } from "./content";
 import { farmingRewards } from "../world/farming";
 import { validMissionReceipt } from "../story/validation";
+import { validFog } from "../world/exploration";
+import { regionForWorld } from "../world/regions";
 export function applyResult(progress: Progress, run: CampaignResult) {
   if (
     typeof run.id !== "string" ||
@@ -51,6 +53,11 @@ export function applyResult(progress: Progress, run: CampaignResult) {
       progress.clears,
       progress.local?.journal?.legacyAccess,
     );
+  if (
+    run.explored !== undefined &&
+    !validFog(run.explored, regionForWorld(stage.worldId).id, "wilderness")
+  )
+    throw new Error("Invalid exploration data.");
   if (reason) throw new Error(reason);
   if (
     stage.number > 5 &&

@@ -2,7 +2,14 @@ import { CITY, type Landmark, type Point, type Solid } from "./city";
 import { regionById, type RegionId } from "./regions";
 
 export type CityLayout = Omit<typeof CITY, "props" | "landmarks"> & {
-  props: (Point & { frame: number; solid?: Solid; light?: string })[];
+  props: (Point & {
+    frame: number;
+    art?: string;
+    ground?: boolean;
+    animate?: number;
+    solid?: Solid;
+    light?: string;
+  })[];
   landmarks: Landmark[];
 };
 const cities = new Map<RegionId, CityLayout>([["central", CITY as CityLayout]]);
@@ -54,7 +61,7 @@ const arts = [
   "city-workshop",
   "city-inn",
   "city-guild",
-  "portal",
+  "city-portal",
 ];
 const lore: Record<
   Exclude<RegionId, "central">,
@@ -332,33 +339,33 @@ export function regionalCity(region: RegionId): CityLayout {
   const water: Solid[] = [],
     bridges: CityLayout["bridges"] = [];
   if (region === "south") {
-    const y = height - 176,
-      pier = Math.round(width * 0.74);
+    const y = height - 192,
+      pier = Math.round((width * 0.74) / 32) * 32;
     water.push(
-      { x: 32, y, w: pier - 80, h: 144 },
-      { x: pier + 48, y, w: width - pier - 80, h: 144 },
+      { x: 32, y, w: pier - 96, h: 160 },
+      { x: pier + 64, y, w: width - pier - 96, h: 160 },
     );
-    bridges.push({ x: pier - 48, y: y - 20, w: 96, h: 164 });
+    bridges.push({ x: pier - 64, y: y - 32, w: 128, h: 192 });
     roads.push({
       points: [
         [pier, districtCenters[5].y + 50],
         [pier, height - 38],
       ],
-      width: 96,
+      width: 128,
       material: "wood",
     });
   } else {
-    const x = region === "north" ? 80 : width - 144,
-      by = Math.round(height * 0.53);
+    const x = region === "north" ? 96 : width - 160,
+      by = Math.round((height * 0.53) / 32) * 32;
     water.push(
-      { x, y: 32, w: 64, h: by - 80 },
+      { x, y: 32, w: 64, h: by - 64 },
       { x, y: by + 64, w: 64, h: height - by - 96 },
     );
-    bridges.push({ x: x - 24, y: by - 48, w: 112, h: 112 });
+    bridges.push({ x: x - 32, y: by - 32, w: 128, h: 96 });
     roads.push({
       points: [
-        [x + 32, by + 8],
-        [cx, by + 8],
+        [x + 32, by + 16],
+        [cx, by + 16],
       ],
       width: 96,
       material: "wood",
@@ -446,6 +453,49 @@ export function regionalCity(region: RegionId): CityLayout {
       solid: { x: p.x - 164, y: p.y - 144, w: 20, h: 14 },
     });
   }
+  if (region === "north")
+    props.push(
+      { x: 280, y: height - 36, frame: 0, art: "rice-terrace", ground: true },
+      { x: 128, y: 480, frame: 0, art: "waterfall", animate: 4 },
+    );
+  if (region === "south")
+    props.push(
+      {
+        x: Math.round(width * 0.36),
+        y: height - 56,
+        frame: 0,
+        art: "harbor-boat",
+      },
+      {
+        x: Math.round(width * 0.14),
+        y: height - 40,
+        frame: 0,
+        art: "coastal-cliff",
+      },
+    );
+  // Private residences are scenery, with visible foundations and no service affordance.
+  const homes = [
+    "city-home-slope",
+    "city-home-gallery",
+    "city-home-corner",
+  ].map((art, i) => {
+    const x = region === "north" ? width - 105 : 114,
+      y = Math.round(
+        height *
+          (region === "north"
+            ? [0.35, 0.65, 0.9][i]
+            : region === "northeast"
+              ? [0.35, 0.6, 0.89][i]
+              : [0.2, 0.54, 0.75][i]),
+      );
+    return {
+      id: `${region}-home-${i}`,
+      art,
+      x,
+      y,
+      solid: { x: x - 44, y: y - 64, w: 88, h: 42 },
+    };
+  });
   const npcs: CityLayout["npcs"] = districtCenters.flatMap((p, i) =>
     [0, 1].map((j) => ({
       id: `${region}-resident-${i}-${j}`,
@@ -497,10 +547,27 @@ export function regionalCity(region: RegionId): CityLayout {
         y: Math.round(height * 0.37),
         solid: { x: cx - 42, y: Math.round(height * 0.37) - 34, w: 84, h: 28 },
       },
+      ...homes,
     ],
     rails: [],
-    arcades: [],
-    portalFeet: [],
+    arcades:
+      region === "northeast"
+        ? [
+            {
+              x: cx,
+              y: 190,
+              art: "ruin-gateway",
+              feet: [
+                { x: cx - 104, y: 166, w: 28, h: 24 },
+                { x: cx + 80, y: 166, w: 28, h: 24 },
+              ],
+            },
+          ]
+        : [],
+    portalFeet: [
+      { x: portal.x - 128, y: portal.y - 54, w: 40, h: 40 },
+      { x: portal.x + 88, y: portal.y - 54, w: 40, h: 40 },
+    ],
     boundaries: [
       { x: 0, y: 0, w: width, h: 24 },
       { x: 0, y: height - 24, w: width, h: 24 },
@@ -555,11 +622,14 @@ export function regionalCity(region: RegionId): CityLayout {
       x: districtCenters[4].x + 72,
       y: districtCenters[4].y - 120,
     },
-    windowLights: districtCenters.map((p) => ({
-      x: p.x - 40,
-      y: p.y - 76,
-      color: "warm",
-    })),
+    windowLights: [
+      ...districtCenters.map((p) => ({
+        x: p.x - 40,
+        y: p.y - 76,
+        color: "warm",
+      })),
+      ...homes.map((p) => ({ x: p.x - 28, y: p.y - 70, color: "warm" })),
+    ],
   } as CityLayout;
   cities.set(region, result);
   return result;

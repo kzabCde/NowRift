@@ -1,4 +1,5 @@
 "use client";
+import ExpeditionAtlas from "./ExpeditionAtlas";
 import SaveIndicator from "./SaveIndicator";
 import RiftTransition from "./RiftTransition";
 import { shortcutAllowed } from "@/game/navigation/flow";
@@ -14,6 +15,8 @@ import type { ExpeditionPrompt } from "@/game/world/farming";
 import { missionById } from "@/game/story/content";
 import type { LocalizedText } from "@/game/quests/types";
 import { travelReason } from "@/game/world/content";
+import { currentRegion } from "@/game/world/exploration";
+import { regionById } from "@/game/world/regions";
 import { expeditionLayout } from "@/game/world/farming";
 import { ITEMS } from "@/game/rpg/content";
 import { resolveAppearance } from "@/game/presentation/appearance";
@@ -90,7 +93,16 @@ export default function NowRiftGame({
   const [starting, setStarting] = useState(false);
   const [questSave, setQuestSave] = useState<SaveData | null>(null),
     [journalOpen, setJournalOpen] = useState(false);
+  const homeRegion = currentRegion(questSave?.local.world),
+    returnLabel =
+      homeRegion === "central"
+        ? t("journey", "RETURN TO RIFT HEAVEN")
+        : t("regions", "RETURN TO {city}", {
+            city: text(regionById(homeRegion).capital),
+          });
   const journalResume = useRef(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const mapResume = useRef(false);
   const [saveBlocked, setSaveBlocked] = useState(false);
   const [expedition, setExpedition] = useState<ExpeditionPrompt | null>(null);
   const [storyDialogue, setStoryDialogue] = useState<{
@@ -137,6 +149,7 @@ export default function NowRiftGame({
   const openJournal = () => {
     if (
       !questSave ||
+      mapOpen ||
       storyDialogue ||
       hud.mission?.phase === "INTRO_DIALOGUE" ||
       !["playing", "paused"].includes(hud.phase)
@@ -146,6 +159,26 @@ export default function NowRiftGame({
     if (journalResume.current) bridge.emit("command", { type: "pause" });
     bridge.emit("command", { type: "transition-lock", locked: true });
     setJournalOpen(true);
+  };
+  const openMap = () => {
+    if (
+      !hud.navigation ||
+      journalOpen ||
+      storyDialogue ||
+      hud.mission?.phase === "INTRO_DIALOGUE" ||
+      !["playing", "paused"].includes(hud.phase)
+    )
+      return;
+    mapResume.current = hud.phase === "playing";
+    if (mapResume.current) bridge.emit("command", { type: "pause" });
+    bridge.emit("command", { type: "transition-lock", locked: true });
+    setMapOpen(true);
+  };
+  const closeMap = () => {
+    setMapOpen(false);
+    bridge.emit("command", { type: "transition-lock", locked: false });
+    if (mapResume.current && currentHud.current.phase === "paused")
+      bridge.emit("command", { type: "pause" });
   };
   const closeJournal = () => {
     setJournalOpen(false);
@@ -259,6 +292,14 @@ export default function NowRiftGame({
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (
+        event.key.toLowerCase() === "m" &&
+        shortcutAllowed(event, event.target)
+      ) {
+        event.preventDefault();
+        if (mapOpen) closeMap();
+        else openMap();
+      }
+      if (
         event.key.toLowerCase() === "q" &&
         shortcutAllowed(event, event.target)
       ) {
@@ -279,7 +320,15 @@ export default function NowRiftGame({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [t, journalOpen, questSave, hud.phase, storyDialogue, hud.mission?.phase]);
+  }, [
+    t,
+    journalOpen,
+    mapOpen,
+    questSave,
+    hud.phase,
+    storyDialogue,
+    hud.mission?.phase,
+  ]);
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
@@ -529,9 +578,7 @@ export default function NowRiftGame({
             {t("game", "A JOURNEY BEYOND THE BREACH")}
           </span>
           <button className="quiet-button" onClick={requestLeave} type="button">
-            {returnToHaven
-              ? t("journey", "RETURN TO RIFT HEAVEN")
-              : t("game", "← MAIN MENU")}{" "}
+            {returnToHaven ? returnLabel : t("game", "← MAIN MENU")}{" "}
           </button>
         </div>
       </header>
@@ -694,6 +741,26 @@ export default function NowRiftGame({
           </div>
           <div className="arena">
             {liveJournal && <QuestNotice journal={liveJournal} />}
+            {revealed && hud.navigation && (
+              <ExpeditionAtlas
+                navigation={hud.navigation}
+                progress={questSave}
+                open={mapOpen}
+                disabled={
+                  saveBlocked ||
+                  !!storyDialogue ||
+                  journalOpen ||
+                  !["playing", "paused"].includes(hud.phase) ||
+                  hud.mission?.phase === "INTRO_DIALOGUE"
+                }
+                onOpen={openMap}
+                onClose={closeMap}
+                onTarget={(id) => {
+                  bridge.emit("command", { type: "map-target", id });
+                  closeMap();
+                }}
+              />
+            )}
             {liveJournal?.tracked &&
               liveJournal.tracked !== `main-${hud.mission?.stageId}` && (
                 <QuestTracker journal={liveJournal} onOpen={openJournal} />
@@ -843,18 +910,22 @@ export default function NowRiftGame({
                       bridge.emit("command", { type: "expedition-interact" })
                     }
                   >
-                    {t(
-                      "haven",
-                      expedition.target === "extract"
-                        ? "Extract to Rift Heaven"
-                        : expedition.target === "fallen-wood"
-                          ? "Gather fallen wood"
-                          : expedition.target === "slime-nest"
-                            ? "Gather slime residue"
-                            : expedition.target === "copper-vein"
-                              ? "Mine copper"
-                              : "Gather supplies",
-                    )}{" "}
+                    {expedition.target === "extract" && homeRegion !== "central"
+                      ? t("regions", "Extract to {city}", {
+                          city: text(regionById(homeRegion).capital),
+                        })
+                      : t(
+                          "haven",
+                          expedition.target === "extract"
+                            ? "Extract to Rift Heaven"
+                            : expedition.target === "fallen-wood"
+                              ? "Gather fallen wood"
+                              : expedition.target === "slime-nest"
+                                ? "Gather slime residue"
+                                : expedition.target === "copper-vein"
+                                  ? "Mine copper"
+                                  : "Gather supplies",
+                        )}{" "}
                     {expedition.target !== "extract" &&
                       !["fallen-wood", "slime-nest", "copper-vein"].includes(
                         expedition.target,
@@ -963,6 +1034,7 @@ export default function NowRiftGame({
               hud.phase === "paused" &&
               !storyDialogue &&
               !journalOpen &&
+              !mapOpen &&
               !confirmLeave &&
               !settings && (
                 <DialogSurface
@@ -1116,12 +1188,16 @@ export default function NowRiftGame({
                   {farming
                     ? !reward
                       ? t("haven", "Saving expedition results…")
-                      : t(
-                          "haven",
-                          hud.phase === "victory"
-                            ? "Your supplies are banked. Return to Rift Heaven to craft and rest."
-                            : "Unbanked expedition loot was lost. Previously owned items are safe.",
-                        )
+                      : hud.phase === "victory" && homeRegion !== "central"
+                        ? text(
+                            "Your supplies are banked. Return to the city to craft and rest.",
+                          )
+                        : t(
+                            "haven",
+                            hud.phase === "victory"
+                              ? "Your supplies are banked. Return to Rift Heaven to craft and rest."
+                              : "Unbanked expedition loot was lost. Previously owned items are safe.",
+                          )
                     : hud.phase === "victory"
                       ? definition
                         ? t(
@@ -1189,7 +1265,7 @@ export default function NowRiftGame({
                   type="button"
                 >
                   {returnToHaven
-                    ? t("journey", "RETURN TO RIFT HEAVEN")
+                    ? returnLabel
                     : t("game", "RETURN TO MAIN MENU")}{" "}
                 </button>
                 <small className="muted">

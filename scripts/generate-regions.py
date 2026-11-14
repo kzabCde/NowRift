@@ -197,17 +197,64 @@ def trees(region):
             im.alpha_composite(cell,(frame*96,variant*128))
     png(region,'city-trees',im)
 
+def scenery():
+    # Ground detail for the highland nursery: deliberate banks and irrigated rows.
+    p=THEMES['north'];im,d=canvas(128,96)
+    for j in range(4):
+        y=12+j*18;left=7+j*5;right=120-j*4
+        d.polygon([(left,y+5),(right-13,y),(right,y+11),(left+10,y+17)],fill='#8f9162',outline='#c1b078')
+        d.polygon([(left+4,y+7),(right-13,y+3),(right-5,y+10),(left+12,y+13)],fill=p['water'][1])
+        for x in range(left+12,right-10,8):d.line((x,y+7,x-1,y+3),fill='#b2bd78');d.line((x,y+7,x+2,y+4),fill='#77965d')
+    png('north','rice-terrace',im)
+    # Four loop frames on a native 32x96 grid, fitting the actual narrow stream.
+    sheet,q=canvas(128,96)
+    for f in range(4):
+        cell,d=canvas(32,96)
+        d.polygon([(4,4),(25,0),(31,17),(28,85),(21,95),(3,87),(0,26)],fill='#455d59')
+        for x,y,w,h in [(3,8,7,18),(24,13,6,22),(0,47,8,20),(24,66,7,22)]:d.rectangle((x,y,x+w,y+h),fill='#708780');d.line((x,y,x+w,y),fill='#afbaa0')
+        d.polygon([(11,6),(23,5),(22,29),(19,57),(23,86),(10,88),(9,55),(12,30)],fill='#74b6ba')
+        for x in [12,16,20]:
+            for y in range(8+(f*3+x)%9,85,13):d.line((x,y,x-1,y+7),fill='#c8e4d5')
+        d.ellipse((4,82,29,95),fill='#548f98',outline='#a6d5cb');d.arc((8,84,25,92),10+f*35,150+f*35,fill='#d8e6c9',width=1)
+        sheet.alpha_composite(cell,(f*32,0))
+    png('north','waterfall',sheet)
+    # Open sandstone gateway. Its two visible feet have matching collision boxes.
+    p=THEMES['northeast'];im,d=canvas(144,96)
+    for x in [20,112]:
+        brick(d,(x,34,x+14,89),p['wall']);d.rectangle((x-3,85,x+17,94),fill=p['wall'][1]);d.line((x-3,85,x+17,85),fill=p['trim'],width=2)
+    for j in range(3):
+        y=33-j*10;inset=j*8
+        brick(d,(12+inset,y,132-inset,y+10),p['wall']);d.line((10+inset,y+10,134-inset,y+10),fill=p['trim'],width=2)
+    for x in range(39,110,13):d.polygon([(x,36),(x+5,31),(x+10,36),(x+5,41)],fill=p['wall'][0]);d.point((x+5,35),fill=p['trim'])
+    d.rectangle((69,1,75,7),fill=p['wall'][2]);png('northeast','ruin-gateway',im)
+    # Fishing boat and limestone stack remain scenery in physically blocked water.
+    p=THEMES['south'];im,d=canvas(64,48)
+    d.ellipse((2,32,62,45),fill='#315960');d.polygon([(2,21),(14,14),(52,15),(63,27),(49,38),(13,35)],fill='#514b3d',outline='#d6b67a')
+    d.polygon([(9,22),(17,18),(49,19),(56,26),(47,32),(16,30)],fill='#9d7d54')
+    for x in [20,33,46]:d.line((x,19,x,30),fill='#d4bd85',width=2)
+    d.rectangle((30,5,32,28),fill='#574f3e');d.polygon([(32,6),(51,21),(33,21)],fill='#c6d1b3')
+    d.line((29,10,12,35),fill='#8e9e89');d.rectangle((8,22,21,27),fill='#567a72');png('south','harbor-boat',im)
+    im,d=canvas(80,112);d.ellipse((5,93,75,110),fill='#315b5e')
+    d.polygon([(12,94),(17,47),(28,30),(30,10),(46,4),(57,25),(62,62),(71,96),(54,106),(27,106)],fill='#8f9d8e',outline='#cbd1b3')
+    d.polygon([(30,12),(41,8),(43,72),(31,100),(18,92),(24,49)],fill='#bdc3a5')
+    for x,y in [(21,47),(41,31),(53,68),(32,81)]:d.line((x,y,x+8,y-5,x+14,y+2),fill='#6e847a',width=2)
+    for x,y in [(26,30),(47,21),(16,84)]:d.polygon([(x,y),(x+12,y-3),(x+18,y+3),(x+5,y+5)],fill='#447761')
+    png('south','coastal-cliff',im)
+
 for region in THEMES:
     residents(region);trees(region)
     if region != 'central':
         tiles(region)
         for name,kind,w,h in [('city-market','market',144,128),('city-forge','forge',144,128),('city-workshop','workshop',144,128),('city-inn','inn',144,128),('city-guild','guild',144,144),('city-wardrobe','wardrobe',80,100),('city-store','store',80,96),('city-stall','stall',80,80)]:building(region,name,kind,w,h)
+        for name,w,h in [('city-home-slope',80,112),('city-home-gallery',96,104),('city-home-corner',80,96)]:building(region,name,'inn',w,h)
     else:
         selected={'city-forge':'forge','city-guild':'guild','city-market-hall':'market','city-greenhouse':'workshop','city-conservatory':'workshop','city-maproom':'guild','city-foundry-wing':'forge','city-cooling-shed':'store','workshop':'workshop','wardrobe':'wardrobe','inn':'inn','store':'store','city-home-red':'inn','city-home-blue':'inn','city-home-thatch':'inn','city-home-corner':'store','city-home-balcony':'inn','city-home-laundry':'wardrobe'}
         for name,kind in selected.items():
             path=ROOT/'public/assets/haven'/(name+'.png')
             with Image.open(path) as source:w,h=source.size
             building(region,name,kind,w,h)
+
+scenery()
 
 for path,data in outputs.items():
     if args.check:

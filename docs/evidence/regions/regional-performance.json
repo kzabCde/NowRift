@@ -1,0 +1,98 @@
+[
+  {
+    "region": "north",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "cpu": 1,
+    "fps": 57.331422285909575,
+    "p95FrameMs": 16.80000000000109,
+    "phaserFps": 103.392578125,
+    "heapBytes": 21474236,
+    "textureBytes": 19698020,
+    "sprites": 86,
+    "visibleSprites": 77,
+    "motes": 56
+  },
+  {
+    "region": "north",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "cpu": 4,
+    "fps": 33.27344113926613,
+    "p95FrameMs": 50.100000000000364,
+    "phaserFps": 83.47187042236328,
+    "heapBytes": 21517044,
+    "textureBytes": 19698020,
+    "sprites": 86,
+    "visibleSprites": 32,
+    "motes": 24
+  },
+  {
+    "region": "northeast",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "cpu": 1,
+    "fps": 59.032268762629265,
+    "p95FrameMs": 16.700000000000728,
+    "phaserFps": 104.3291015625,
+    "heapBytes": 22995344,
+    "textureBytes": 19652492,
+    "sprites": 85,
+    "visibleSprites": 77,
+    "motes": 62
+  },
+  {
+    "region": "northeast",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "cpu": 4,
+    "fps": 31.19400013273273,
+    "p95FrameMs": 50.099999999998545,
+    "phaserFps": 78.41012859344482,
+    "heapBytes": 25530876,
+    "textureBytes": 19652492,
+    "sprites": 85,
+    "visibleSprites": 41,
+    "motes": 31
+  },
+  {
+    "region": "south",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "cpu": 1,
+    "fps": 57.5075624106354,
+    "p95FrameMs": 16.80000000000291,
+    "phaserFps": 102.221923828125,
+    "heapBytes": 24486264,
+    "textureBytes": 19641796,
+    "sprites": 86,
+    "visibleSprites": 78,
+    "motes": 61
+  },
+  {
+    "region": "south",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "cpu": 4,
+    "fps": 23.981603153739226,
+    "p95FrameMs": 50.10000000000582,
+    "phaserFps": 68.652272939682,
+    "heapBytes": 23846676,
+    "textureBytes": 19641796,
+    "sprites": 86,
+    "visibleSprites": 41,
+    "motes": 28
+  }
+]

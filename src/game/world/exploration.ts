@@ -1,18 +1,30 @@
 import { isRegionId, regionById, REGION_IDS, type RegionId } from "./regions";
 import type { Point } from "./city";
+import { CAMPAIGN_BOUNDS } from "../campaign/maps";
+import { STAGES, stageById } from "../campaign/content";
+import type { WorldSave } from "./save";
 
 export const FOG_CELL = 128;
 export const SIGHT_RADIUS = 230;
 export type MapDestination = { region: RegionId; landmarkId: string };
+export type WildernessMemory = {
+  stageId: string;
+  seed: number;
+  explored: string;
+};
 export type ExplorationSave = {
   schema: 1;
   region: RegionId;
   explored: Partial<Record<RegionId, string>>;
   destination: MapDestination | null;
   caches: string[];
+  wilderness?: Partial<Record<RegionId, WildernessMemory>>;
 };
-export function fogGrid(region: RegionId) {
-  const r = regionById(region),
+export function fogGrid(
+  region: RegionId,
+  area: "city" | "wilderness" = "city",
+) {
+  const r = area === "wilderness" ? CAMPAIGN_BOUNDS : regionById(region),
     columns = Math.ceil(r.width / FOG_CELL),
     rows = Math.ceil(r.height / FOG_CELL);
   return {
@@ -22,11 +34,18 @@ export function fogGrid(region: RegionId) {
     digits: Math.ceil((columns * rows) / 4),
   };
 }
-export function emptyFog(region: RegionId) {
-  return "0".repeat(fogGrid(region).digits);
+export function emptyFog(
+  region: RegionId,
+  area: "city" | "wilderness" = "city",
+) {
+  return "0".repeat(fogGrid(region, area).digits);
 }
-export function validFog(value: unknown, region: RegionId): value is string {
-  const { digits, cells } = fogGrid(region);
+export function validFog(
+  value: unknown,
+  region: RegionId,
+  area: "city" | "wilderness" = "city",
+): value is string {
+  const { digits, cells } = fogGrid(region, area);
   return (
     typeof value === "string" &&
     value.length === digits &&
@@ -37,15 +56,25 @@ export function validFog(value: unknown, region: RegionId): value is string {
 export function exploredCell(fog: string, cell: number) {
   return !!(parseInt(fog[Math.floor(cell / 4)] ?? "0", 16) & (1 << cell % 4));
 }
-export function mergeFog(a: string, b: string, region: RegionId): string {
-  if (!validFog(a, region) || !validFog(b, region))
+export function mergeFog(
+  a: string,
+  b: string,
+  region: RegionId,
+  area: "city" | "wilderness" = "city",
+): string {
+  if (!validFog(a, region, area) || !validFog(b, region, area))
     throw new Error("Invalid exploration data.");
   return [...a]
     .map((v, i) => (parseInt(v, 16) | parseInt(b[i], 16)).toString(16))
     .join("");
 }
-export function revealFog(fog: string, region: RegionId, point: Point) {
-  const grid = fogGrid(region),
+export function revealFog(
+  fog: string,
+  region: RegionId,
+  point: Point,
+  area: "city" | "wilderness" = "city",
+) {
+  const grid = fogGrid(region, area),
     chars = [...fog];
   const x0 = Math.max(0, Math.floor((point.x - SIGHT_RADIUS) / FOG_CELL)),
     x1 = Math.min(
@@ -81,13 +110,14 @@ export function fogState(
   region: RegionId,
   point: Point,
   viewer: Point | null,
+  area: "city" | "wilderness" = "city",
 ) {
   if (
     viewer &&
     Math.hypot(point.x - viewer.x, point.y - viewer.y) <= SIGHT_RADIUS
   )
     return "visible" as const;
-  const grid = fogGrid(region),
+  const grid = fogGrid(region, area),
     x = Math.floor(point.x / FOG_CELL),
     y = Math.floor(point.y / FOG_CELL);
   return x >= 0 &&
@@ -105,6 +135,7 @@ export function defaultExploration(point: Point): ExplorationSave {
     explored: { central: revealFog(emptyFog("central"), "central", point) },
     destination: null,
     caches: [],
+    wilderness: {},
   };
 }
 export function validExploration(value: unknown): value is ExplorationSave {
@@ -128,12 +159,62 @@ export function validExploration(value: unknown): value is ExplorationSave {
         (r) => id === `${r}-cache`,
       ),
     ) &&
+    (s.wilderness === undefined ||
+      (!!s.wilderness &&
+        typeof s.wilderness === "object" &&
+        !Array.isArray(s.wilderness) &&
+        Object.entries(s.wilderness).every(
+          ([region, memory]) =>
+            isRegionId(region) && validWildernessMemory(memory, region),
+        ))) &&
     (s.destination === null ||
       (!!s.destination &&
         isRegionId(s.destination.region) &&
         typeof s.destination.landmarkId === "string" &&
         s.destination.landmarkId.length < 100))
   );
+}
+export function validWildernessMemory(
+  value: unknown,
+  region: RegionId,
+): value is WildernessMemory {
+  if (!value || typeof value !== "object") return false;
+  const m = value as WildernessMemory;
+  return (
+    STAGES.some(
+      (s) => s.id === m.stageId && s.worldId === regionById(region).worldId,
+    ) &&
+    Number.isSafeInteger(m.seed) &&
+    m.seed >= 0 &&
+    m.seed <= 0xffffffff &&
+    validFog(m.explored, region, "wilderness")
+  );
+}
+/** Only the stable, canonical regional Free area is shared across visits. Seeded missions retain their own checkpoint fog. */
+export function rememberWilderness(
+  world: WorldSave | undefined,
+  selection: { stageId: string; seed: number; activity?: string },
+  explored?: string,
+) {
+  if (!world?.atlas || !explored || selection.activity !== "farming") return;
+  const stage = stageById(selection.stageId),
+    region = REGION_IDS.find((r) => regionById(r).worldId === stage.worldId)!;
+  if (
+    stage.number !== 1 ||
+    selection.seed !== stage.environment.seed ||
+    !validFog(explored, region, "wilderness")
+  )
+    return;
+  const all = (world.atlas.wilderness ??= {}),
+    old = all[region];
+  all[region] = {
+    stageId: stage.id,
+    seed: selection.seed,
+    explored:
+      old?.stageId === stage.id && old.seed === selection.seed
+        ? mergeFog(old.explored, explored, region, "wilderness")
+        : explored,
+  };
 }
 export function currentRegion(world?: { atlas?: ExplorationSave }): RegionId {
   return world?.atlas?.region ?? "central";

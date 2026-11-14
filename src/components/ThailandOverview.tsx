@@ -5,7 +5,7 @@ import {
   type RegionId,
 } from "@/game/world/regions";
 import type { QuestJournal } from "@/game/quests/types";
-import { questById } from "@/game/quests/catalog";
+import { trackedQuestRegion } from "@/game/world/map";
 import type { WorldSave } from "@/game/world/save";
 import { currentRegion } from "@/game/world/exploration";
 import { useI18n } from "@/i18n/useI18n";
@@ -20,6 +20,7 @@ const outlines: Record<RegionId, string> = {
 };
 export default function ThailandOverview({
   world,
+  playerRegion,
   selection,
   clears,
   legacy,
@@ -27,6 +28,7 @@ export default function ThailandOverview({
   onSelect,
 }: {
   world: WorldSave;
+  playerRegion?: RegionId;
   selection: RegionId;
   clears: readonly string[];
   legacy: readonly string[];
@@ -34,8 +36,8 @@ export default function ThailandOverview({
   onSelect: (id: RegionId) => void;
 }) {
   const { text } = useI18n(),
-    region = currentRegion(world),
-    tracked = journal?.tracked ? questById(journal.tracked) : undefined;
+    region = playerRegion ?? currentRegion(world),
+    questRegion = trackedQuestRegion(journal);
   return (
     <div className="thailand-overview" data-testid="thailand-world-overview">
       <svg viewBox="0 0 800 840" aria-hidden="true" shapeRendering="crispEdges">
@@ -142,7 +144,7 @@ export default function ThailandOverview({
             <span>
               {region === r.id
                 ? "●"
-                : tracked?.chapterId === r.worldId
+                : questRegion === r.id
                   ? "!"
                   : visited
                     ? "◆"

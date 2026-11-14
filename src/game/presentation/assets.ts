@@ -149,6 +149,11 @@ function definition(source: (typeof ASSET_SOURCES)[number]): PixelAsset {
       category = "prop";
       frameWidth = 96;
       frameHeight = 128;
+    } else if (name === "waterfall") {
+      kind = "spritesheet";
+      category = "vfx";
+      frameWidth = 32;
+      frameHeight = 96;
     } else if (name === "props") {
       kind = "spritesheet";
       frameWidth = 32;

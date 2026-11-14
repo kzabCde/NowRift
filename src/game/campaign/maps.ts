@@ -7,6 +7,7 @@ export type MapLayout = {
   props: Obstacle[];
   zones: { x: number; y: number; r: number }[];
 };
+export const CAMPAIGN_BOUNDS = { width: 1800, height: 1400 } as const;
 export function constructMap(
   stage: StageDefinition,
   seed = stage.environment.seed,
@@ -63,6 +64,6 @@ export function constructMap(
     }
     tiles.push(row);
   }
-  return { width: 1800, height: 1400, tiles, props, zones };
+  return { ...CAMPAIGN_BOUNDS, tiles, props, zones };
 }
 const M = Math;

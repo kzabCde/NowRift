@@ -30,6 +30,8 @@ export class HavenCity {
     data: (typeof CITY.npcs)[number];
   }[] = [];
   private loops: { image: Phaser.GameObjects.Image; kind: number }[] = [];
+  private sceneryLoops: { image: Phaser.GameObjects.Image; frames: number }[] =
+    [];
   private seals: Phaser.GameObjects.Image[] = [];
   private blooms: Phaser.GameObjects.Image[] = [];
   private motes: Phaser.GameObjects.Graphics;
@@ -156,15 +158,25 @@ export class HavenCity {
           );
     }
     for (const bridge of this.layout.bridges) {
-      masonry
-        .lineStyle(4, 0xc4aa7d)
-        .lineBetween(bridge.x, bridge.y, bridge.x + bridge.w, bridge.y)
-        .lineBetween(
-          bridge.x,
-          bridge.y + bridge.h,
-          bridge.x + bridge.w,
-          bridge.y + bridge.h,
-        );
+      masonry.lineStyle(4, 0xc4aa7d);
+      if (bridge.h > bridge.w)
+        masonry
+          .lineBetween(bridge.x, bridge.y, bridge.x, bridge.y + bridge.h)
+          .lineBetween(
+            bridge.x + bridge.w,
+            bridge.y,
+            bridge.x + bridge.w,
+            bridge.y + bridge.h,
+          );
+      else
+        masonry
+          .lineBetween(bridge.x, bridge.y, bridge.x + bridge.w, bridge.y)
+          .lineBetween(
+            bridge.x,
+            bridge.y + bridge.h,
+            bridge.x + bridge.w,
+            bridge.y + bridge.h,
+          );
     }
     for (const arcade of this.layout.arcades)
       this.image(arcade.x, arcade.y, "haven-" + arcade.art);
@@ -190,14 +202,16 @@ export class HavenCity {
         });
     }
     for (const prop of this.layout.props) {
-      const tree = prop.frame >= 56;
+      const tree = !prop.art && prop.frame >= 56;
       const image = this.image(
         prop.x,
         prop.y,
-        tree ? "haven-city-trees" : "haven-city-props",
+        "haven-" + (prop.art ?? (tree ? "city-trees" : "city-props")),
         tree ? (prop.frame - 56) * 4 : prop.frame,
       );
       if (tree) this.trees.push({ image, variant: prop.frame - 56 });
+      if (prop.ground) image.setDepth(-9940);
+      if (prop.animate) this.sceneryLoops.push({ image, frames: prop.animate });
     }
     for (const effect of this.layout.effects) {
       const image = this.image(
@@ -375,6 +389,10 @@ export class HavenCity {
             (prefs.reducedEffects
               ? 0
               : Math.floor(time / (kind === 0 ? 110 : 170)) % 8),
+        );
+      for (const { image, frames } of this.sceneryLoops)
+        image.setFrame(
+          prefs.reducedEffects ? 0 : Math.floor(time / 140) % frames,
         );
       for (const { image, data } of this.residents) {
         const pose = npcPosition(data, prefs.reducedEffects ? 300_000 : clock);

@@ -1,0 +1,176 @@
+{
+  "sourceCommit": "9b57500",
+  "renderer": "Phaser Canvas / pixelArt",
+  "instrumentedBuild": true,
+  "note": "Unedited browser screenshots. Test fixtures seed existing progression for city access; purchases, travel, gathering and extraction use actual production systems.",
+  "screenshots": {
+    "central-desktop-emberforge.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-emberforge.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "3c6f5f345cc0682b5a1473e8e45be9c9b403661dc3e796b6aa68c7be801203f9"
+    },
+    "central-desktop-garden.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-garden.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "682d943775cd0e553906f69e25805effae3dcdc65c107af98f01038cc5fb138f"
+    },
+    "central-desktop-gate.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-gate.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e0958ae36c18de3046af8e203cee504d9c59b47bfaefcaf271832b94e1e809c8"
+    },
+    "central-desktop-grove.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-grove.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "7ab745ee0def38458f1106c43d5f78c339f348c88e977c299f7fad871a3f7739"
+    },
+    "central-desktop-guild.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-guild.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "de33a53de7d80a6728b0084c92c62a6e6d051f7d16e8f8ea5f8df63679e1ad4a"
+    },
+    "central-desktop-hearthside.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-hearthside.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "b8a0677f91662cfe55bf3e62a8067521c4f825d52387b0d61268996e3074e808"
+    },
+    "central-desktop-market.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-market.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e3f06f5b7ea79a77d1590bab8f78a9c53d465dc057f00804c4b6f0f3fd3d5292"
+    },
+    "central-desktop-plaza.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-plaza.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "0424af2c510b97f75e874edee52880988f067a24129b8b8616879fa112165175"
+    },
+    "central-desktop-training.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/desktop-training.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "e0ec4d25a628339b98574f9f188596e84df7561e30e82ab4e839dc56e88b2843"
+    },
+    "central-mobile-emberforge.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-emberforge.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3f1afa741f9f9e9fec5ee3ade4ca22982714de8a21e894f1479be6d7b02c7478"
+    },
+    "central-mobile-garden.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-garden.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "14eb48f86ead79aa689970c53033615cfadba954eca3ab434d6021fb7a4a54e9"
+    },
+    "central-mobile-gate.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-gate.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "7d354f74623fdbf90889379d919e1219146e2855b14d2f7b2b2b0135e34a4657"
+    },
+    "central-mobile-grove.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-grove.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9e33d7d4f10c6071a18ef34bb055bbada8f25ad02f725608e0b53f849704dc5b"
+    },
+    "central-mobile-guild.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-guild.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0da7819373d3e5bf8b0974f0788c57fba53bbec197d0c1ddd346bec596dd8d37"
+    },
+    "central-mobile-hearthside.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-hearthside.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "309abd89b68bf43bfa7b7877e6cf48c0de276bb5605e3815af19000f9292905f"
+    },
+    "central-mobile-market.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-market.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9b66db2b42e69256bfd1720ec8de53f43a5b15290fc8a8127305b72913d5fcef"
+    },
+    "central-mobile-plaza.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-plaza.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ec19e5da7be3009681f3eaf1b3d0a01a05648b554dac6966be9ece4a307d46f0"
+    },
+    "central-mobile-training.png": {
+      "source": "test-results/city-expanded-city-and-aut-c08f8-ng-the-live-canvas-or-build/mobile-training.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "db6e2a320cd668c9faae230021767e8314a6540365ed613d1df4f2a77a355564"
+    },
+    "highland-expedition-atlas.png": {
+      "source": "test-results/regions-regional-explorati-8fcbc--to-the-same-city-with-loot/highland-expedition-atlas.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "f3ac749d753b74005558ad1d363a17849b810f132d4d0f0f6e3766e00a3c6ebc"
+    },
+    "highland-expedition-minimap.png": {
+      "source": "test-results/regions-regional-explorati-8fcbc--to-the-same-city-with-loot/highland-expedition-minimap.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "b403d9abd99702c09df45dbb660cbf50f2bd8967ddd94a689ab526a3e8201c05"
+    },
+    "north-desktop.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/north-desktop.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "1fa3317b288c69c0de5624f01dfabff8459d9bf2fb869db702badeeb1362edc2"
+    },
+    "north-mobile.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/north-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6a5aee0ea9ad695c6a9e17f508be393ec9c83f2088b33a1f74a17251717e6517"
+    },
+    "northeast-desktop.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/northeast-desktop.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "39113324cc760fb4e4510bae2ca61efb6728c1f0c75c35b060ad36734c8e6132"
+    },
+    "northeast-mobile.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/northeast-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "8d97e255272e9d89af2686cad8c7af42dbc76211d9d2a47b035539fddf8c95f3"
+    },
+    "south-desktop.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/south-desktop.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "5eba1b0a71ae430424e520eb3c32f36171ad3fd49e16e1353269a584b7989c71"
+    },
+    "south-mobile.png": {
+      "source": "test-results/regions-regional-explorati-eb195-s-and-survive-return-reload/south-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "f76c1f50129a66f17c8ebd8107585cc37e836c0aca4c3360c76eedde898549e5"
+    },
+    "thai-mobile-world-map.png": {
+      "source": "test-results/regions-regional-explorati-2b5fe-hout-steering-the-character/thai-mobile-world-map.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e095bfab1597a1e034546af31fc0dec44a48429feab783f7dff669183e33e9f3"
+    },
+    "thailand-world-overview.png": {
+      "source": "test-results/regions-regional-explorati-b4cb5-n-without-moving-the-player/thailand-world-overview.png",
+      "width": 1440,
+      "height": 1000,
+      "sha256": "352e06a0da3ea3396f354fd543842ba28ad03e1587083af83f3b1c4b6f887905"
+    }
+  }
+}

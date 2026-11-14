@@ -47,7 +47,7 @@ import { applyWorldCommand } from "../world/actions";
 import { districtAt } from "../world/city";
 import type { WorldCommand } from "../world/save";
 import { cityBounds, regionalCity } from "../world/regional-city";
-import { currentRegion } from "../world/exploration";
+import { currentRegion, rememberWilderness } from "../world/exploration";
 import { characterName } from "./identity";
 import { OUTFITS, type Outfit } from "../world/save";
 import { calculateStats, resolveEquippedWeapon } from "../rpg/stats";
@@ -800,6 +800,8 @@ export const profileRepository = {
         at,
       );
       p.local.checkpoint = c;
+      if (c.stage)
+        rememberWilderness(p.local.world, c.stage, c.environment?.explored);
       p.local.activeRun!.updatedAt = at;
       p.local.activeRun!.sequence = c.run.sequence;
       put(store, root, p, at);
@@ -874,6 +876,7 @@ export const profileRepository = {
         );
       const settled = applyResult(p, result),
         next = settled.progress as SaveData;
+      rememberWilderness(next.local.world, result, result.explored);
       if (identity) {
         settleQuestEvidence(next, result, identity, p.local.checkpoint);
         inventoryQuestGains(p, next, {

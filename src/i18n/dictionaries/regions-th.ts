@@ -1,6 +1,22 @@
 import { REGIONS } from "../../game/world/regions";
 
 export const regionsTh: Record<string, string> = {
+  "RETURN TO {city}": "กลับสู่{city}",
+  "Return to {city}": "กลับสู่{city}",
+  "Extract to {city}": "ถอนตัวกลับสู่{city}",
+  "Your supplies are banked. Return to the city to craft and rest.":
+    "เก็บเสบียงเข้าคลังแล้ว กลับเข้าเมืองเพื่อสร้างอุปกรณ์และพักผ่อน",
+  "Travelling to your destination": "กำลังเดินทางสู่ปลายทาง",
+  "Return to the city before beginning another expedition.":
+    "กลับเข้าเมืองก่อนเริ่มคณะสำรวจครั้งใหม่",
+  "Expedition minimap": "แผนที่ย่อคณะสำรวจ",
+  "Expedition map": "แผนที่คณะสำรวจ",
+  "Expedition locations": "สถานที่ในคณะสำรวจ",
+  "Mission companion": "เพื่อนร่วมภารกิจ",
+  "Close map": "ปิดแผนที่",
+  Resources: "ทรัพยากร",
+  "Return portal": "ประตูกลับ",
+  Gathered: "เก็บแล้ว",
   ...Object.fromEntries(
     REGIONS.flatMap((r) => [
       [r.name, r.thaiName],
@@ -49,14 +65,14 @@ export const regionsTh: Record<string, string> = {
   "New regional route": "เส้นทางภูมิภาคใหม่",
   "Story route locked": "เส้นทางเนื้อเรื่องยังไม่ปลดล็อก",
   "Regional story": "เรื่องราวประจำภูมิภาค",
-  "Original guardian": "ผู้พิทักษ์ประจำถิ่น",
+  "Regional guardian": "ผู้พิทักษ์ประจำถิ่น",
   Defeated: "ปราบแล้ว",
   "Travel via Rift Gate": "เดินทางผ่านประตูริฟต์",
   "Mark nearest Rift Gate": "ปักหมุดประตูริฟต์ในเมือง",
   "First arrival requires a Rift Gate. Later journeys use your discovered beacon.":
     "การเดินทางครั้งแรกต้องเริ่มที่ประตูริฟต์ ครั้งถัดไปใช้จุดเดินทางที่ค้นพบแล้วได้",
-  "Regional geography preserves the original Story unlock order. City travel never clears a stage.":
-    "ภูมิภาคยังใช้ลำดับปลดล็อกเนื้อเรื่องเดิม การเดินทางระหว่างเมืองไม่ถือว่าผ่านด่าน",
+  "Story progress opens regional routes. City travel does not complete missions.":
+    "ความคืบหน้าเนื้อเรื่องเปิดเส้นทางสู่ภูมิภาค การเดินทางระหว่างเมืองไม่ถือว่าสำเร็จภารกิจ",
   "Walk to a regional Rift Gate to open a new route.":
     "เดินไปที่ประตูริฟต์ของเมืองเพื่อเปิดเส้นทางใหม่",
   "Unknown map destination.": "ไม่พบปลายทางบนแผนที่",

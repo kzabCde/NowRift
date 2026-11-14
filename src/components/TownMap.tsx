@@ -313,7 +313,7 @@ export default function TownMap({
               {text(chosen.story)}
             </p>
             <p>
-              <strong>{text("Original guardian")}: </strong>
+              <strong>{text("Regional guardian")}: </strong>
               {text(worldById(chosen.worldId).boss.name)} ·{" "}
               {text(
                 clears.includes(chosen.bossStage + ":normal")
@@ -352,7 +352,7 @@ export default function TownMap({
             </button>
             <small>
               {text(
-                "Regional geography preserves the original Story unlock order. City travel never clears a stage.",
+                "Story progress opens regional routes. City travel does not complete missions.",
               )}
             </small>
           </article>

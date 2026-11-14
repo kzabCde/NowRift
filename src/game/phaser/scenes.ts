@@ -1,3 +1,4 @@
+import { wildernessNavigation } from "../world/wilderness-map";
 import {
   captureCheckpoint,
   restoreCheckpoint,
@@ -1086,6 +1087,20 @@ export class GameScene extends Phaser.Scene {
     }
   }
   command(command: Command) {
+    if (command.type === "map-target") {
+      const navigation = wildernessNavigation(this.simulation);
+      if (
+        !this.storageBlocked &&
+        navigation &&
+        (command.id === null ||
+          navigation.markers.some((m) => m.id === command.id))
+      ) {
+        this.simulation.campaign!.mapTarget = command.id;
+        this.publish();
+        this.checkpoint();
+      }
+      return;
+    }
     if (command.type === "mission-lifecycle") {
       const g = this.simulation,
         mission = g.campaign?.mission;
@@ -1418,6 +1433,9 @@ export class GameScene extends Phaser.Scene {
                 mode: g.campaign.mode ?? "story",
                 enemyKills: g.campaign.enemyKills ?? {},
                 ...(missionReceipt(g) ? { mission: missionReceipt(g)! } : {}),
+                ...(g.campaign.explored
+                  ? { explored: g.campaign.explored }
+                  : {}),
                 earnedXp: Math.max(
                   0,
                   Math.floor(

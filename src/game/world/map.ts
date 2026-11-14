@@ -1,6 +1,6 @@
 import type { Point } from "./city";
 import type { WorldSave } from "./save";
-import type { RegionId } from "./regions";
+import { REGION_IDS, regionForWorld, type RegionId } from "./regions";
 import type { QuestJournal } from "../quests/types";
 import { regionalCity } from "./regional-city";
 import { questGiverStates } from "../quests/presentation";
@@ -17,6 +17,29 @@ export type MapMarker = Point & {
   symbol: string;
 };
 export type MapResident = Point & { id: string; name: string };
+/** Point to the next physical objective, including return-to-giver quests. */
+export function trackedQuestRegion(journal?: QuestJournal): RegionId | null {
+  const quest = journal?.tracked ? questById(journal.tracked) : undefined;
+  const instance = quest && journal?.quests[quest.id];
+  if (
+    !quest ||
+    !instance ||
+    instance.rewardClaimed ||
+    !["ACTIVE", "OBJECTIVE_COMPLETED", "READY_TO_CLAIM"].includes(
+      instance.status,
+    )
+  )
+    return null;
+  const objective = currentObjectives(instance, quest)[0];
+  const target =
+    instance.status === "READY_TO_CLAIM" || objective?.type === "DeliverItem"
+      ? quest.giver
+      : objective?.target;
+  for (const region of REGION_IDS)
+    if (regionalCity(region).landmarks.some((l) => l.id === target))
+      return region;
+  return regionForWorld(objective?.worldId ?? quest.chapterId).id;
+}
 export function localMapMarkers(
   region: RegionId,
   world: WorldSave,

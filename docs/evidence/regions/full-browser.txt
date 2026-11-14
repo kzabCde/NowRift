@@ -1,0 +1,195 @@
+
+> nowrift@0.1.0 test:browser
+> playwright test
+
+[WebServer] (node:50266) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:50279) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 147 tests using 1 worker
+
+(node:50293) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓    1 e2e/branding.spec.ts:3:1 › official transparent logo appears on guest gateway and throughout the web app (3.5s)
+  ✓    2 e2e/branding.spec.ts:23:1 › favicon and install icons are all real PNGs with matching dimensions (36ms)
+  ✓    3 e2e/campaign.spec.ts:45:1 › atlas discovers locked worlds, explains locks, and supports mobile layout (3.0s)
+  ✓    4 e2e/campaign.spec.ts:68:3 › campaign simulation bridge › first victory banks rewards and unlocks next stage after reload (7.0s)
+  ✓    5 e2e/campaign.spec.ts:98:5 › campaign simulation bridge › Whispering Forest: ten objective missions plus Hard and Nightmare guardians (47.7s)
+  ✓    6 e2e/campaign.spec.ts:98:5 › campaign simulation bridge › Lost Desert: ten objective missions plus Hard and Nightmare guardians (46.6s)
+  ✓    7 e2e/campaign.spec.ts:98:5 › campaign simulation bridge › Frozen Abyss: ten objective missions plus Hard and Nightmare guardians (48.2s)
+  ✓    8 e2e/campaign.spec.ts:98:5 › campaign simulation bridge › Infernal Depths: ten objective missions plus Hard and Nightmare guardians (47.1s)
+  ✓    9 e2e/city.spec.ts:22:3 › expanded city and authoritative town travel › all nine districts render distinct desktop and touch views without replacing the live canvas or build (15.6s)
+  ✓   10 e2e/city.spec.ts:87:3 › expanded city and authoritative town travel › Town Map distinguishes locked waypoints, retains route markers, commits travel and ignores stale autosaves after reload (12.6s)
+  ✓   11 e2e/city.spec.ts:155:3 › expanded city and authoritative town travel › exploration unlocks every waypoint and all nine real arrivals preserve the shared progression (24.2s)
+  ✓   12 e2e/city.spec.ts:187:3 › expanded city and authoritative town travel › district stations connect to real clothing, crafting, guild, training and lore systems (16.4s)
+  ✓   13 e2e/city.spec.ts:288:3 › expanded city and authoritative town travel › Thai touch Town Map works at 320px and district sound, lighting and effect bounds remain real (8.3s)
+  ✓   14 e2e/city.spec.ts:392:3 › expanded city and authoritative town travel › large city stays bounded while walking and traveling under desktop and throttled touch rendering (24.0s)
+  -   15 e2e/city.spec.ts:464:1 › production Town Map travels, reloads and preserves the character without test instrumentation
+  ✓   16 e2e/equipment.spec.ts:106:1 › 24 evolution frames match the live Phaser layer and React HUD after replacement (7.6s)
+  ✓   17 e2e/equipment.spec.ts:161:1 › missing evolution atlas uses a marked family-correct React and Phaser fallback (4.9s)
+  ✓   18 e2e/equipment.spec.ts:202:3 › wanderer equips all four owned weapons in Inventory and uses them across four Worlds (17.5s)
+  ✓   19 e2e/equipment.spec.ts:202:3 › sentinel equips all four owned weapons in Inventory and uses them across four Worlds (16.7s)
+  ✓   20 e2e/equipment.spec.ts:202:3 › strider equips all four owned weapons in Inventory and uses them across four Worlds (18.7s)
+  ✓   21 e2e/equipment.spec.ts:323:1 › empty inventory weapons block campaign entry and expose a real Equip action (3.1s)
+  ✓   22 e2e/equipment.spec.ts:351:1 › mobile equipment previews remain layered, change with owned gear, and survive resizing (5.3s)
+  ✓   23 e2e/equipment.spec.ts:394:3 › equipment checkpoint and live town rendering › recovery restores its original blade instance and combat after live inventory changes (7.5s)
+  ✓   24 e2e/equipment.spec.ts:472:3 › equipment checkpoint and live town rendering › Haven changes the held weapon after inventory equip without replacing its canvas (7.5s)
+  ✓   25 e2e/gameplay.spec.ts:15:1 › guest hub, working manual and all four weapon choices (3.4s)
+  ✓   26 e2e/gameplay.spec.ts:50:1 › gameplay, pause, settings, resume, restart, and confirmed exit (7.5s)
+  ✓   27 e2e/gameplay.spec.ts:94:1 › small mobile and landscape focus mode preserve the run without overflow (3.9s)
+  ✓   28 e2e/gameplay.spec.ts:118:1 › touch drag, cancellation, and blur interruption (3.8s)
+  ✓   29 e2e/gameplay.spec.ts:165:1 › settings persist and corrupted preferences preserve playable defaults (5.4s)
+  ✓   30 e2e/gameplay.spec.ts:190:1 › PWA assets and game chunks launch offline after initial online load (4.8s)
+  ✓   31 e2e/gameplay.spec.ts:242:1 › missing player art falls back without blocking playable combat (2.9s)
+  ✓   32 e2e/gameplay.spec.ts:267:3 › instrumented gameplay (NEXT_PUBLIC_E2E=1 build only) › keyboard actually moves the player, camera follows, and upgrade modifies real combat (3.7s)
+  ✓   33 e2e/gameplay.spec.ts:296:3 › instrumented gameplay (NEXT_PUBLIC_E2E=1 build only) › Guardian telegraphs, phase two, real projectile victory, saved record and retry (5.0s)
+  ✓   34 e2e/gameplay.spec.ts:364:3 › instrumented gameplay (NEXT_PUBLIC_E2E=1 build only) › unavailable save storage reports failure while retry remains playable (3.0s)
+Rendered stress: {
+  frames: 478,
+  fps: 59.633714257192935,
+  p95FrameMs: 16.799999999999272,
+  enemies: 150,
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36'
+}
+  ✓   35 e2e/gameplay.spec.ts:382:3 › instrumented gameplay (NEXT_PUBLIC_E2E=1 build only) › 150-enemy rendered stress measurement (11.4s)
+Mobile viewport, 4x CPU stress: {
+  frames: 311,
+  fps: 38.84149920694847,
+  p95FrameMs: 49.899999999999636,
+  enemies: 150,
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36'
+}
+  ✓   36 e2e/gameplay.spec.ts:420:3 › instrumented gameplay (NEXT_PUBLIC_E2E=1 build only) › 150-enemy mobile viewport with 4x CPU throttling (14.2s)
+  ✓   37 e2e/haven.spec.ts:76:1 › Rift Heaven launches with the saved character, real canvas, localized map and journal (7.0s)
+  ✓   38 e2e/haven.spec.ts:115:1 › mobile portrait and landscape hub overlays fit without overflow or a second canvas (7.2s)
+  ✓   39 e2e/haven.spec.ts:157:3 › instrumented open-world integration › training uses real combat damage and cannot change permanent inventory (6.0s)
+  ✓   40 e2e/haven.spec.ts:182:3 › instrumented open-world integration › a refreshed expedition restores gathered resources and can lose only unbanked loot (15.1s)
+  ✓   41 e2e/haven.spec.ts:254:3 › instrumented open-world integration › a second town session invalidates the old hub writer without changing inventory (10.1s)
+  ✓   42 e2e/haven.spec.ts:286:3 › instrumented open-world integration › keyboard moves and collides; interactions require range and overlays keep the same scene (6.7s)
+  ✓   43 e2e/haven.spec.ts:362:3 › instrumented open-world integration › wardrobe changes visible cosmetics and persists without touching equipment (8.3s)
+  ✓   44 e2e/haven.spec.ts:381:3 › instrumented open-world integration › guest character → haven → quest → forest combat → gather → extract → craft → reload (23.2s)
+  ✓   45 e2e/haven.spec.ts:518:3 › instrumented open-world integration › touch cancellation and rotation stop movement without corrupting the scene (5.2s)
+  ✓   46 e2e/haven.spec.ts:570:1 › the cached town, character and map continue after an offline reload (20.6s)
+  ✓   47 e2e/i18n.spec.ts:3:1 › Thai language selection persists and localizes the campaign without changing progress (3.7s)
+  ✓   48 e2e/i18n.spec.ts:33:1 › language changes do not remount Phaser or reset an active run (2.8s)
+  ✓   49 e2e/i18n.spec.ts:56:1 › a new Thai-speaking visitor uses Thai without server hydration errors (2.2s)
+  ✓   50 e2e/i18n.spec.ts:75:1 › Thai locale and installation metadata remain available offline after caching (2.5s)
+  ✓   51 e2e/journey.spec.ts:66:1 › Play creates one persistent named identity, shows a real loading transition and enters the city (4.8s)
+  ✓   52 e2e/journey.spec.ts:105:1 › new names validate without creating data; controls and bidi are rejected (1.8s)
+  ✓   53 e2e/journey.spec.ts:141:1 › returning players continue, select among three slots and never overwrite a full roster (12.4s)
+  ✓   54 e2e/journey.spec.ts:176:1 › Sanctuary, nested inventory and settings retain the same Phaser world and translate live (5.7s)
+  ✓   55 e2e/journey.spec.ts:225:1 › the activity directory guides walking and daily activities open over the retained town (5.6s)
+  ✓   56 e2e/journey.spec.ts:268:1 › failed world assets remain gated and Retry recreates only the renderer with the same saved identity (5.1s)
+  ✓   57 e2e/journey.spec.ts:303:1 › Thai creation, reduced motion, portrait and landscape remain usable (3.5s)
+  ✓   58 e2e/journey.spec.ts:351:1 › storage failure offers recovery without silently creating a replacement character (1.9s)
+  ✓   59 e2e/journey.spec.ts:370:1 › older campaign-only saves enter through selection and retain their progression (4.0s)
+  ✓   60 e2e/journey.spec.ts:418:1 › loading waits for actual assets before initializing or revealing the world (3.5s)
+  ✓   61 e2e/journey.spec.ts:458:1 › the character-first journey and Sanctuary continue after an offline PWA relaunch (6.9s)
+  ✓   62 e2e/journey.spec.ts:508:3 › instrumented journey boundaries › H locks actual movement, preserves position and ignores held keys (7.4s)
+  ✓   63 e2e/journey.spec.ts:541:3 › instrumented journey boundaries › campaign failure returns to the persistent city and H cannot bypass combat (9.7s)
+  ✓   64 e2e/journey.spec.ts:581:3 › instrumented journey boundaries › farming recovery takes precedence at Play, extraction settles once and returns home (15.0s)
+  ✓   65 e2e/journey.spec.ts:663:3 › instrumented journey boundaries › a recovered level-up waits for world reveal, then applies one real blessing (9.7s)
+  ✓   66 e2e/landing.spec.ts:33:1 › keyboard Play keeps the existing character entry flow and exact official logo (2.3s)
+  ✓   67 e2e/landing.spec.ts:68:3 › desktop keeps the official logo and Play visible without scrolling or overflow (2.7s)
+  ✓   68 e2e/landing.spec.ts:68:3 › laptop keeps the official logo and Play visible without scrolling or overflow (2.3s)
+  ✓   69 e2e/landing.spec.ts:68:3 › tablet keeps the official logo and Play visible without scrolling or overflow (2.2s)
+  ✓   70 e2e/landing.spec.ts:68:3 › small laptop keeps the official logo and Play visible without scrolling or overflow (2.1s)
+  ✓   71 e2e/landing.spec.ts:68:3 › portrait keeps the official logo and Play visible without scrolling or overflow (1.8s)
+  ✓   72 e2e/landing.spec.ts:68:3 › small phone keeps the official logo and Play visible without scrolling or overflow (1.8s)
+  ✓   73 e2e/landing.spec.ts:68:3 › landscape keeps the official logo and Play visible without scrolling or overflow (1.8s)
+  ✓   74 e2e/landing.spec.ts:68:3 › short landscape keeps the official logo and Play visible without scrolling or overflow (1.7s)
+  ✓   75 e2e/landing.spec.ts:68:3 › very short landscape keeps the official logo and Play visible without scrolling or overflow (1.3s)
+  ✓   76 e2e/landing.spec.ts:100:1 › Explore reveals four real features, lazy local art and a working second entry action (4.2s)
+  ✓   77 e2e/landing.spec.ts:128:1 › sound, graphics settings and Thai copy remain live and persistent (3.8s)
+  ✓   78 e2e/landing.spec.ts:165:1 › decorative motion responds to mouse, pauses offscreen and respects OS and game preferences (2.9s)
+  ✓   79 e2e/landing.spec.ts:200:1 › a missing cinematic background falls back to existing world art and keeps Play working (1.7s)
+  ✓   80 e2e/landing.spec.ts:221:1 › cold mobile framing is stable before hydration and artwork loading (4.6s)
+  ✓   81 e2e/landing.spec.ts:275:1 › landing actions wait for handlers with deferred JavaScript and 4x CPU throttling (5.3s)
+  ✓   82 e2e/outfitters.spec.ts:123:1 › purchase and equip every category, compare real stats, forge, sell and reload (9.3s)
+  ✓   83 e2e/outfitters.spec.ts:279:3 › shop eligibility uses real gold and cannot charge a blocked purchase (3.5s)
+  ✓   84 e2e/outfitters.spec.ts:279:3 › shop eligibility uses real capacity and cannot charge a blocked purchase (3.4s)
+  ✓   85 e2e/outfitters.spec.ts:279:3 › shop eligibility uses real progression and cannot charge a blocked purchase (3.7s)
+  ✓   86 e2e/outfitters.spec.ts:316:1 › mobile Thai detail is fullscreen, focus trapped and preserves touch-sized purchase actions (3.4s)
+  ✓   87 e2e/outfitters.spec.ts:371:1 › the historical six-slot save migrates in-browser without altering its checkpoint (4.4s)
+  ✓   88 e2e/outfitters.spec.ts:395:3 › wanderer previews all four themes without changing unrelated layers or evolved weapon (4.5s)
+  ✓   89 e2e/outfitters.spec.ts:395:3 › sentinel previews all four themes without changing unrelated layers or evolved weapon (4.6s)
+  ✓   90 e2e/outfitters.spec.ts:395:3 › strider previews all four themes without changing unrelated layers or evolved weapon (4.2s)
+  ✓   91 e2e/outfitters.spec.ts:430:1 › the hub merchant updates the same live rig and returns to the existing canvas (7.8s)
+  ✓   92 e2e/persistence.spec.ts:112:1 › guest identity, three save slots, selection, names and deletion persist independently (5.4s)
+  ✓   93 e2e/persistence.spec.ts:190:1 › profile-wide check-in pays once across characters and achievements claim only once (2.7s)
+  ✓   94 e2e/persistence.spec.ts:234:1 › malformed import and quota failure preserve existing progress and shared claim history (2.5s)
+  ✓   95 e2e/persistence.spec.ts:282:1 › profile, daily and backup controls fit mobile portrait and landscape (2.4s)
+  ✓   96 e2e/persistence.spec.ts:315:1 › another tab selecting a different slot cannot redirect a pending reward to that character (4.9s)
+  ✓   97 e2e/persistence.spec.ts:351:1 › successful enhancement completes a daily quest and its reward persists once (4.9s)
+  ✓   98 e2e/persistence.spec.ts:393:1 › daily claims and JSON export work offline and survive an offline reload (3.5s)
+  ✓   99 e2e/persistence.spec.ts:430:1 › Thai profile navigation preserves identity and save-slot contents (2.3s)
+  ✓  100 e2e/persistence.spec.ts:455:3 › checkpoint and complete RPG backup integration › keyboard and touch preferences persist and change actual input handling (6.0s)
+  ✓  101 e2e/persistence.spec.ts:497:3 › checkpoint and complete RPG backup integration › stage loot, equip, enhancement and unlocks survive reload and confirmed export/import (9.7s)
+  ✓  102 e2e/persistence.spec.ts:589:3 › checkpoint and complete RPG backup integration › an interrupted run resumes the exact checkpoint paused and settles rewards once (5.9s)
+  ✓  103 e2e/persistence.spec.ts:649:3 › checkpoint and complete RPG backup integration › a failed checkpoint pauses combat, preserves the previous snapshot and retries visibly (4.2s)
+  ✓  104 e2e/persistence.spec.ts:711:3 › checkpoint and complete RPG backup integration › recovering in another tab blocks the old writer and cannot double-bank the run (7.8s)
+  ✓  105 e2e/polish.spec.ts:10:1 › new sanctuary screens fit portrait, tablet and landscape; motion preference works (3.4s)
+  ✓  106 e2e/polish.spec.ts:67:3 › real audio and game integration › audio unlocks on interaction, produces a signal, obeys mute and persists every bus (3.5s)
+  ✓  107 e2e/polish.spec.ts:127:3 › real audio and game integration › one audio context and scheduler survive navigation, pause and tab interruption (7.9s)
+  ✓  108 e2e/polish.spec.ts:188:3 › real audio and game integration › collision floods respect voice limits, prioritize damage alerts and clean up sources (4.6s)
+  ✓  109 e2e/polish.spec.ts:214:3 › real audio and game integration › earned relics equip, enhance atomically, persist, and change real character stats (7.1s)
+  ✓  110 e2e/polish.spec.ts:293:3 › real audio and game integration › low effects retain boss warnings, effects stay bounded, and keyboard focus stays in upgrade (3.7s)
+Low quality, 4x CPU: {
+  renderFps: 24.412703171513844,
+  simulatedSeconds: 4.167900000002231,
+  wallSeconds: 4.669699999999255,
+  now: 7078.199999999255,
+  time: 4.365100000001486,
+  frames: 130,
+  fpsLimit: 30,
+  effects: 23,
+  particles: 7,
+  feedback: 0,
+  textObjects: 1
+}
+  ✓  111 e2e/polish.spec.ts:341:3 › real audio and game integration › low graphics caps rendering while simulation keeps real time under 4x CPU throttle (7.6s)
+  ✓  112 e2e/regions.spec.ts:38:3 › regional exploration and unified atlas › four real city scenes retain the character, render native regional assets and survive return/reload (54.7s)
+  ✓  113 e2e/regions.spec.ts:195:3 › regional exploration and unified atlas › minimap opens an accurate local/world map, pans and zooms, and saves a destination without moving the player (9.4s)
+  ✓  114 e2e/regions.spec.ts:264:3 › regional exploration and unified atlas › a regional shop uses the existing purchase transaction once and retains owned gear after reload (13.9s)
+  ✓  115 e2e/regions.spec.ts:310:3 › regional exploration and unified atlas › Thai mobile map supports real pinch and drag gestures without steering the character (5.7s)
+  ✓  116 e2e/regions.spec.ts:388:3 › regional exploration and unified atlas › regional Free exploration pauses for its atlas, gathers at the actual marker and extracts to the same city with loot (36.1s)
+  ✓  117 e2e/regions.spec.ts:512:3 › regional exploration and unified atlas › Story map markers use current mission objects and map inspection cannot advance time or objectives (4.3s)
+  ✓  118 e2e/rpg.spec.ts:82:3 › a saved +3 milestone transforms the equipped weapon, can be skipped, and survives reload (6.0s)
+  ✓  119 e2e/rpg.spec.ts:82:3 › a saved +6 milestone transforms the equipped weapon, can be skipped, and survives reload (7.4s)
+  ✓  120 e2e/rpg.spec.ts:82:3 › a saved +9 milestone transforms the equipped weapon, can be skipped, and survives reload (6.0s)
+  ✓  121 e2e/rpg.spec.ts:82:3 › a saved +12 milestone transforms the equipped weapon, can be skipped, and survives reload (5.9s)
+  ✓  122 e2e/rpg.spec.ts:82:3 › a saved +15 milestone transforms the equipped weapon, can be skipped, and survives reload (6.2s)
+  ✓  123 e2e/rpg.spec.ts:159:1 › Thai mobile milestone previews respect reduced motion (2.7s)
+  ✓  124 e2e/rpg.spec.ts:181:1 › inventory sorts, filters, compares, protects and equips unique gear (4.0s)
+  ✓  125 e2e/rpg.spec.ts:232:1 › enhancement quote, success feedback and double confirmation charge once (3.0s)
+  ✓  126 e2e/rpg.spec.ts:264:1 › enhancement failure preserves rank and displays newly accumulated pity (2.9s)
+  ✓  127 e2e/rpg.spec.ts:308:1 › a real downgrade returns Mythic to Ascendant without an evolution celebration (3.0s)
+  ✓  128 e2e/rpg.spec.ts:353:1 › shop purchases, material crafting, sales and transaction history (4.1s)
+  ✓  129 e2e/rpg.spec.ts:409:1 › dismantle removes an owned item and grants actual materials after confirmation (3.0s)
+  ✓  130 e2e/rpg.spec.ts:427:1 › full inventory preserves loot until a slot is freed, without duplicate claiming (3.5s)
+  ✓  131 e2e/rpg.spec.ts:462:1 › mobile inventory, equipment and shop remain usable at narrow widths (3.5s)
+  ✓  132 e2e/rpg.spec.ts:497:1 › permanent disciplines consume resources and survive reload (4.7s)
+  ✓  133 e2e/rpg.spec.ts:526:1 › corrupt RPG inventory is reported and never silently reset (2.2s)
+  ✓  134 e2e/rpg.spec.ts:540:1 › RPG language switching translates inventory without changing owned items (2.6s)
+  ✓  135 e2e/rpg.spec.ts:562:3 › live campaign build and consumables › equipped stats and tonics reach combat; retry uses newly earned character levels (6.7s)
+  ✓  136 e2e/rpg.spec.ts:638:1 › Gold bag expansion persists with one receipt and updates inventory slots (2.5s)
+  ✓  137 e2e/rpg.spec.ts:654:1 › right-click context actions and Ctrl multi-selection sell two equipment items once (3.3s)
+  ✓  138 e2e/rpg.spec.ts:689:1 › mobile layout exposes a visible multi-select control (2.5s)
+  ✓  139 e2e/story-persistence.spec.ts:3:1 › completed Story objectives commit before the periodic autosave (4.2s)
+  ✓  140 e2e/story.spec.ts:33:3 › objective-driven Story vertical slice › Forest briefing, physical objectives, real combat and persistent settlement (15.9s)
+  ✓  141 e2e/story.spec.ts:187:3 › objective-driven Story vertical slice › Haven giver indicators, real delivery, journal tracking and bilingual mobile layout (9.8s)
+  ✓  142 e2e/story.spec.ts:333:3 › objective-driven Story vertical slice › Free Mode only offers accessible areas and cannot open locked difficulties (3.2s)
+  ✓  143 e2e/visual-overhaul.spec.ts:93:1 › owned helmet, armor and boots change independent preview layers and persist after reload (6.0s)
+  ✓  144 e2e/visual-overhaul.spec.ts:154:3 › live layered renderer and pixel effects › Free Mode gathering uses the selected biome and acknowledges its mining feedback without banking unextracted loot (4.9s)
+  ✓  145 e2e/visual-overhaul.spec.ts:217:3 › live layered renderer and pixel effects › equipped body layers agree between town and combat, with directional frame bounds and a frozen checkpoint (10.8s)
+  ✓  146 e2e/visual-overhaul.spec.ts:315:3 › live layered renderer and pixel effects › actual attack and boss events draw bounded pixel VFX, pause their frames and clean up on returning to town (9.5s)
+  ✓  147 e2e/visual-overhaul.spec.ts:413:3 › live layered renderer and pixel effects › crafting visual receipts follow successful inventory transactions and failed writes grant no visual reward (6.4s)
+
+  1 skipped
+  146 passed (19.3m)
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

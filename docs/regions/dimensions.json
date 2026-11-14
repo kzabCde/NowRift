@@ -9,8 +9,8 @@
       "name": "Mistbound Highlands",
       "city": {
         "cellSize": 16,
-        "reachableCells": 5200,
-        "reachableArea": 1331200,
+        "reachableCells": 5048,
+        "reachableArea": 1292288,
         "grossArea": 1884160,
         "width": 1280,
         "height": 1472
@@ -36,8 +36,8 @@
       "name": "Sandstone Kingdom",
       "city": {
         "cellSize": 16,
-        "reachableCells": 5270,
-        "reachableArea": 1349120,
+        "reachableCells": 5081,
+        "reachableArea": 1300736,
         "grossArea": 1884160,
         "width": 1472,
         "height": 1280
@@ -90,8 +90,8 @@
       "name": "Azure Coast",
       "city": {
         "cellSize": 16,
-        "reachableCells": 5018,
-        "reachableArea": 1284608,
+        "reachableCells": 4790,
+        "reachableArea": 1226240,
         "grossArea": 1892352,
         "width": 1408,
         "height": 1344
@@ -113,6 +113,6 @@
       }
     }
   ],
-  "totalReachableArea": 20939520,
-  "targetRatio": 1.0067076923076923
+  "totalReachableArea": 20793856,
+  "targetRatio": 0.9997046153846154
 }

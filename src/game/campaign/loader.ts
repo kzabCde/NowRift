@@ -9,7 +9,11 @@ import { stageRuntime } from "./runtime";
 import { characterLevel } from "../rpg/stats";
 import { missionById } from "../story/content";
 import { createMission } from "../story/runtime";
+import { CAMPAIGN_BOUNDS } from "./maps";
+import { emptyFog, revealFog, validFog } from "../world/exploration";
+import { regionForWorld } from "../world/regions";
 export type StageSelection = {
+  mapExplored?: string;
   missionVersion?: 0 | 1;
   legacyAccess?: string[];
   visualAppearance?: CharacterAppearance;
@@ -48,8 +52,8 @@ export function loadStage(
   if (reason) throw new Error(reason);
   const stage = stageById(selection.stageId),
     g = makeGame(
-      1800,
-      1400,
+      CAMPAIGN_BOUNDS.width,
+      CAMPAIGN_BOUNDS.height,
       selection.weaponSnapshot?.attackId ?? weapon,
       seeded(selection.seed),
     );
@@ -59,6 +63,18 @@ export function loadStage(
   if (selection.weaponSnapshot)
     g.equippedWeapon = structuredClone(selection.weaponSnapshot);
   g.campaign = stageRuntime(stage, selection.difficulty, selection.seed);
+  const region = regionForWorld(stage.worldId).id;
+  if (
+    selection.mapExplored !== undefined &&
+    !validFog(selection.mapExplored, region, "wilderness")
+  )
+    throw new Error("Invalid exploration data.");
+  g.campaign.explored = revealFog(
+    selection.mapExplored ?? emptyFog(region, "wilderness"),
+    region,
+    g.player,
+    "wilderness",
+  );
   g.campaign.mode =
     selection.activity === "farming" ? "free" : (selection.mode ?? "story");
   const mission =

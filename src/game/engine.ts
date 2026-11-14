@@ -1,3 +1,7 @@
+import {
+  wildernessNavigation,
+  updateWildernessDiscovery,
+} from "./world/wilderness-map";
 import type { CharacterAppearance } from "./presentation/appearance";
 import {
   hurtMissionAlly,
@@ -188,6 +192,7 @@ export type Game = FeedbackQueue & {
   };
 };
 export type Snapshot = {
+  navigation?: import("./world/wilderness-map").WildernessNavigation;
   questEvidence?: {
     runId?: string;
     seconds: number;
@@ -303,6 +308,7 @@ export function togglePause(g: Game) {
 export function snapshot(g: Game): Snapshot {
   const boss = g.enemies.find((e) => e.kind === "boss");
   return {
+    navigation: wildernessNavigation(g),
     mission: missionSummary(g),
     questEvidence: g.campaign
       ? {
@@ -644,6 +650,7 @@ function hurt(g: Game, amount: number, from: { x: number; y: number }) {
   p.x += (dx / d) * 16;
   p.y += (dy / d) * 16;
   resolveObstacles(g, p);
+  updateWildernessDiscovery(g);
   text(g, p.x, p.y - 20, "−" + Math.round(amount), false, "damage", "#ffab98");
   feedback(g, "damage", p.x, p.y, 0xf19a8b, 42, 0, true);
   emit(g, p.x, p.y, "#f19a8b", 14);
@@ -996,6 +1003,7 @@ export function updateGame(
     if ((p.attackUntil ?? 0) <= g.time) p.facing = facingFromAngle(p.angle);
   }
   resolveObstacles(g, p);
+  updateWildernessDiscovery(g);
   environmentStep(g, step, {
     hurt: (amount, from) => hurt(g, amount, from),
     spawn: (kind, x, y) => spawnEnemy(g, kind, x, y),
