@@ -411,3 +411,82 @@
     transition: none;
   }
 }
+.arena .expedition-minimap {
+  position: absolute;
+  width: 128px;
+  right: 12px;
+  top: 14px;
+  z-index: 15;
+}
+.expedition-atlas-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: #061a18da;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top))
+    max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
+}
+.expedition-atlas-dialog {
+  width: min(1080px, 100%);
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px;
+  border: 1px solid #9aa381;
+  background: #18332b;
+  color: #e8dfba;
+}
+.atlas-dialog-heading {
+  display: flex;
+  justify-content: flex-end;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.atlas-dialog-heading button {
+  pointer-events: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 10px;
+  font-size: 24px;
+  background: #203b33;
+}
+.atlas-wilderness-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.atlas-wilderness-locations button {
+  padding: 10px;
+  min-height: 44px;
+  border: 1px solid #7c8c70;
+  background: #254137;
+  font-size: 12px;
+}
+.atlas-wilderness-locations button[aria-pressed="true"] {
+  background: #d7c79a;
+  color: #244135;
+}
+@media (max-width: 650px) {
+  .arena .expedition-minimap {
+    width: 100px;
+    top: 12px;
+    right: 8px;
+  }
+  .arena .story-minimap {
+    top: auto;
+    bottom: 104px;
+    width: 88px;
+  }
+  .arena .story-minimap .minimap-destination {
+    display: none;
+  }
+  .expedition-atlas-dialog {
+    padding: 12px;
+  }
+}

@@ -235,6 +235,10 @@ export function applyWorldCommand(
     return;
   }
   if (command.type === "travel") {
+    if (w.location !== "haven")
+      throw new Error(
+        "Return to the city before beginning another expedition.",
+      );
     if (!resolveEquippedWeapon(p))
       throw new Error("Equip a weapon in Inventory before entering a stage.");
     if (!near(w.position, LANDMARKS.find((l) => l.kind === "portal")!.entrance))
@@ -243,5 +247,7 @@ export function applyWorldCommand(
       throw new Error("Recover or discard the saved run before travelling.");
     w.location = "expedition";
     w.position = { ...HAVEN.return };
+    // The old city scene must never overwrite this departure/return with a delayed save.
+    w.positionEpoch++;
   }
 }

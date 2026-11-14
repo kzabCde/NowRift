@@ -8,6 +8,9 @@ import {
 } from "./content";
 import { constructMap, type MapLayout } from "./maps";
 export type StageRuntime = {
+  explored?: string;
+  explorationCell?: string;
+  mapTarget?: string | null;
   mission?: import("../story/types").MissionState;
   enemyKills?: Partial<Record<Enemy["kind"], number>>;
   mode?: "story" | "free";

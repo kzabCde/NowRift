@@ -32,6 +32,10 @@ import {
 } from "./exploration";
 import { translateText } from "../../i18n/translator";
 import { REGIONAL_QUESTS } from "../quests/regional-content";
+import { QUEST_CATALOG } from "../quests/catalog";
+import { createJournal } from "../quests/engine";
+import { trackedQuestRegion } from "./map";
+import { regionalTerrain } from "./regional-terrain";
 import { missionFixture, playMission } from "../story/testing/driver";
 
 beforeEach(async () => {
@@ -43,6 +47,50 @@ beforeEach(async () => {
     request.onblocked = () => reject(new Error("Open database"));
   });
 });
+test("world quest markers follow physical givers and local objectives instead of chapter labels", () => {
+  const journal = createJournal(QUEST_CATALOG);
+  journal.tracked = "main-frozen-5";
+  journal.quests[journal.tracked].status = "READY_TO_CLAIM";
+  expect(trackedQuestRegion(journal)).toBe("central");
+  const regional = REGIONAL_QUESTS.find((q) => q.chapterId === "frozen")!;
+  journal.tracked = regional.id;
+  journal.quests[regional.id].status = "READY_TO_CLAIM";
+  expect(trackedQuestRegion(journal)).toBe("north");
+  journal.quests[regional.id].status = "ACTIVE";
+  expect(trackedQuestRegion(journal)).toBe("north");
+  journal.quests[regional.id].rewardClaimed = true;
+  expect(trackedQuestRegion(journal)).toBeNull();
+  journal.tracked = "main-forest-1";
+  journal.quests[journal.tracked].status = "ACTIVE";
+  expect(trackedQuestRegion(journal)).toBe("south");
+});
+test.each(["north", "northeast", "south"] as const)(
+  "%s: every water tile matches its physical boundary and bridges leave a dry crossing",
+  (region) => {
+    const city = regionalCity(region),
+      terrain = regionalTerrain(city, region);
+    for (const rectangle of [...city.water, ...city.bridges])
+      for (const value of [rectangle.x, rectangle.y, rectangle.w, rectangle.h])
+        expect(value % 32).toBe(0);
+    for (let row = 0; row < city.rows; row++)
+      for (let column = 0; column < city.columns; column++) {
+        const p = { x: column * 32 + 16, y: row * 32 + 16 },
+          contains = (s: { x: number; y: number; w: number; h: number }) =>
+            p.x >= s.x && p.x < s.x + s.w && p.y >= s.y && p.y < s.y + s.h;
+        const water = city.water.some(contains) && !city.bridges.some(contains);
+        expect(Math.floor(terrain.layers.ground[row][column] / 4) === 8).toBe(
+          water,
+        );
+      }
+    for (const bridge of city.bridges)
+      expect(
+        validPosition(
+          { x: bridge.x + bridge.w / 2, y: bridge.y + bridge.h / 2 },
+          region,
+        ),
+      ).toBe(true);
+  },
+);
 test("regional geography maps the four original bosses without changing forty stage IDs or unlock order", () => {
   expect(REGIONS.map((r) => [r.id, r.bossStage])).toEqual([
     ["north", "frozen-5"],

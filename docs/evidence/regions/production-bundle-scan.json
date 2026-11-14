@@ -1,0 +1,11 @@
+{
+  "build": "ordinary production; NEXT_PUBLIC_E2E and NOWRIFT_E2E unset",
+  "javascriptChunks": 18,
+  "signatures": [
+    "__NOWRIFT_TEST__",
+    "__NOWRIFT_HAVEN__",
+    "mission-fixture",
+    "Fixture could not interact:"
+  ],
+  "matches": []
+}

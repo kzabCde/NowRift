@@ -4,6 +4,7 @@ import type { CampaignResult } from "./campaign/rewards";
 import type { Snapshot } from "./engine";
 import type { UpgradeId, WeaponId } from "./content/forest";
 export type Command =
+  | { type: "map-target"; id: string | null }
   | { type: "transition-lock"; locked: boolean }
   | import("./world/bridge").HavenCommand
   | { type: "expedition-interact" }

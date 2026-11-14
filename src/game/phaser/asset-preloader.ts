@@ -8,7 +8,7 @@ import {
   type PixelAsset,
 } from "../presentation/assets";
 import { regionalCity } from "../world/regional-city";
-import type { RegionId } from "../world/regions";
+import { regionForWorld, type RegionId } from "../world/regions";
 
 const pending = new WeakMap<Phaser.Loader.LoaderPlugin, Set<string>>();
 
@@ -65,6 +65,10 @@ export function queueSceneAssets(
       ),
       ...regional,
     ];
+  }
+  if (world === "forest" || world === "desert" || world === "frozen") {
+    const tree = pixelAsset(`region-${regionForWorld(world).id}-city-trees`);
+    if (tree) assets.push(tree);
   }
   for (const asset of assets) queuePixelAsset(scene, asset);
   return assets;

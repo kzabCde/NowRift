@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { GameBridge } from "@/game/bridge";
 import {
-  FARM,
   travelReason,
   type Point,
   type InteractionKind,
@@ -50,7 +49,7 @@ import TownMap from "./TownMap";
 import { waypoint, waypointRegion } from "@/game/world/waypoints";
 import { regionalCity, cityBounds } from "@/game/world/regional-city";
 import { currentRegion, type MapDestination } from "@/game/world/exploration";
-import { regionById } from "@/game/world/regions";
+import { regionById, regionForWorld } from "@/game/world/regions";
 import RegionalMinimap from "./RegionalMinimap";
 import { useSettings } from "@/state/settings";
 import SanctuaryPanel from "./SanctuaryPanel";
@@ -550,8 +549,18 @@ export default function HavenGame({
     const next = await action({ type: "travel", writer: writer.current });
     if (next) {
       audio.play("launch");
+      const memory =
+        next.local.world!.atlas?.wilderness?.[
+          regionForWorld(
+            STAGES.find((s) => s.id === selection.stageId)!.worldId,
+          ).id
+        ];
       onAdventure({
         ...selection,
+        ...(memory?.stageId === selection.stageId &&
+        memory.seed === selection.seed
+          ? { mapExplored: memory.explored }
+          : {}),
         returnTo: "haven",
         startingHp: next.local.world!.hp,
         outfit: next.local.world!.outfit,
@@ -559,6 +568,11 @@ export default function HavenGame({
       });
     }
   }
+  const localExpeditionStage = STAGES.find(
+    (s) =>
+      s.id ===
+      `${region === "central" ? "forest" : regionById(region).worldId}-1`,
+  )!;
   const w = p?.local.world,
     equipped = p ? resolveEquippedWeapon(p) : null,
     stats = p ? calculateStats(p, p.local.weapon, p.local.character) : null,
@@ -657,7 +671,7 @@ export default function HavenGame({
           data-testid="town-travel-transition"
         >
           <i aria-hidden="true" />
-          <strong>{text("Travelling through the city")}</strong>
+          <strong>{text("Travelling to your destination")}</strong>
           <span>{text(townTravel)}</span>
         </div>
       )}
@@ -965,7 +979,13 @@ export default function HavenGame({
       {returnMission && (
         <DialogSurface
           className="mission-dialogue"
-          title={text("Return to Rift Haven")}
+          title={
+            region === "central"
+              ? text("Return to Rift Haven")
+              : t("regions", "Return to {city}", {
+                  city: text(regionById(region).capital),
+                })
+          }
         >
           <span className="eyebrow">{text("Mission complete")}</span>
           <h2>{text(returnMission.questTitle.en)}</h2>
@@ -1281,7 +1301,7 @@ export default function HavenGame({
                 </p>
                 {p &&
                   lockedReason(
-                    FARM.stageId,
+                    localExpeditionStage.id,
                     difficulty,
                     p.clears,
                     p.local.journal?.legacyAccess,
@@ -1289,7 +1309,7 @@ export default function HavenGame({
                     <p role="status">
                       {text(
                         lockedReason(
-                          FARM.stageId,
+                          localExpeditionStage.id,
                           difficulty,
                           p.clears,
                           p.local.journal?.legacyAccess,
@@ -1305,7 +1325,7 @@ export default function HavenGame({
                     !!(
                       p &&
                       lockedReason(
-                        FARM.stageId,
+                        localExpeditionStage.id,
                         difficulty,
                         p.clears,
                         p.local.journal?.legacyAccess,
@@ -1315,10 +1335,10 @@ export default function HavenGame({
                   onClick={() =>
                     p &&
                     void travel({
-                      stageId: FARM.stageId,
+                      stageId: localExpeditionStage.id,
                       activity: "farming",
                       difficulty,
-                      seed: crypto.getRandomValues(new Uint32Array(1))[0],
+                      seed: localExpeditionStage.environment.seed,
                       clears: p.clears,
                     })
                   }

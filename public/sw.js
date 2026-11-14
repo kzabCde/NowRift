@@ -1,5 +1,5 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v19-nine-district-city";
+const VERSION = "nowrift-pwa-v20-regional-atlas";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [
@@ -30,6 +30,9 @@ const CORE_URLS = [
   "/assets/worlds/forest/projectiles.png",
   "/assets/worlds/forest/tiles.png",
   "/assets/worlds/forest/tree.png",
+  // The starter expedition must remain available after the first city is cached.
+  // One foliage atlas is not an eager download of the Southern city bundle.
+  "/assets/regions/south/city-trees.png",
   "/assets/worlds/forest/rock.png",
   "/assets/worlds/forest/slime.png",
   "/assets/worlds/forest/goblin.png",

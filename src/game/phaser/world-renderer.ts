@@ -1,5 +1,8 @@
 import type Phaser from "phaser";
 import type { StageRuntime } from "../campaign/runtime";
+import { regionForWorld } from "../world/regions";
+import { useSettings } from "../../state/settings";
+import { onSceneEnd } from "./lifecycle";
 export function buildWorld(scene: Phaser.Scene, c: StageRuntime) {
   const key = c.world.id + "-tiles";
   const map = scene.make.tilemap({
@@ -9,12 +12,23 @@ export function buildWorld(scene: Phaser.Scene, c: StageRuntime) {
   });
   const set = map.addTilesetImage(key, key, 32, 32, 0, 0);
   if (set) map.createLayer(0, set, 0, 0)?.setDepth(-100);
-  for (const o of c.map.props)
-    scene.add
-      .image(o.x, o.y, c.world.id + "-" + o.type)
-      .setOrigin(0.5, 0.87)
+  const regionalTrees: { image: Phaser.GameObjects.Image; variant: number }[] =
+      [],
+    treeKey = `region-${regionForWorld(c.world.id).id}-city-trees`;
+  for (const [i, o] of c.map.props.entries()) {
+    const regional = o.type === "tree" && scene.textures.exists(treeKey);
+    const image = scene.add
+      .image(
+        o.x,
+        o.y,
+        regional ? treeKey : c.world.id + "-" + o.type,
+        regional ? (i % 3) * 4 : 0,
+      )
+      .setOrigin(0.5, regional ? 0.94 : 0.87)
       .setScale(1.5)
       .setDepth(o.y);
+    if (regional) regionalTrees.push({ image, variant: i % 3 });
+  }
   const runes = scene.add.graphics().setDepth(-90);
   runes.lineStyle(2, c.world.hazard.color, 0.24);
   for (const z of c.map.zones) runes.strokeCircle(z.x, z.y, z.r);
@@ -30,7 +44,15 @@ export function buildWorld(scene: Phaser.Scene, c: StageRuntime) {
       .setAlpha(0.4)
       .setDepth(6500),
   );
-  const tick = (time: number) =>
+  let lastFoliage = 0;
+  const tick = (time: number) => {
+    if (time - lastFoliage > 450) {
+      lastFoliage = time;
+      const frame = useSettings.getState().reducedEffects
+        ? 0
+        : Math.floor(time / 450) % 4;
+      for (const t of regionalTrees) t.image.setFrame(t.variant * 4 + frame);
+    }
     motes.forEach((m, i) => {
       m.y =
         (i * 197 +
@@ -39,8 +61,9 @@ export function buildWorld(scene: Phaser.Scene, c: StageRuntime) {
         1400;
       m.x = (i * 139 + Math.sin(time / 1700 + i) * 16) % 1800;
     });
+  };
   scene.events.on("update", tick);
-  scene.events.once("shutdown", () => {
+  onSceneEnd(scene, () => {
     scene.events.off("update", tick);
     map.destroy();
   });

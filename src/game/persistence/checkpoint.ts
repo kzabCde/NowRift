@@ -18,6 +18,9 @@ import { validAppearance as validCharacterAppearance } from "../presentation/app
 import { validWeaponSnapshot } from "../rpg/weapon-validation";
 import { legacyCampaignAccess } from "../campaign/access";
 import { validMissionState } from "../story/validation";
+import { validFog } from "../world/exploration";
+import { regionForWorld } from "../world/regions";
+import { updateWildernessDiscovery } from "../world/wilderness-map";
 type State = Pick<
   Game,
   | "phase"
@@ -51,6 +54,8 @@ type State = Pick<
 type EnvironmentState = Pick<
   NonNullable<Game["campaign"]>,
   | "harvested"
+  | "explored"
+  | "mapTarget"
   | "mission"
   | "enemyKills"
   | "timer"
@@ -113,6 +118,7 @@ export function captureCheckpoint(
   tonics: string[] = [],
   at = Date.now(),
 ): RunCheckpoint {
+  updateWildernessDiscovery(g, true);
   const rng = g.rng as ReturnType<typeof seeded>;
   if (!rng.getState)
     throw new Error("This run has no recoverable random state.");
@@ -142,6 +148,10 @@ export function captureCheckpoint(
     state,
     environment: g.campaign
       ? {
+          ...(g.campaign.explored ? { explored: g.campaign.explored } : {}),
+          ...(g.campaign.mapTarget !== undefined
+            ? { mapTarget: g.campaign.mapTarget }
+            : {}),
           ...(g.campaign.harvested ? { harvested: g.campaign.harvested } : {}),
           ...(g.campaign.mission ? { mission: g.campaign.mission } : {}),
           ...(g.campaign.enemyKills
@@ -196,6 +206,31 @@ export function validCheckpoint(value: unknown): value is RunCheckpoint {
   if (!obj(value)) return false;
   const c = value as unknown as RunCheckpoint,
     s = c.state;
+  if (
+    c.environment?.explored !== undefined ||
+    c.stage?.mapExplored !== undefined
+  ) {
+    const stage = STAGES.find((s) => s.id === c.stage?.stageId);
+    if (!stage) return false;
+    const region = regionForWorld(stage.worldId).id;
+    if (
+      c.environment?.explored !== undefined &&
+      !validFog(c.environment.explored, region, "wilderness")
+    )
+      return false;
+    if (
+      c.stage?.mapExplored !== undefined &&
+      !validFog(c.stage.mapExplored, region, "wilderness")
+    )
+      return false;
+  }
+  if (
+    c.environment?.mapTarget !== undefined &&
+    c.environment.mapTarget !== null &&
+    (typeof c.environment.mapTarget !== "string" ||
+      !/^[a-z][a-z0-9-]{0,79}$/.test(c.environment.mapTarget))
+  )
+    return false;
   if (
     c.stage?.missionVersion !== undefined &&
     ![0, 1].includes(c.stage.missionVersion)
