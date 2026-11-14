@@ -51,6 +51,7 @@ import { regionalCity, cityBounds } from "@/game/world/regional-city";
 import { currentRegion, type MapDestination } from "@/game/world/exploration";
 import { regionById, regionForWorld } from "@/game/world/regions";
 import RegionalMinimap from "./RegionalMinimap";
+import HudRail from "./HudRail";
 import { useSettings } from "@/state/settings";
 import SanctuaryPanel from "./SanctuaryPanel";
 import ProfileScreen from "./ProfileScreen";
@@ -98,6 +99,7 @@ export default function HavenGame({
     sequence = useRef(0),
     positionEpoch = useRef(0),
     travelTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
+    travelGuard = useRef(false),
     busyRef = useRef(false),
     pending = useRef<Promise<unknown>>(Promise.resolve());
   const profileRef = useRef<SaveData | null>(null);
@@ -404,9 +406,11 @@ export default function HavenGame({
     t,
   ]);
   async function fastTravel(waypointId: string, viaGate = false) {
-    if (busyRef.current || townTravel || !profileRef.current) return;
+    if (busyRef.current || travelGuard.current || !profileRef.current) return;
     const destination = waypoint(waypointId);
     if (!destination) return;
+    travelGuard.current = true;
+    bridge.emit("command", { type: "haven-lock", locked: true });
     setTownTravel(destination.name);
     savePosition(current.current.position);
     const next = await action({
@@ -417,6 +421,7 @@ export default function HavenGame({
       expectedEpoch: positionEpoch.current,
     });
     if (!next) {
+      travelGuard.current = false;
       setTownTravel(null);
       return;
     }
@@ -463,6 +468,7 @@ export default function HavenGame({
     travelTimer.current = setTimeout(
       () => {
         setTownTravel(null);
+        travelGuard.current = false;
         travelTimer.current = null;
       },
       reduced ? 30 : 480,
@@ -675,96 +681,108 @@ export default function HavenGame({
           <span>{text(townTravel)}</span>
         </div>
       )}
-      <header className="haven-topbar">
-        <Brand />
-        <div className="haven-title">
-          <span className="eyebrow">
-            {text(regionById(region).name)} · {h("SAFE SANCTUARY")}
-          </span>
-          <h1>
-            {region === "central"
-              ? j("Rift Heaven")
-              : text(regionById(region).capital)}
-          </h1>
-          <small
-            className="haven-district"
-            data-district={hud.district ?? "plaza"}
-          >
-            {text(
-              DISTRICTS.find((d) => d.id === hud.district)?.name ??
-                "Central Plaza",
-            )}{" "}
-            · {text(hud.night ? "Lantern hours" : "Daylight")}
-          </small>
-        </div>
-        <div className="haven-toolbar">
-          <SaveIndicator />
-          <LanguageSwitcher compact />
-          <button disabled={busy || !!townTravel} onClick={() => void leave()}>
-            {h("Menu")}
-          </button>
-        </div>
-      </header>
-      <aside className="haven-status" aria-label={j("Rift Heaven")}>
-        {p && (
-          <CharacterPreview
-            character={p.local.character}
-            outfit={w?.outfit ?? "moss"}
-            weapon={equipped}
-            profile={p}
-            size={56}
-            decorative
-          />
-        )}
-        <div>
-          <strong>{p?.local.name ?? "…"}</strong>
-          <small>
-            {h("Level")} {p ? characterLevel(p.xp).level : 1} · {h("Power")}{" "}
-            {stats?.power ?? 0}
-          </small>
-          <div className="haven-hp">
-            <i
-              style={{
-                width: `${stats ? Math.min(100, ((w?.hp ?? 1) / stats.maxHp) * 100) : 0}%`,
-              }}
-            />
-          </div>
-          <small>
-            {Math.ceil(Math.min(w?.hp ?? 1, stats?.maxHp ?? 1))}/
-            {stats?.maxHp ?? 100} HP · {p?.gold ?? 0} {h("Gold")}
-          </small>
-        </div>
-      </aside>
-      {w && ready && revealed && (
-        <RegionalMinimap
-          world={w}
-          position={hud.position}
-          facing={hud.facing}
-          explored={hud.explored}
-          npcs={hud.npcs}
-          journal={p?.local.journal}
-          disabled={busy || !!panel || !!townTravel}
-          onOpen={openMap}
-        />
-      )}
-      {p?.local.journal?.tracked && (
-        <QuestTracker
-          journal={p.local.journal}
-          onOpen={() => setPanel("journal")}
-        />
-      )}
-      {!p?.local.journal?.tracked &&
-        w &&
-        w.quest !== "available" &&
-        w.quest !== "claimed" && (
-          <button className="haven-tracker" onClick={() => setPanel("journal")}>
-            <span>{h("A path home")}</span>
-            <small>
-              {h("Extract once from Whispering Forest")}{" "}
-              {Math.min(1, w.extractions)}/1
+      <div className="haven-hud-top">
+        <header className="haven-topbar">
+          <Brand />
+          <div className="haven-title">
+            <span className="eyebrow">
+              {text(regionById(region).name)} · {h("SAFE SANCTUARY")}
+            </span>
+            <h1>
+              {region === "central"
+                ? j("Rift Heaven")
+                : text(regionById(region).capital)}
+            </h1>
+            <small
+              className="haven-district"
+              data-district={hud.district ?? "plaza"}
+            >
+              {text(
+                DISTRICTS.find((d) => d.id === hud.district)?.name ??
+                  "Central Plaza",
+              )}{" "}
+              · {text(hud.night ? "Lantern hours" : "Daylight")}
             </small>
-          </button>
-        )}
+          </div>
+          <div className="haven-toolbar">
+            <SaveIndicator />
+            <LanguageSwitcher compact />
+            <button
+              disabled={busy || !!townTravel}
+              onClick={() => void leave()}
+            >
+              {h("Menu")}
+            </button>
+          </div>
+        </header>
+        <div className="haven-hud-zones">
+          <aside className="haven-status" aria-label={j("Rift Heaven")}>
+            {p && (
+              <CharacterPreview
+                character={p.local.character}
+                outfit={w?.outfit ?? "moss"}
+                weapon={equipped}
+                profile={p}
+                size={56}
+                decorative
+              />
+            )}
+            <div>
+              <strong>{p?.local.name ?? "…"}</strong>
+              <small>
+                {h("Level")} {p ? characterLevel(p.xp).level : 1} · {h("Power")}{" "}
+                {stats?.power ?? 0}
+              </small>
+              <div className="haven-hp">
+                <i
+                  style={{
+                    width: `${stats ? Math.min(100, ((w?.hp ?? 1) / stats.maxHp) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+              <small>
+                {Math.ceil(Math.min(w?.hp ?? 1, stats?.maxHp ?? 1))}/
+                {stats?.maxHp ?? 100} HP · {p?.gold ?? 0} {h("Gold")}
+              </small>
+            </div>
+          </aside>
+          <HudRail>
+            {w && ready && revealed && (
+              <RegionalMinimap
+                world={w}
+                position={hud.position}
+                facing={hud.facing}
+                explored={hud.explored}
+                npcs={hud.npcs}
+                journal={p?.local.journal}
+                disabled={busy || !!panel || !!townTravel}
+                onOpen={openMap}
+              />
+            )}
+            {p?.local.journal?.tracked && (
+              <QuestTracker
+                journal={p.local.journal}
+                onOpen={() => setPanel("journal")}
+              />
+            )}
+            {!p?.local.journal?.tracked &&
+              w &&
+              w.quest !== "available" &&
+              w.quest !== "claimed" && (
+                <button
+                  className="haven-tracker"
+                  onClick={() => setPanel("journal")}
+                >
+                  <span>{h("A path home")}</span>
+                  <small>
+                    {h("Extract once from Whispering Forest")}{" "}
+                    {Math.min(1, w.extractions)}/1
+                  </small>
+                </button>
+              )}
+          </HudRail>
+        </div>
+      </div>
       {p?.local.checkpoint && (
         <button className="haven-recovery" onClick={() => void leave(true)}>
           {h(

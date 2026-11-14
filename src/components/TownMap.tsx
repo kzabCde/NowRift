@@ -44,7 +44,7 @@ export default function TownMap({
   onTravel: (id: string, viaGate?: boolean) => void;
   onMark: (id: string | null) => void;
 }) {
-  const { text } = useI18n(),
+  const { text, t } = useI18n(),
     region = currentRegion(world),
     city = regionalCity(region),
     points = waypointsIn(region);
@@ -55,15 +55,22 @@ export default function TownMap({
           (w) => w.district === districtAt(position, city.districts).id,
         )?.id ?? points[0].id,
     ),
-    [worldSelection, setWorldSelection] = useState<RegionId>(region);
+    [worldSelection, setWorldSelection] = useState<RegionId>(region),
+    [worldWaypoint, setWorldWaypoint] = useState<string | null>(null);
   const markers = useMemo(
     () => localMapMarkers(region, world, journal, npcs),
     [region, world, journal, npcs],
   );
-  const selected = points.find((w) => w.id === selection),
-    marker = markers.find((m) => m.id === selection),
+  const marker = markers.find((m) => m.id === selection),
     landmark = city.landmarks.find((l) => l.id === marker?.landmarkId),
-    district = city.districts.find((d) => d.id === selected?.district),
+    selected =
+      points.find((w) => w.id === selection) ??
+      points.find(
+        (w) =>
+          w.district ===
+          (landmark?.district ??
+            districtAt(marker ?? position, city.districts).id),
+      ),
     effective = { ...world, position };
   const blocked = selected
       ? fastTravelReason(effective, selected.id, { clears, legacy })
@@ -81,12 +88,20 @@ export default function TownMap({
   const chosen = regionById(worldSelection),
     capitalId =
       worldSelection === "central" ? "plaza" : `${worldSelection}-plaza`,
-    visited = world.waypoints.includes(capitalId),
-    viaGate = !visited;
-  const regionLocked = regionAccessReason(worldSelection, clears, legacy),
+    regionalPoints = waypointsIn(worldSelection),
+    regionalPoint =
+      regionalPoints.find((w) => w.id === worldWaypoint) ??
+      regionalPoints.find((w) => w.id === capitalId)!,
+    visited = world.waypoints.includes(regionalPoint.id),
+    viaGate =
+      !visited && regionalPoint.id === capitalId && worldSelection !== region;
+  const regionLocked =
+      worldSelection === region
+        ? null
+        : regionAccessReason(worldSelection, clears, legacy),
     regionBlocked = fastTravelReason(
       effective,
-      capitalId,
+      regionalPoint.id,
       { clears, legacy },
       viaGate,
     ),
@@ -123,6 +138,54 @@ export default function TownMap({
       </div>
       {mode === "local" ? (
         <>
+          <article
+            className="town-waypoint-detail town-travel-panel"
+            data-selected-waypoint={selected?.id}
+            aria-live="polite"
+          >
+            <div className="town-selected-copy">
+              <span className="eyebrow">
+                {text(unlocked ? "ATTUNED WAYPOINT" : "EXPLORATION REQUIRED")}
+              </span>
+              <h3>
+                {text(marker?.name ?? selected?.name ?? "Select location")}
+              </h3>
+              <small>
+                {t("qol", "Travel destination: {name}", {
+                  name: text(selected?.name ?? "Select location"),
+                })}
+              </small>
+            </div>
+            <div className="town-selected-actions">
+              <button
+                className="primary-button"
+                disabled={busy || !selected || !!blocked}
+                onClick={() => selected && onTravel(selected.id)}
+              >
+                {text("Fast Travel")} →
+              </button>
+              {(selected || landmark) && (
+                <button
+                  className="quiet-button"
+                  disabled={busy}
+                  onClick={() => onMark(landmark?.id ?? selected!.landmarkId)}
+                >
+                  {text("Set destination")} →
+                </button>
+              )}
+            </div>
+            {blocked ? (
+              <p className="town-travel-reason" role="status">
+                {text(blocked)}
+              </p>
+            ) : (
+              <p className="town-travel-available">
+                {text(
+                  "Town travel is free. World expeditions still depart from the Rift Gate.",
+                )}
+              </p>
+            )}
+          </article>
           <MapViewport
             key={`local-${region}`}
             ratio={city.width / city.height}
@@ -159,7 +222,7 @@ export default function TownMap({
                 <button
                   key={w.id}
                   data-waypoint-entry={w.id}
-                  aria-pressed={selection === w.id}
+                  aria-pressed={selected?.id === w.id}
                   onClick={() => setSelection(w.id)}
                 >
                   <b>{i + 1}</b>
@@ -176,74 +239,6 @@ export default function TownMap({
                 </button>
               ))}
             </div>
-            <article
-              className="town-waypoint-detail"
-              data-selected-waypoint={selected?.id}
-              aria-live="polite"
-            >
-              <span className="eyebrow">
-                {text(
-                  selected
-                    ? unlocked
-                      ? "ATTUNED WAYPOINT"
-                      : "EXPLORATION REQUIRED"
-                    : marker?.kind === "npc"
-                      ? "City resident"
-                      : "CITY DESTINATION",
-                )}
-              </span>
-              <h3>
-                {text(selected?.name ?? marker?.name ?? "Select location")}
-              </h3>
-              {district && <p>{district.motifs.map(text).join(" · ")}</p>}
-              {selected && !unlocked && (
-                <p>
-                  {text(
-                    "Attune the beacon or visit a station in this district to unlock its waypoint.",
-                  )}
-                </p>
-              )}
-              {blocked && (
-                <p className="town-travel-reason" role="status">
-                  {text(blocked)}
-                </p>
-              )}
-              {selected && (
-                <button
-                  className="primary-button"
-                  disabled={busy || !!blocked}
-                  onClick={() => onTravel(selected.id)}
-                >
-                  {text("Fast Travel")} →
-                </button>
-              )}
-              {(selected || landmark) && (
-                <button
-                  className="quiet-button"
-                  disabled={busy}
-                  onClick={() => onMark(selected?.landmarkId ?? landmark!.id)}
-                >
-                  {text("Set destination")} →
-                </button>
-              )}
-              {marker?.kind === "npc" && !landmark && (
-                <p>
-                  {text(
-                    "A living city resident. Their marker follows their current position.",
-                  )}
-                </p>
-              )}
-              <small>
-                {text(
-                  "Direction markers indicate a destination, not a verified path through obstacles.",
-                )}
-              </small>
-              <small>
-                {text(
-                  "Town travel is free. World expeditions still depart from the Rift Gate.",
-                )}
-              </small>
-            </article>
           </div>
           <details className="town-stations">
             <summary>{text("Stations & entrances")}</summary>
@@ -256,7 +251,11 @@ export default function TownMap({
                       world.discoveries.includes(l.id)),
                 )
                 .map((l) => (
-                  <button key={l.id} onClick={() => onMark(l.id)}>
+                  <button
+                    key={l.id}
+                    data-map-location-entry={l.id}
+                    onClick={() => setSelection(l.id)}
+                  >
                     {text(l.name)}
                     <small>
                       {text(
@@ -272,6 +271,60 @@ export default function TownMap({
         </>
       ) : (
         <>
+          <article
+            className="atlas-region-detail town-travel-panel"
+            aria-live="polite"
+            data-selected-region={chosen.id}
+          >
+            <div className="town-selected-copy">
+              <span className="eyebrow">
+                {text(
+                  worldSelection === region
+                    ? "CURRENT REGION"
+                    : visited
+                      ? "Discovered"
+                      : "New regional route",
+                )}
+              </span>
+              <h3>
+                {text(chosen.name)} · {text(chosen.capital)}
+              </h3>
+            </div>
+            <div className="town-selected-actions">
+              <button
+                className="primary-button"
+                data-region-travel={chosen.id}
+                disabled={busy || !!regionBlocked}
+                onClick={() => onTravel(regionalPoint.id, viaGate)}
+              >
+                {text(viaGate ? "Travel via Rift Gate" : "Fast Travel")} →
+              </button>
+            </div>
+            <label className="town-regional-destination">
+              {text("Regional destination")}
+              <select
+                aria-label={text("Regional destination")}
+                value={regionalPoint.id}
+                onChange={(e) => setWorldWaypoint(e.target.value)}
+              >
+                {regionalPoints.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {text(w.name)} ·{" "}
+                    {text(
+                      world.waypoints.includes(w.id)
+                        ? "Discovered"
+                        : "Undiscovered",
+                    )}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(regionLocked || regionBlocked) && (
+              <p className="town-travel-reason" role="status">
+                {text(regionLocked ?? regionBlocked!)}
+              </p>
+            )}
+          </article>
           <MapViewport
             key="regional-world"
             ratio={800 / 840}
@@ -287,14 +340,13 @@ export default function TownMap({
               clears={clears}
               legacy={legacy}
               journal={journal}
-              onSelect={setWorldSelection}
+              onSelect={(id) => {
+                setWorldSelection(id);
+                setWorldWaypoint(null);
+              }}
             />
           </MapViewport>
-          <article
-            className="atlas-region-detail"
-            aria-live="polite"
-            data-selected-region={chosen.id}
-          >
+          <article className="atlas-region-detail" aria-live="polite">
             <span className="eyebrow">
               {text(
                 worldSelection === region
@@ -321,21 +373,6 @@ export default function TownMap({
                   : "Not yet defeated",
               )}
             </p>
-            {(regionLocked || regionBlocked) && worldSelection !== region && (
-              <p className="town-travel-reason" role="status">
-                {text(regionLocked ?? regionBlocked!)}
-              </p>
-            )}
-            {worldSelection !== region && (
-              <button
-                className="primary-button"
-                data-region-travel={chosen.id}
-                disabled={busy || !!regionBlocked}
-                onClick={() => onTravel(capitalId, viaGate)}
-              >
-                {text(visited ? "Fast Travel" : "Travel via Rift Gate")} →
-              </button>
-            )}
             {viaGate && worldSelection !== region && (
               <p>
                 {text(

@@ -1,3 +1,4 @@
+import { qolTh } from "./qol-th";
 import { cityTh } from "./city-th";
 import { regionsTh } from "./regions-th";
 import { storyTh, storyStageTh } from "./story-th";
@@ -11,6 +12,7 @@ import { rpgTh } from "./rpg-th";
 import { outfittersTh } from "./outfitters-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  qol: qolTh,
   regions: regionsTh,
   story: storyTh,
   city: cityTh,

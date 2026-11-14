@@ -1,5 +1,6 @@
 "use client";
 import ExpeditionAtlas from "./ExpeditionAtlas";
+import HudRail from "./HudRail";
 import SaveIndicator from "./SaveIndicator";
 import RiftTransition from "./RiftTransition";
 import { shortcutAllowed } from "@/game/navigation/flow";
@@ -741,30 +742,126 @@ export default function NowRiftGame({
           </div>
           <div className="arena">
             {liveJournal && <QuestNotice journal={liveJournal} />}
-            {revealed && hud.navigation && (
-              <ExpeditionAtlas
-                navigation={hud.navigation}
-                progress={questSave}
-                open={mapOpen}
-                disabled={
-                  saveBlocked ||
-                  !!storyDialogue ||
-                  journalOpen ||
-                  !["playing", "paused"].includes(hud.phase) ||
-                  hud.mission?.phase === "INTRO_DIALOGUE"
-                }
-                onOpen={openMap}
-                onClose={closeMap}
-                onTarget={(id) => {
-                  bridge.emit("command", { type: "map-target", id });
-                  closeMap();
-                }}
-              />
-            )}
-            {liveJournal?.tracked &&
-              liveJournal.tracked !== `main-${hud.mission?.stageId}` && (
-                <QuestTracker journal={liveJournal} onOpen={openJournal} />
-              )}
+            <div className="arena-hud-zones">
+              <div className="combat-objective-stack">
+                {" "}
+                {mission && hud.mission && (
+                  <aside
+                    className="mission-hud"
+                    aria-label={text("Mission objectives")}
+                    aria-live="polite"
+                  >
+                    <small>
+                      {text("The Shattered Rift")} ·{" "}
+                      {Math.min(hud.mission.step + 1, hud.mission.total)} /{" "}
+                      {hud.mission.total}
+                    </small>
+                    <strong>{text(mission.questTitle.en)}</strong>
+                    <p>
+                      {hud.mission.phase === "OBJECTIVE_COMPLETED"
+                        ? text("Objective completed")
+                        : missionStep
+                          ? text(missionStep.text.en)
+                          : text("Mission complete")}
+                    </p>
+                    {missionStep && (
+                      <small>
+                        {hud.mission.progress} / {hud.mission.goal}
+                      </small>
+                    )}
+                    {missionStep && (
+                      <progress
+                        max={hud.mission.goal}
+                        value={hud.mission.progress}
+                        aria-label={text(missionStep.text.en)}
+                      />
+                    )}
+                    {hud.mission.direction && (
+                      <small className="mission-direction">
+                        <i
+                          aria-hidden="true"
+                          style={{
+                            transform: `rotate(${hud.mission.direction.angle}rad)`,
+                          }}
+                        >
+                          ➜
+                        </i>
+                        {text("Mission landmark")} ·{" "}
+                        {hud.mission.direction.tiles} {text("tiles")}
+                      </small>
+                    )}
+                    {hud.mission.ally && (
+                      <small>
+                        {text("Protect your companion")} · {hud.mission.ally.hp}{" "}
+                        / {hud.mission.ally.maxHp} HP
+                      </small>
+                    )}
+                    {hud.mission.feedback === "mechanism-order" && (
+                      <small>{text("Follow the rune sequence.")}</small>
+                    )}
+                  </aside>
+                )}{" "}
+                {hud.boss && (
+                  <div
+                    className="boss-hud"
+                    aria-label={`${text(mission?.finale?.name.en ?? world?.boss.name ?? "Forest Guardian")} ${t("game", "health")}`}
+                  >
+                    <span>
+                      {text(
+                        mission?.finale?.name.en ??
+                          world?.boss.name ??
+                          "Forest Guardian",
+                      )}{" "}
+                      <small>
+                        {hud.boss.phase === 3
+                          ? text("FRACTURE · PHASE III")
+                          : hud.boss.phase === 2
+                            ? t("game", "ENRAGED · PHASE II")
+                            : t("game", "THE ANCIENT WARDEN")}
+                      </small>
+                    </span>
+                    <div className="bar-track">
+                      <div
+                        className="bar-fill boss-fill"
+                        style={{
+                          width: `${Math.max(0, (hud.boss.hp / hud.boss.maxHp) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <small>
+                      {hud.boss.hp} / {hud.boss.maxHp}
+                    </small>
+                  </div>
+                )}
+              </div>
+              <HudRail>
+                {" "}
+                {revealed && hud.navigation && (
+                  <ExpeditionAtlas
+                    navigation={hud.navigation}
+                    progress={questSave}
+                    open={mapOpen}
+                    disabled={
+                      saveBlocked ||
+                      !!storyDialogue ||
+                      journalOpen ||
+                      !["playing", "paused"].includes(hud.phase) ||
+                      hud.mission?.phase === "INTRO_DIALOGUE"
+                    }
+                    onOpen={openMap}
+                    onClose={closeMap}
+                    onTarget={(id) => {
+                      bridge.emit("command", { type: "map-target", id });
+                      closeMap();
+                    }}
+                  />
+                )}
+                {liveJournal?.tracked &&
+                  liveJournal.tracked !== `main-${hud.mission?.stageId}` && (
+                    <QuestTracker journal={liveJournal} onOpen={openJournal} />
+                  )}
+              </HudRail>
+            </div>
             {revealed && journalOpen && liveJournal && (
               <DialogSurface
                 className="arena-overlay quest-overlay"
@@ -779,62 +876,7 @@ export default function NowRiftGame({
                 />
               </DialogSurface>
             )}
-            {mission && hud.mission && (
-              <aside
-                className="mission-hud"
-                aria-label={text("Mission objectives")}
-                aria-live="polite"
-              >
-                <small>
-                  {text("The Shattered Rift")} ·{" "}
-                  {Math.min(hud.mission.step + 1, hud.mission.total)} /{" "}
-                  {hud.mission.total}
-                </small>
-                <strong>{text(mission.questTitle.en)}</strong>
-                <p>
-                  {hud.mission.phase === "OBJECTIVE_COMPLETED"
-                    ? text("Objective completed")
-                    : missionStep
-                      ? text(missionStep.text.en)
-                      : text("Mission complete")}
-                </p>
-                {missionStep && (
-                  <small>
-                    {hud.mission.progress} / {hud.mission.goal}
-                  </small>
-                )}
-                {missionStep && (
-                  <progress
-                    max={hud.mission.goal}
-                    value={hud.mission.progress}
-                    aria-label={text(missionStep.text.en)}
-                  />
-                )}
-                {hud.mission.direction && (
-                  <small className="mission-direction">
-                    <i
-                      aria-hidden="true"
-                      style={{
-                        transform: `rotate(${hud.mission.direction.angle}rad)`,
-                      }}
-                    >
-                      ➜
-                    </i>
-                    {text("Mission landmark")} · {hud.mission.direction.tiles}{" "}
-                    {text("tiles")}
-                  </small>
-                )}
-                {hud.mission.ally && (
-                  <small>
-                    {text("Protect your companion")} · {hud.mission.ally.hp} /{" "}
-                    {hud.mission.ally.maxHp} HP
-                  </small>
-                )}
-                {hud.mission.feedback === "mechanism-order" && (
-                  <small>{text("Follow the rune sequence.")}</small>
-                )}
-              </aside>
-            )}
+
             {missionObject && hud.phase === "playing" && (
               <div className="expedition-context">
                 <button
@@ -979,38 +1021,6 @@ export default function NowRiftGame({
                 {text("Mission complete")}
                 {newStageUnlocked ? ` · ${text("New stage unlocked")}` : ""}
               </p>
-            )}
-            {hud.boss && (
-              <div
-                className="boss-hud"
-                aria-label={`${text(mission?.finale?.name.en ?? world?.boss.name ?? "Forest Guardian")} ${t("game", "health")}`}
-              >
-                <span>
-                  {text(
-                    mission?.finale?.name.en ??
-                      world?.boss.name ??
-                      "Forest Guardian",
-                  )}{" "}
-                  <small>
-                    {hud.boss.phase === 3
-                      ? text("FRACTURE · PHASE III")
-                      : hud.boss.phase === 2
-                        ? t("game", "ENRAGED · PHASE II")
-                        : t("game", "THE ANCIENT WARDEN")}
-                  </small>
-                </span>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill boss-fill"
-                    style={{
-                      width: `${Math.max(0, (hud.boss.hp / hud.boss.maxHp) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <small>
-                  {hud.boss.hp} / {hud.boss.maxHp}
-                </small>
-              </div>
             )}
             {hud.phase === "playing" && (
               <>

@@ -1,0 +1,184 @@
+/* HUD geometry belongs to these shared zones, never to individual widgets. */
+.keybind-details { margin: 12px 0; padding: 10px 0; border-block: 1px solid #7a8e675c; }
+.keybind-details summary { cursor: pointer; min-height: 44px; padding: 10px 0; }
+.keybind-row { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(35px, auto) auto auto; align-items: center; gap: 7px; border-top: 1px solid #6f856344; padding: 5px 0; font-size: 12px; }
+.keybind-row button, .keybind-prompt button { min-height: 44px; min-width: 44px; padding: 7px; border: 1px solid #8e9b6d; background: #1d382f; color: #e5d8b0; }
+.keybind-row kbd { text-align: center; font-size: 12px; overflow-wrap: anywhere; }
+.controls-note { font-size: 11px; color: #b4c1a1; line-height: 1.6; }
+.keybind-prompt { padding: 10px; background: #304a34; border: 1px solid #d1b575; }
+.keybind-prompt button { margin: 5px; }
+.haven-hud-top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 14;
+  pointer-events: none;
+}
+.haven-hud-top .haven-topbar {
+  position: relative;
+}
+.haven-hud-zones {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 264px);
+  align-items: start;
+  gap: 16px;
+  padding: 0 max(20px, env(safe-area-inset-right)) 0
+    max(20px, env(safe-area-inset-left));
+}
+.haven-hud-zones .haven-status {
+  position: static;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  pointer-events: auto;
+}
+.haven-hud-zones .haven-hp {
+  width: min(180px, 100%);
+}
+.hud-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+  pointer-events: none;
+}
+.hud-rail > * {
+  pointer-events: auto;
+  max-width: 100%;
+}
+.hud-rail .regional-minimap {
+  position: static;
+  width: min(192px, 100%);
+}
+.hud-rail .quest-tracker {
+  position: static;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 10px;
+}
+.hud-rail .quest-tracker strong,
+.hud-rail .quest-tracker small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.hud-rail .haven-tracker {
+  position: static;
+  width: 100%;
+}
+.arena-hud-zones {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 192px);
+  align-items: start;
+  gap: 16px;
+  padding: 12px;
+  pointer-events: none;
+}
+.combat-objective-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  align-items: flex-start;
+}
+.combat-objective-stack .mission-hud,
+.combat-objective-stack .boss-hud {
+  position: static;
+  transform: none;
+  max-width: min(360px, 100%);
+  width: 100%;
+  margin: 0;
+}
+.arena-hud-zones .hud-rail .regional-minimap {
+  width: min(160px, 100%);
+}
+@media (max-width: 650px) {
+  .haven-hud-zones {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 116px);
+    gap: 8px;
+    padding-inline: max(8px, env(safe-area-inset-left))
+      max(8px, env(safe-area-inset-right));
+  }
+  .haven-hud-zones .haven-status {
+    padding: 8px;
+    gap: 8px;
+  }
+  .haven-hud-zones .haven-status > div {
+    min-width: 0;
+  }
+  .haven-hud-zones .haven-status strong {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 16px;
+  }
+  .haven-hud-zones .haven-status small {
+    font-size: 9px;
+  }
+  .hud-rail .regional-minimap {
+    width: 116px;
+  }
+  .hud-rail .quest-tracker {
+    padding: 7px;
+  }
+  .hud-rail .quest-tracker strong {
+    font-size: 11px;
+  }
+  .hud-rail .quest-tracker small {
+    font-size: 9px;
+  }
+  .arena-hud-zones {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 104px);
+    padding: 8px;
+    gap: 8px;
+  }
+  .combat-objective-stack .mission-hud {
+    padding: 8px;
+  }
+  .combat-objective-stack .mission-hud strong {
+    font-size: 13px;
+  }
+  .combat-objective-stack .mission-hud p {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .combat-objective-stack .boss-hud {
+    padding: 7px;
+  }
+}
+@media (max-height: 500px) {
+  .haven-hud-zones {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 192px);
+    gap: 8px;
+  }
+  .hud-rail .regional-minimap {
+    width: 88px;
+  }
+  .hud-rail .regional-minimap-open > span {
+    font-size: 8px;
+  }
+  .hud-rail .minimap-destination {
+    display: none;
+  }
+  .hud-rail .quest-tracker {
+    padding: 6px;
+  }
+  .hud-rail .quest-tracker strong,
+  .hud-rail .quest-tracker small {
+    -webkit-line-clamp: 1;
+    font-size: 10px;
+    margin: 0;
+  }
+  .arena-hud-zones {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 150px);
+    padding: 8px;
+  }
+}
