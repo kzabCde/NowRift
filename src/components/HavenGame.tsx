@@ -56,7 +56,10 @@ import { useSettings } from "@/state/settings";
 import SanctuaryPanel from "./SanctuaryPanel";
 import ProfileScreen from "./ProfileScreen";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
-import { shortcutAllowed } from "@/game/navigation/flow";
+import { useGameplayShortcuts } from "./useGameplayShortcuts";
+import { hasModal, modalDepth, requestModalBack } from "@/game/input/keyboard";
+import { keyHint } from "@/game/input/bindings";
+import HudToggle from "./HudToggle";
 import { cityMilestones } from "@/game/world/city";
 import { ACTIVITIES } from "@/game/world/activities";
 import QuestNotice from "./QuestNotice";
@@ -94,6 +97,7 @@ export default function HavenGame({
   const { t, text } = useI18n(),
     h = (key: Parameters<typeof t<"haven">>[1]) => t("haven", key),
     j = (key: Parameters<typeof t<"journey">>[1]) => t("journey", key);
+  const prefs = useSettings();
   const bridge = useMemo(() => new GameBridge(), []),
     writer = useRef(uid()),
     sequence = useRef(0),
@@ -362,49 +366,6 @@ export default function HavenGame({
     setPanels((previous) => previous.slice(0, -1));
     void reload().catch((e) => setError(storageError(e)));
   }, [reload]);
-  useEffect(() => {
-    const keyboard = (event: KeyboardEvent) => {
-      if (
-        event.key.toLowerCase() !== "h" ||
-        !shortcutAllowed(event, event.target)
-      )
-        return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (panel === "sanctuary") close();
-      else if (
-        ready &&
-        revealed &&
-        !panel &&
-        !busy &&
-        !error &&
-        !rendererError
-      ) {
-        bridge.emit("command", { type: "haven-lock", locked: true });
-        savePosition(current.current.position);
-        setPanels(["sanctuary"]);
-      } else
-        setNotice(
-          t(
-            "journey",
-            "Sanctuary is available while freely exploring Rift Heaven. Close the current activity first.",
-          ),
-        );
-    };
-    window.addEventListener("keydown", keyboard, true);
-    return () => window.removeEventListener("keydown", keyboard, true);
-  }, [
-    panel,
-    ready,
-    revealed,
-    busy,
-    error,
-    rendererError,
-    bridge,
-    close,
-    savePosition,
-    t,
-  ]);
   async function fastTravel(waypointId: string, viaGate = false) {
     if (busyRef.current || travelGuard.current || !profileRef.current) return;
     const destination = waypoint(waypointId);
@@ -494,42 +455,48 @@ export default function HavenGame({
       close();
     }
   }
-  useEffect(() => {
-    const keyboard = (event: KeyboardEvent) => {
-      if (
-        event.key.toLowerCase() !== "m" ||
-        !shortcutAllowed(event, event.target)
-      )
-        return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (panel === "map") close();
-      else if (
-        !panel &&
-        ready &&
-        revealed &&
-        !busy &&
-        !error &&
-        !rendererError
-      ) {
-        savePosition(current.current.position);
-        bridge.emit("command", { type: "haven-lock", locked: true });
-        setPanels(["map"]);
-      }
-    };
-    window.addEventListener("keydown", keyboard, true);
-    return () => window.removeEventListener("keydown", keyboard, true);
-  }, [
-    panel,
-    ready,
-    revealed,
-    busy,
-    error,
-    rendererError,
-    savePosition,
-    bridge,
-    close,
-  ]);
+  useGameplayShortcuts((action, event) => {
+    if (action === "pause" && hasModal()) {
+      if (event.code === "Escape") return false;
+      requestModalBack();
+      return true;
+    }
+    const target = (
+      {
+        map: "map",
+        journal: "journal",
+        inventory: "storage",
+        sanctuary: "sanctuary",
+        pause: "pause",
+      } as const
+    )[action as "map" | "journal" | "inventory" | "sanctuary" | "pause"];
+    if (target && panel === target && modalDepth() <= 1) {
+      close();
+      return true;
+    }
+    if (
+      !ready ||
+      !revealed ||
+      busy ||
+      townTravel ||
+      error ||
+      rendererError ||
+      panel ||
+      hasModal()
+    )
+      return false;
+    if (action === "hud") {
+      prefs.set({ hideHud: !prefs.hideHud });
+      return true;
+    }
+    if (target) {
+      savePosition(current.current.position);
+      bridge.emit("command", { type: "haven-lock", locked: true });
+      setPanel(target);
+      return true;
+    }
+    return false;
+  });
   async function leave(profiles = false) {
     savePosition(current.current.position);
     await pending.current;
@@ -655,9 +622,16 @@ export default function HavenGame({
     revealed && !panel && !busy && p?.local.journal?.returns[0]
       ? missionById(p.local.journal.returns[0])
       : undefined;
+  const hudConcealed =
+    prefs.hideHud &&
+    revealed &&
+    !panel &&
+    !returnMission &&
+    !error &&
+    !rendererError;
   return (
     <main
-      className={`haven-page ${revealed ? "world-revealed" : "world-loading"}`}
+      className={`haven-page ${revealed ? "world-revealed" : "world-loading"} ${hudConcealed ? "hud-concealed" : ""}`}
     >
       {p?.local.journal && <QuestNotice journal={p.local.journal} />}
       <div className="haven-canvas">
@@ -828,13 +802,25 @@ export default function HavenGame({
           <button onClick={() => onMenu()}>{h("Return to launcher")}</button>
         </div>
       )}
+      {hudConcealed && (
+        <div className="hud-reveal">
+          <HudToggle />
+          <button
+            type="button"
+            aria-label={h("Paused")}
+            onClick={() => setPanel("pause")}
+          >
+            {h("Paused")}
+          </button>
+        </div>
+      )}
       <nav className="haven-bottom">
         <button
           aria-label={j("Sanctuary")}
           onClick={() => setPanel("sanctuary")}
         >
           <span className="sanctuary-pixel" aria-hidden="true" />
-          {j("Sanctuary")} <kbd>H</kbd>
+          {j("Sanctuary")} <kbd>{keyHint(prefs, "sanctuary")}</kbd>
         </button>
         <button
           aria-label={j("Activity Directory")}
@@ -843,17 +829,18 @@ export default function HavenGame({
           {j("Activity Directory")}
         </button>
         <button aria-label={h("Inventory")} onClick={() => setPanel("storage")}>
-          {h("Inventory")} <kbd>I</kbd>
+          {h("Inventory")} <kbd>{keyHint(prefs, "inventory")}</kbd>
         </button>
         <button aria-label={h("Map")} onClick={openMap}>
-          {h("Map")} <kbd>M</kbd>
+          {h("Map")} <kbd>{keyHint(prefs, "map")}</kbd>
         </button>
         <button aria-label={h("Journal")} onClick={() => setPanel("journal")}>
-          {h("Journal")} <kbd>Q</kbd>
+          {h("Journal")} <kbd>{keyHint(prefs, "journal")}</kbd>
         </button>
         <button onClick={() => setPanel("settings")}>{h("Settings")}</button>
+        <HudToggle />
         <button aria-label={h("Paused")} onClick={() => setPanel("pause")}>
-          {h("Paused")} <kbd>Esc</kbd>
+          {h("Paused")} <kbd>{keyHint(prefs, "pause")}</kbd>
         </button>
       </nav>
       {ready && revealed && !panel && !error && !rendererError && (
@@ -863,7 +850,7 @@ export default function HavenGame({
               className="haven-interact"
               onClick={() => bridge.emit("command", { type: "haven-interact" })}
             >
-              <kbd>E</kbd>
+              <kbd>{keyHint(prefs, "interact")}</kbd>
               <span>{text(near.name)}</span>
               <small>{h("Interact")}</small>
             </button>
@@ -1067,8 +1054,19 @@ export default function HavenGame({
               <>
                 <h2>{h("A place to return to.")}</h2>
                 <p>
-                  {j(
-                    "Walk with WASD or arrows, or drag on touch screens. E interacts. I opens inventory, M the map, Q your journal, and H Sanctuary.",
+                  {t(
+                    "qol",
+                    "Move {up}/{left}/{down}/{right} or touch. Interact {interact}; map {map}; journal {journal}; Sanctuary {sanctuary}.",
+                    {
+                      up: keyHint(prefs, "up"),
+                      left: keyHint(prefs, "left"),
+                      down: keyHint(prefs, "down"),
+                      right: keyHint(prefs, "right"),
+                      interact: keyHint(prefs, "interact"),
+                      map: keyHint(prefs, "map"),
+                      journal: keyHint(prefs, "journal"),
+                      sanctuary: keyHint(prefs, "sanctuary"),
+                    },
                   )}
                 </p>
                 <button

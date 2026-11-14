@@ -1,12 +1,110 @@
 /* HUD geometry belongs to these shared zones, never to individual widgets. */
-.keybind-details { margin: 12px 0; padding: 10px 0; border-block: 1px solid #7a8e675c; }
-.keybind-details summary { cursor: pointer; min-height: 44px; padding: 10px 0; }
-.keybind-row { display: grid; grid-template-columns: minmax(90px, 1fr) minmax(35px, auto) auto auto; align-items: center; gap: 7px; border-top: 1px solid #6f856344; padding: 5px 0; font-size: 12px; }
-.keybind-row button, .keybind-prompt button { min-height: 44px; min-width: 44px; padding: 7px; border: 1px solid #8e9b6d; background: #1d382f; color: #e5d8b0; }
-.keybind-row kbd { text-align: center; font-size: 12px; overflow-wrap: anywhere; }
-.controls-note { font-size: 11px; color: #b4c1a1; line-height: 1.6; }
-.keybind-prompt { padding: 10px; background: #304a34; border: 1px solid #d1b575; }
-.keybind-prompt button { margin: 5px; }
+.keybind-details {
+  margin: 12px 0;
+  padding: 10px 0;
+  border-block: 1px solid #7a8e675c;
+}
+.keybind-details summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+}
+.keybind-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(35px, auto) auto auto;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid #6f856344;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.keybind-row button,
+.keybind-prompt button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 7px;
+  border: 1px solid #8e9b6d;
+  background: #1d382f;
+  color: #e5d8b0;
+}
+.keybind-row kbd {
+  text-align: center;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.controls-note {
+  font-size: 11px;
+  color: #b4c1a1;
+  line-height: 1.6;
+}
+.keybind-prompt {
+  padding: 10px;
+  background: #304a34;
+  border: 1px solid #d1b575;
+}
+.keybind-prompt button {
+  margin: 5px;
+}
+.hud-toggle,
+.hud-reveal > button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 10px;
+  background: #16362ee8;
+  color: #eadab0;
+  border: 1px solid #a7ad78;
+  font-size: 10px;
+}
+.hud-reveal {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  display: flex;
+  gap: 6px;
+  z-index: 24;
+}
+.hud-concealed .haven-hud-top,
+.hud-concealed .haven-bottom,
+.hud-concealed .haven-recovery,
+.hud-concealed .haven-context > p,
+.hud-concealed .quest-notice,
+.hud-concealed .haven-toast {
+  display: none;
+}
+.qol-exploration-hidden > .topbar,
+.qol-exploration-hidden .run-heading,
+.qol-exploration-hidden .hud-rail,
+.qol-exploration-hidden .quest-notice,
+.qol-exploration-hidden .field-note,
+.qol-exploration-hidden .sector-heading,
+.qol-exploration-hidden .arena-footer .control-hint {
+  display: none;
+}
+.qol-exploration-hidden
+  .game-actions
+  > button:not(.hud-toggle):not(.combat-pause) {
+  display: none;
+}
+.haven-bottom {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, max-content));
+}
+@media (max-width: 900px) {
+  .haven-bottom {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: min(640px, calc(100% - 16px));
+  }
+}
+@media (max-height: 500px) and (min-width: 651px) {
+  .haven-bottom {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    width: calc(100% - 16px);
+  }
+  .haven-bottom button {
+    font-size: 8px;
+    padding: 6px;
+  }
+}
 .haven-hud-top {
   position: absolute;
   inset: 0 0 auto;
@@ -180,5 +278,52 @@
   .arena-hud-zones {
     grid-template-columns: minmax(0, 1fr) minmax(0, 150px);
     padding: 8px;
+  }
+}
+
+.combat-speed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+}
+.combat-speed > span {
+  font-size: 9px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.combat-speed > div {
+  display: flex;
+  gap: 2px;
+}
+.combat-speed button {
+  min-width: 38px;
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid #576265;
+  background: #192c2e;
+  color: #d6dac9;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.combat-speed button[aria-pressed="true"] {
+  background: #554526;
+  border-color: #e7c272;
+  color: #fff0be;
+  box-shadow: inset 0 -3px #302c22;
+}
+.combat-speed button:disabled {
+  opacity: 0.5;
+}
+@media (max-width: 560px) {
+  .combat-speed > span {
+    font-size: 8px;
+  }
+  .combat-speed button {
+    min-width: 30px;
+  }
+  .hud-stats:has(.combat-speed) {
+    gap: 6px;
   }
 }

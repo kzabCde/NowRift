@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n/useI18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { audio } from "@/game/audio/engine";
 import { QUALITY, useSettings } from "@/state/settings";
+import KeybindEditor from "./KeybindEditor";
 export function PixelIcon({
   index = 0,
   large = false,
@@ -23,6 +24,8 @@ export function PixelIcon({
 }
 function useDialogFocus(onClose?: () => void) {
   const ref = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const element = ref.current;
@@ -37,11 +40,14 @@ function useDialogFocus(onClose?: () => void) {
         '[role="dialog"][aria-modal="true"]',
       );
       if (dialogs.item(dialogs.length - 1) !== element) return;
+      if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey)
+        return;
+      if (event.key === "Escape" && useSettings.getState().rebinding) return;
       if (event.key === "Escape") {
         event.stopImmediatePropagation();
-        if (onClose) {
+        if (close.current) {
           event.preventDefault();
-          onClose();
+          close.current();
         }
         return;
       }
@@ -71,7 +77,7 @@ function useDialogFocus(onClose?: () => void) {
       document.removeEventListener("keydown", trap, true);
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
   return ref;
 }
 export function DialogSurface({
@@ -321,19 +327,15 @@ export function Settings({ onClose }: { onClose: () => void }) {
       </div>
       <section className="input-settings">
         <h3>{text("Input & display")}</h3>
+        <KeybindEditor />
         <label className="setting-row">
-          <span>{text("Keyboard controls")}</span>
-          <select
-            aria-label={text("Keyboard controls")}
-            value={prefs.keyboard}
-            onChange={(e) =>
-              prefs.set({ keyboard: e.target.value as typeof prefs.keyboard })
-            }
-          >
-            <option value="both">{text("WASD + arrows")}</option>
-            <option value="wasd">WASD</option>
-            <option value="arrows">{text("Arrow keys")}</option>
-          </select>
+          <span>{text("Hide optional exploration HUD")}</span>
+          <input
+            type="checkbox"
+            aria-label={text("Hide optional exploration HUD")}
+            checked={prefs.hideHud}
+            onChange={(e) => prefs.set({ hideHud: e.target.checked })}
+          />
         </label>
         <label className="setting-row">
           <span>{text("Touch movement area")}</span>

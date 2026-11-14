@@ -1,4 +1,6 @@
 "use client";
+import { useSettings } from "@/state/settings";
+import { keyHint } from "@/game/input/bindings";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import type { WildernessNavigation } from "@/game/world/wilderness-map";
@@ -28,6 +30,7 @@ export default function ExpeditionAtlas({
   onClose: () => void;
   onTarget: (id: string | null) => void;
 }) {
+  const prefs = useSettings();
   const { text } = useI18n(),
     [mode, setMode] = useState<"local" | "world">("local"),
     [selected, setSelected] = useState<string>(
@@ -61,7 +64,7 @@ export default function ExpeditionAtlas({
           <WildernessSurface navigation={navigation} mini />
           <span>
             <b>{text(regionById(navigation.region).name)}</b>
-            <kbd>M</kbd>
+            <kbd>{keyHint(prefs, "map")}</kbd>
           </span>
         </button>
         {target && (
