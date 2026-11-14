@@ -1,5 +1,5 @@
 /* NowRift Phase 4 — same-origin app-shell cache; no backend data or login. */
-const VERSION = "nowrift-pwa-v20-regional-atlas";
+const VERSION = "nowrift-pwa-v21-gameplay-qol";
 const CORE_CACHE = VERSION + "-core";
 const ASSET_CACHE = VERSION + "-assets";
 const CORE_URLS = [

@@ -99,6 +99,13 @@ export default function NowRiftGame({
   const pendingResult = useRef<Promise<void> | null>(null),
     startGuard = useRef(false);
   const [starting, setStarting] = useState(false);
+  const leaving = useRef(false);
+  useEffect(() => {
+    leaving.current = false;
+    return () => {
+      leaving.current = true;
+    };
+  }, []);
   const [questSave, setQuestSave] = useState<SaveData | null>(null),
     [journalOpen, setJournalOpen] = useState(false);
   const homeRegion = currentRegion(questSave?.local.world),
@@ -220,7 +227,7 @@ export default function NowRiftGame({
       bridge.on("mission-dialogue", setStoryDialogue),
       bridge.on("ready", (value) => {
         setReady(value);
-        if (value && autoStart) bootStart.current();
+        if (value && autoStart && !leaving.current) bootStart.current();
       }),
       bridge.on("checkpoint", (checkpoint) => {
         pendingCheckpoint.current = profileRepository
@@ -413,7 +420,12 @@ export default function NowRiftGame({
     if (!tonicGuard.current) bridge.emit("command", { type: "pause" });
   }, [bridge]);
   const start = async () => {
-    if (tonicGuard.current || startGuard.current || loadingFailed.current)
+    if (
+      tonicGuard.current ||
+      startGuard.current ||
+      loadingFailed.current ||
+      leaving.current
+    )
       return;
     startGuard.current = true;
     setStarting(true);
@@ -423,6 +435,7 @@ export default function NowRiftGame({
       const p = await profileRepository.load(
         slotId ?? runContext.current?.slotId,
       );
+      if (leaving.current) return;
       const recovering = !!recovery && !didRecover.current;
       if (stage) {
         const reason = travelReason(
@@ -439,6 +452,13 @@ export default function NowRiftGame({
         !!stage,
         stage,
       );
+      if (leaving.current) {
+        // A cancelled new start has no gameplay to bank. A recovered checkpoint
+        // remains intact for the next explicit Resume, including all its loot.
+        if (!prepared.checkpoint)
+          await profileRepository.discardRun(prepared.run.slotId, prepared.run);
+        return;
+      }
       runContext.current = prepared.run;
       didRecover.current = true;
       const c = prepared.checkpoint;
@@ -509,7 +529,8 @@ export default function NowRiftGame({
     void start();
   };
   const leave = async () => {
-    if (tonicGuard.current || startGuard.current) return;
+    if (tonicGuard.current || startGuard.current || leaving.current) return;
+    leaving.current = true;
     await pendingResult.current;
     const run = runContext.current;
     let warning: string | undefined;

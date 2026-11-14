@@ -45,6 +45,10 @@ function useDialogFocus(onClose?: () => void) {
       if (event.key === "Escape" && useSettings.getState().rebinding) return;
       if (event.key === "Escape") {
         event.stopImmediatePropagation();
+        if (event.repeat) {
+          event.preventDefault();
+          return;
+        }
         if (close.current) {
           event.preventDefault();
           close.current();

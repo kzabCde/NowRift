@@ -53,7 +53,7 @@ export default function TownMap({
       () =>
         points.find(
           (w) => w.district === districtAt(position, city.districts).id,
-        )?.id ?? points[0].id,
+        )?.landmarkId ?? points[0].landmarkId,
     ),
     [worldSelection, setWorldSelection] = useState<RegionId>(region),
     [worldWaypoint, setWorldWaypoint] = useState<string | null>(null);
@@ -64,7 +64,7 @@ export default function TownMap({
   const marker = markers.find((m) => m.id === selection),
     landmark = city.landmarks.find((l) => l.id === marker?.landmarkId),
     selected =
-      points.find((w) => w.id === selection) ??
+      points.find((w) => w.landmarkId === selection) ??
       points.find(
         (w) =>
           w.district ===
@@ -223,7 +223,7 @@ export default function TownMap({
                   key={w.id}
                   data-waypoint-entry={w.id}
                   aria-pressed={selected?.id === w.id}
-                  onClick={() => setSelection(w.id)}
+                  onClick={() => setSelection(w.landmarkId)}
                 >
                   <b>{i + 1}</b>
                   <strong>{text(w.name)}</strong>
