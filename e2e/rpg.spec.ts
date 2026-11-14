@@ -1,3 +1,4 @@
+import { beginStory, finishStory } from "./helpers/story";
 import { EVOLUTION_TIERS } from "../src/game/presentation/weapon-visual";
 import { test, expect, type Page } from "@playwright/test";
 import { initializeRpg } from "../src/game/rpg/profile";
@@ -576,6 +577,7 @@ test.describe("live campaign build and consumables", () => {
       .getByRole("button", { name: "WORLD MAP →", exact: true })
       .click();
     await page.getByRole("button", { name: "START STAGE →" }).click();
+    await beginStory(page);
     await expect(page.locator(".game-state")).toContainText("LIVE RUN");
     const build = await page.evaluate(() => {
       const g = window.__NOWRIFT_TEST__!.state();
@@ -614,13 +616,14 @@ test.describe("live campaign build and consumables", () => {
       const g = window.__NOWRIFT_TEST__!.state();
       g.campaign!.enemies = 120;
       g.player.invincible = 999;
-      g.time = g.campaign!.definition.clear.seconds - 0.01;
     });
     await page.getByRole("button", { name: /^RESUME RUN/ }).click();
+    await finishStory(page);
     await expect(page.locator(".campaign-reward")).toContainText("FIRST CLEAR");
     const earned = calculateStats(await saved(page));
     expect(earned.level).toBeGreaterThan(expected.level);
     await page.getByRole("button", { name: "TRY AGAIN" }).click();
+    await beginStory(page);
     await expect(page.locator(".game-state")).toContainText("LIVE RUN");
     const retry = await page.evaluate(() => {
       const g = window.__NOWRIFT_TEST__!.state();

@@ -1,4 +1,5 @@
 import "fake-indexeddb/auto";
+import { migrateJournal } from "../quests/save";
 import { beforeEach, expect, test } from "vitest";
 import { migrateWorld } from "../world/save";
 import legacy from "./fixtures/six-slot-save.json";
@@ -73,6 +74,13 @@ test("the six-slot golden save migrates once without rewards or changes to its f
   expected.rpg.schema = 2;
   expected.rpg.equipped.pants = null;
   expected.local.world = migrateWorld(expected.local.world);
+  Object.assign(expected.local, {
+    journal: migrateJournal(
+      undefined,
+      expected.clears,
+      expected.local.lastPlayed,
+    ),
+  });
   expect(next).toEqual(expected);
   expect(migrateSave(next, next.local.id, next.local.lastPlayed)).toEqual(next);
   expect(before).toEqual(legacy);

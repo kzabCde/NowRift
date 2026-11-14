@@ -5,6 +5,12 @@ import {
 } from "../persistence/checkpoint";
 import type { RunOwner } from "../persistence/model";
 import { seeded } from "../campaign/content";
+import { StoryWorld } from "./story-world";
+import {
+  beginMission,
+  interactMission,
+  missionReceipt,
+} from "../story/runtime";
 import { applyBuild } from "../engine";
 import { translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
@@ -425,12 +431,22 @@ class ForestRenderer {
             : e.speed > 0
               ? "walk"
               : "idle";
-      const frame = assetAnimationFrame(
-        this.skin + e.kind,
-        pose,
-        this.tick + e.id * 39,
+      const frame =
+        e.missionTarget?.kind === "destructible"
+          ? 32
+          : assetAnimationFrame(
+              this.skin + e.kind,
+              pose,
+              this.tick + e.id * 39,
+            );
+      const image = this.image(
+        this.enemies,
+        i++,
+        e.missionTarget?.kind === "destructible"
+          ? "haven-city-props"
+          : this.skin + e.kind,
+        frame,
       );
-      const image = this.image(this.enemies, i++, this.skin + e.kind, frame);
       image
         .setPosition(e.x, e.y)
         .setScale(2)
@@ -668,6 +684,7 @@ export class MainMenuScene extends Phaser.Scene {
   }
 }
 export class GameScene extends Phaser.Scene {
+  storyWorld: StoryWorld | null = null;
   simulation!: Simulation;
   visuals!: ForestRenderer;
   bridge!: GameBridge;
@@ -686,6 +703,7 @@ export class GameScene extends Phaser.Scene {
   stage?: StageSelection;
   loadout?: Loadout;
   lastCheckpoint = 0;
+  lastMissionCheckpoint = 0;
   storageBlocked = false;
   farmNodes: Phaser.GameObjects.Image[] = [];
   pendingGather: { id: string; sequence: number }[] = [];
@@ -715,6 +733,7 @@ export class GameScene extends Phaser.Scene {
     this.registry.set("outfit", this.stage?.outfit);
     this.loadout = data.checkpoint?.loadout ?? data.loadout;
     this.lastCheckpoint = 0;
+    this.lastMissionCheckpoint = 0;
     this.storageBlocked = false;
     this.simulation = data.checkpoint
       ? restoreCheckpoint(data.checkpoint)
@@ -755,10 +774,12 @@ export class GameScene extends Phaser.Scene {
         this.simulation.character,
         this.stage?.outfit ?? "moss",
       );
-    const queued = queueAppearanceAssets(
-      this,
-      appearanceAssets(look).map((asset) => asset.path),
-    );
+    const queued = queueAppearanceAssets(this, [
+      ...appearanceAssets(look).map((asset) => asset.path),
+      ...(this.simulation.campaign?.mission
+        ? ["haven-city-residents", "haven-city-props"]
+        : []),
+    ]);
     this.load.once("complete", () => warmSceneAssets(queued));
     const progress = (value: number) =>
         (this.registry.get("bridge") as GameBridge).emit("loading", value),
@@ -778,6 +799,7 @@ export class GameScene extends Phaser.Scene {
     this.bridge = this.registry.get("bridge");
     const g = this.simulation;
     this.visuals = new ForestRenderer(this, g);
+    this.storyWorld = g.campaign?.mission ? new StoryWorld(this) : null;
     this.farmNodes = [];
     this.farmLayout =
       this.stage?.activity === "farming" && g.campaign
@@ -807,13 +829,17 @@ export class GameScene extends Phaser.Scene {
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     const escape = () => {
-      if (this.tonicPending || this.storageBlocked) return;
+      if (this.tonicPending || this.storageBlocked || this.transitionLocked)
+        return;
       togglePause(g);
       this.clearInput();
       this.publish();
     };
     this.keys?.ESC.on("down", escape);
-    const farmInteract = () => this.command({ type: "expedition-interact" });
+    const farmInteract = () =>
+      this.command({
+        type: g.campaign?.mission ? "mission-interact" : "expedition-interact",
+      });
     this.input.keyboard?.on("keydown-E", farmInteract);
     const interrupt = () => {
       if (g.phase === "playing") togglePause(g);
@@ -946,6 +972,10 @@ export class GameScene extends Phaser.Scene {
           textObjects: this.visuals.texts.length,
         }),
         scenario: (name) => {
+          if (name === "target") {
+            g.enemies.length = 0;
+            spawnEnemy(g, "slime", g.player.x + 60, g.player.y);
+          }
           if (name === "boss") {
             g.time =
               (g.campaign
@@ -984,6 +1014,11 @@ export class GameScene extends Phaser.Scene {
             g.player.invincible = 999;
             g.spawnCooldown = 999;
           }
+          this.publish();
+        },
+        missionStep: async () => {
+          const { playObjective } = await import("../story/testing/driver");
+          if (g.campaign?.mission && g.phase !== "victory") playObjective(g);
           this.publish();
         },
         strikeBoss: () => {
@@ -1044,11 +1079,26 @@ export class GameScene extends Phaser.Scene {
         ),
       );
       this.lastCheckpoint = performance.now();
+      this.lastMissionCheckpoint = g.campaign?.mission?.completed.length ?? 0;
     } catch (error) {
       this.bridge.emit("error", String(error));
     }
   }
   command(command: Command) {
+    if (command.type === "mission-lifecycle") {
+      const g = this.simulation,
+        mission = g.campaign?.mission;
+      if (
+        g.id === command.runId &&
+        g.phase === "victory" &&
+        mission &&
+        ["MISSION_COMPLETED", "REWARD_SETTLEMENT"].includes(mission.phase)
+      ) {
+        mission.phase = command.phase;
+        this.publish();
+      }
+      return;
+    }
     if (command.type === "transition-lock") {
       this.transitionLocked = command.locked;
       this.clearInput();
@@ -1066,6 +1116,49 @@ export class GameScene extends Phaser.Scene {
       ].includes(command.type)
     )
       return;
+    if (command.type === "mission-begin") {
+      if (
+        !this.storageBlocked &&
+        !this.tonicPending &&
+        beginMission(this.simulation)
+      ) {
+        this.clearInput();
+        this.publish();
+        this.checkpoint();
+      }
+      return;
+    }
+    if (command.type === "mission-dialogue-close") {
+      if (
+        !this.storageBlocked &&
+        !this.tonicPending &&
+        this.simulation.phase === "paused"
+      ) {
+        togglePause(this.simulation);
+        this.clearInput();
+        this.publish();
+      }
+      return;
+    }
+    if (command.type === "mission-interact") {
+      if (this.storageBlocked || this.tonicPending) return;
+      const result = interactMission(this.simulation);
+      if (result?.advanced) {
+        audio.play("press");
+        if (result.object.dialogue) {
+          togglePause(this.simulation);
+          this.bridge.emit("mission-dialogue", {
+            id: result.object.id,
+            title: result.object.label,
+            text: result.object.dialogue,
+          });
+        }
+        this.clearInput();
+        this.publish();
+        this.checkpoint();
+      }
+      return;
+    }
     if (command.type === "expedition-interact") {
       const g = this.simulation;
       if (
@@ -1273,6 +1366,7 @@ export class GameScene extends Phaser.Scene {
     if (g.player.moving && g.phase === "playing") audio.play("step");
     if (g.phase !== "playing" && this.pointer !== null) this.clearInput();
     this.visuals.draw(g, delta, this.joystick);
+    this.storyWorld?.draw(g);
     if (g.phase !== this.lastPhase)
       this.game.loop.setFPSLimit(
         ["paused", "upgrade"].includes(g.phase)
@@ -1283,6 +1377,9 @@ export class GameScene extends Phaser.Scene {
       );
     if (
       (time - this.lastCheckpoint >= 10000 && g.phase === "playing") ||
+      (g.phase === "playing" &&
+        (g.campaign?.mission?.completed.length ?? 0) !==
+          this.lastMissionCheckpoint) ||
       (g.phase !== this.lastPhase && ["paused", "upgrade"].includes(g.phase))
     )
       this.checkpoint();
@@ -1318,6 +1415,8 @@ export class GameScene extends Phaser.Scene {
                 id: this.runId,
                 run: this.run ? { ...this.run } : undefined,
                 mode: g.campaign.mode ?? "story",
+                enemyKills: g.campaign.enemyKills ?? {},
+                ...(missionReceipt(g) ? { mission: missionReceipt(g)! } : {}),
                 earnedXp: Math.max(
                   0,
                   Math.floor(
@@ -1388,8 +1487,11 @@ declare global {
         feedback: number;
         textObjects: number;
       };
-      scenario: (name: "boss" | "upgrade" | "defeat" | "stress") => void;
+      scenario: (
+        name: "boss" | "upgrade" | "defeat" | "stress" | "target",
+      ) => void;
       strikeBoss: () => void;
+      missionStep: () => Promise<void>;
     };
   }
 }

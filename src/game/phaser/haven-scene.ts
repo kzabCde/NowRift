@@ -100,6 +100,8 @@ export class HavenScene extends Phaser.Scene {
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
     this.city = new HavenCity(this);
+    if (this.startData.questStates)
+      this.city.setQuestStates(this.startData.questStates);
     this.labels = this.city.labels;
     this.staticSprites = this.city.sprites;
     if (this.startData.milestones)
@@ -351,6 +353,7 @@ export class HavenScene extends Phaser.Scene {
       }
     }
     if (c.type === "haven-equipment") {
+      if (c.questStates) this.city.setQuestStates(c.questStates);
       if (c.milestones) this.city.setMilestones(c.milestones);
       this.startData.character = c.character;
       this.startData.weapon = c.weapon ? structuredClone(c.weapon) : null;

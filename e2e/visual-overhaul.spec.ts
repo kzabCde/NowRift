@@ -7,6 +7,7 @@ import type { SaveData } from "../src/game/persistence/model";
 import { LANDMARKS } from "../src/game/world/content";
 import { expeditionLayout } from "../src/game/world/farming";
 import { waitForHavenInput } from "./helpers/haven";
+import { STAGES } from "../src/game/campaign/content";
 
 const equippedDefinitions = ["desert-armor", "frozen-helmet", "infernal-boots"];
 function fixture() {
@@ -155,7 +156,11 @@ test.describe("live layered renderer and pixel effects", () => {
   }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await seed(page);
+    const progress = fixture();
+    progress.clears = STAGES.filter((s) => s.worldId === "forest").map(
+      (s) => s.id + ":normal",
+    );
+    await seed(page, progress);
     const before = await saved(page);
     await page
       .getByRole("button", { name: "WORLD MAP →", exact: true })

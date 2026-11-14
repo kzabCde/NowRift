@@ -7,6 +7,12 @@ export type Command =
   | { type: "transition-lock"; locked: boolean }
   | import("./world/bridge").HavenCommand
   | { type: "expedition-interact" }
+  | { type: "mission-begin" | "mission-interact" | "mission-dialogue-close" }
+  | {
+      type: "mission-lifecycle";
+      runId: string;
+      phase: "REWARD_SETTLEMENT" | "RETURN_TO_HAVEN";
+    }
   | {
       type: "start";
       visualAppearance?: import("./presentation/appearance").CharacterAppearance;
@@ -42,6 +48,11 @@ export type RunResult = {
   weapon: WeaponId;
 };
 export type GameEvents = {
+  "mission-dialogue": {
+    id: string;
+    title: import("./quests/types").LocalizedText;
+    text: import("./quests/types").LocalizedText;
+  };
   haven: import("./world/bridge").HavenSnapshot;
   interaction: { id: string; position: import("./world/content").Point };
   "haven-save": { position: import("./world/content").Point; epoch: number };

@@ -300,6 +300,7 @@ export const rpgTh = {
   "Enhancement succeeded: +{rank}.": "เสริมพลังสำเร็จ: +{rank}",
   "Enhancement failed: +{rank}. {pity}": "เสริมพลังล้มเหลว: +{rank} {pity}",
   "Consumed {item} ×{amount}": "ใช้ {item} ×{amount}",
+  "Delivered {item} ×{amount}": "ส่งมอบ {item} ×{amount}",
   "Obtained {item} ×{amount}": "ได้รับ {item} ×{amount}",
   "Sold {item} ×{amount}": "ขาย {item} ×{amount}",
   "Crafted {item} ×{amount}": "สร้าง {item} ×{amount}",

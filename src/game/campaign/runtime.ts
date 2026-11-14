@@ -8,6 +8,8 @@ import {
 } from "./content";
 import { constructMap, type MapLayout } from "./maps";
 export type StageRuntime = {
+  mission?: import("../story/types").MissionState;
+  enemyKills?: Partial<Record<Enemy["kind"], number>>;
   mode?: "story" | "free";
   activity?: "farming";
   harvested?: string[];
@@ -97,8 +99,16 @@ export function environmentStep(g: Game, dt: number, h: Hooks) {
 }
 export function campaignBossAttack(g: Game, e: Enemy, h: Hooks) {
   const c = g.campaign!;
-  const angry = e.hp <= e.maxHp / 2,
-    pattern = (e.pattern ?? 0) % 3;
+  const phase = finalePhase(e),
+    angry = e.missionFinale ? phase >= 2 : e.hp <= e.maxHp / 2,
+    cycle = e.pattern ?? 0,
+    pattern = e.missionFinale
+      ? phase === 1
+        ? 0
+        : phase === 2
+          ? 1 + (cycle % 2)
+          : cycle % 3
+      : cycle % 3;
   e.pattern = (e.pattern ?? 0) + 1;
   const w = c.world,
     a = Math.atan2(g.player.y - e.y, g.player.x - e.x),
@@ -170,5 +180,36 @@ export function campaignBossAttack(g: Game, e: Enemy, h: Hooks) {
       }
     }
   }
-  e.attack = (angry ? 2.7 : 4) / Math.sqrt(c.difficulty.projectiles);
+  if (e.missionFinale && phase === 3) {
+    // Final phase adds a readable aimed cross volley between the existing realm attacks.
+    for (let i = 0; i < 4; i++) {
+      const angle = a + (i * Math.PI) / 2;
+      h.bullet({
+        x: e.x,
+        y: e.y,
+        vx: Math.cos(angle) * 165,
+        vy: Math.sin(angle) * 165,
+        r: 7,
+        life: 4,
+        damage: 20,
+        color: w.colors[2],
+        hostile: true,
+        sprite: 4,
+      });
+    }
+  }
+  e.attack =
+    (e.missionFinale && phase === 3 ? 2.1 : angry ? 2.7 : 4) /
+    Math.sqrt(c.difficulty.projectiles);
+}
+export function finalePhase(e: Enemy) {
+  return e.missionFinale
+    ? e.hp <= e.maxHp / 3
+      ? 3
+      : e.hp <= (e.maxHp * 2) / 3
+        ? 2
+        : 1
+    : e.hp <= e.maxHp / 2
+      ? 2
+      : 1;
 }

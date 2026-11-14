@@ -49,10 +49,12 @@ export type RunOwner = {
   sequence: number;
 };
 export type ActiveRun = RunOwner & {
+  stage?: import("../campaign/identity").RunStageIdentity;
   updatedAt: number;
   metrics: Pick<Metrics, "kills" | "bosses" | "seconds">;
 };
 export type SlotState = {
+  journal?: import("../quests/types").QuestJournal;
   world?: import("../world/save").WorldSave;
   schema: 2;
   id: string;

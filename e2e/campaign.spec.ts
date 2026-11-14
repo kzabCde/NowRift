@@ -1,3 +1,4 @@
+import { beginStory, finishStory } from "./helpers/story";
 import { test, expect, type Page } from "@playwright/test";
 import { STAGES, WORLDS, DIFFICULTIES } from "../src/game/campaign/content";
 async function atlas(page: Page) {
@@ -46,7 +47,7 @@ test("atlas discovers locked worlds, explains locks, and supports mobile layout"
 }) => {
   await atlas(page);
   await expect(page.locator(".world-card")).toHaveCount(4);
-  await expect(page.locator(".stage-list button")).toHaveCount(5);
+  await expect(page.locator(".stage-list button")).toHaveCount(10);
   await page.locator(".world-card").nth(1).click();
   await expect(
     page.getByRole("button", { name: "START STAGE →" }),
@@ -54,7 +55,7 @@ test("atlas discovers locked worlds, explains locks, and supports mobile layout"
   await expect(page.locator(".notice")).toContainText("previous world");
   await page.locator(".world-card").first().click();
   await page.getByRole("button", { name: "HARD", exact: true }).click();
-  await expect(page.locator(".notice")).toContainText("five NORMAL");
+  await expect(page.locator(".notice")).toContainText("10 NORMAL");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await page.evaluate(
@@ -69,12 +70,10 @@ test.describe("campaign simulation bridge", () => {
   }) => {
     await atlas(page);
     await page.getByRole("button", { name: "START STAGE →" }).click();
+    await beginStory(page);
     await expect(page.locator(".game-state")).toContainText("LIVE RUN");
-    await page.evaluate(() => {
-      const g = window.__NOWRIFT_TEST__!.state();
-      g.player.invincible = 999;
-      g.time = g.campaign!.definition.clear.seconds - 0.01;
-    });
+    await finishStory(page);
+
     await expect(
       page.getByRole("heading", { name: "The veil is lifted." }),
     ).toBeVisible();
@@ -96,15 +95,15 @@ test.describe("campaign simulation bridge", () => {
     );
   });
   for (const world of WORLDS)
-    test(`${world.name}: five playable stages plus hard and nightmare boss`, async ({
+    test(`${world.name}: ten objective missions plus Hard and Nightmare guardians`, async ({
       page,
     }, info) => {
-      test.setTimeout(100000);
+      test.setTimeout(180000);
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await seedAll(page);
       for (const stage of STAGES.filter((s) => s.worldId === world.id))
-        for (const difficulty of (stage.number === 5
+        for (const difficulty of (stage.number === 5 || stage.number === 10
           ? ["normal", "hard", "nightmare"]
           : ["normal"]) as ("normal" | "hard" | "nightmare")[]) {
           await atlas(page);
@@ -120,6 +119,7 @@ test.describe("campaign simulation bridge", () => {
             .nth(stage.number - 1)
             .click();
           await page.getByRole("button", { name: "START STAGE →" }).click();
+          await beginStory(page);
           await expect(page.locator(".game-state")).toContainText("LIVE RUN");
           expect(
             await page.evaluate(
@@ -130,34 +130,61 @@ test.describe("campaign simulation bridge", () => {
           await page.keyboard.down("d");
           await page.waitForTimeout(150);
           await page.keyboard.up("d");
-          if (stage.number === 5) {
-            await page.evaluate(() => {
-              window.__NOWRIFT_TEST__!.scenario("boss");
-              const g = window.__NOWRIFT_TEST__!.state();
-              g.player.invincible = 999;
-              const b = g.enemies.find((e) => e.kind === "boss")!;
-              b.x = g.player.x + 180;
-              b.y = g.player.y;
-              b.attack = 0;
-            });
-            await expect(
-              page.getByLabel(`${world.boss.name} health`),
-            ).toBeVisible();
-            await page.waitForTimeout(100);
+          if (stage.number === 5 || stage.number === 10) {
+            await finishStory(page, true);
+            const bossName =
+              stage.number === 10
+                ? {
+                    forest: "Heartwood Echo",
+                    desert: "Meridian Keeper",
+                    frozen: "Witness of Winter",
+                    infernal: "The Fractured Heart",
+                  }[world.id]
+                : world.boss.name;
+            await expect(page.getByLabel(`${bossName} health`)).toBeVisible();
+            if (stage.number === 10 && difficulty === "normal") {
+              for (const [damage, label] of [
+                [0.38, "PHASE II"],
+                [0.34, "PHASE III"],
+              ] as const) {
+                await page.evaluate((damage) => {
+                  const g = window.__NOWRIFT_TEST__!.state(),
+                    boss = g.enemies.find((e) => e.kind === "boss")!;
+                  g.bullets.push({
+                    x: boss.x,
+                    y: boss.y,
+                    vx: 0,
+                    vy: 0,
+                    r: 8,
+                    life: 1,
+                    damage: boss.maxHp * damage,
+                    color: "#fff",
+                  });
+                }, damage);
+                await expect(page.locator(".boss-hud")).toContainText(label);
+              }
+              await page.evaluate(() => {
+                const g = window.__NOWRIFT_TEST__!.state();
+                g.bullets = g.bullets.filter((b) => !b.hostile);
+                g.enemies.find((e) => e.kind === "boss")!.attack = 0;
+              });
+              await expect
+                .poll(() =>
+                  page.evaluate(
+                    () =>
+                      window
+                        .__NOWRIFT_TEST__!.state()
+                        .bullets.filter((b) => b.hostile).length,
+                  ),
+                )
+                .toBeGreaterThanOrEqual(4);
+            }
             if (difficulty === "normal")
               await page.screenshot({
-                path: info.outputPath(`${world.id}-boss.png`),
+                path: info.outputPath(`${world.id}-${stage.number}-boss.png`),
               });
-            await page.evaluate(() => window.__NOWRIFT_TEST__!.strikeBoss());
-          } else
-            await page.evaluate(() => {
-              const g = window.__NOWRIFT_TEST__!.state();
-              g.player.invincible = 999;
-              g.time =
-                g.campaign!.definition.clear.seconds *
-                  g.campaign!.difficulty.duration -
-                0.01;
-            });
+          }
+          await finishStory(page);
           await expect(
             page.getByRole("heading", { name: "The veil is lifted." }),
           ).toBeVisible();

@@ -1,6 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { SaveData, PlayerProfile } from "../src/game/persistence/model";
-import { HAVEN, LANDMARKS, validPosition } from "../src/game/world/content";
+import {
+  HAVEN,
+  LANDMARKS,
+  nearest,
+  validPosition,
+} from "../src/game/world/content";
 import { waitForHavenInput } from "./helpers/haven";
 async function save(page: Page): Promise<SaveData> {
   return page.evaluate(
@@ -84,7 +89,11 @@ test("Rift Heaven launches with the saved character, real canvas, localized map 
   );
   await close(page);
   await page.getByRole("button", { name: "Journal", exact: true }).click();
-  await page.getByRole("button", { name: "Accept quest", exact: true }).click();
+  await page.locator(".legacy-supply-quest summary").click();
+  await page
+    .locator(".legacy-supply-quest")
+    .getByRole("button", { name: "Accept quest", exact: true })
+    .click();
   await expect(page.getByRole("dialog", { name: "Journal" })).toContainText(
     "Active",
   );
@@ -294,6 +303,15 @@ test.describe("instrumented open-world integration", () => {
     expect(
       (await page.evaluate(() => window.__NOWRIFT_HAVEN__!.state().position)).x,
     ).toBeLessThan(before.x + 105);
+    // The new Plaza beacon can still be in range after the short movement check.
+    // Give the out-of-range assertion its own explicitly empty street fixture.
+    const emptyStreet = {
+      x: HAVEN.spawn.x,
+      y: HAVEN.spawn.y + HAVEN.range + 64,
+    };
+    expect(validPosition(emptyStreet)).toBe(true);
+    expect(nearest(emptyStreet)).toBeNull();
+    await page.evaluate((p) => window.__NOWRIFT_HAVEN__!.place(p), emptyStreet);
     await page.keyboard.press("e");
     await page.evaluate(
       () =>
@@ -382,7 +400,9 @@ test.describe("instrumented open-world integration", () => {
       .click();
     await haven(page);
     await place(page, "mara");
+    await page.locator(".legacy-supply-quest summary").click();
     await page
+      .locator(".legacy-supply-quest")
       .getByRole("button", { name: "Accept quest", exact: true })
       .click();
     await close(page);
@@ -453,6 +473,7 @@ test.describe("instrumented open-world integration", () => {
     await expect(page.locator(".haven-title h1")).toHaveText("Rift Heaven");
     await expect(page.locator("canvas")).toHaveCount(1);
     await place(page, "mara");
+    await page.locator(".legacy-supply-quest summary").click();
     await page
       .getByRole("button", { name: "Claim reward", exact: true })
       .click();

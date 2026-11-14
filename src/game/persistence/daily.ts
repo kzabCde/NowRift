@@ -258,8 +258,12 @@ export function reconcile(save: SaveData, at: number) {
     forest: save.clears.filter((c) => /^forest-[1-5]:normal$/.test(c)).length,
     explorer:
       1 +
-      WORLDS.slice(0, -1).filter((w) =>
-        save.clears.includes(w.id + "-5:normal"),
+      WORLDS.slice(0, -1).filter(
+        (w) =>
+          save.clears.includes(w.id + "-10:normal") ||
+          !!save.local.journal?.legacyAccess.includes(
+            WORLDS[WORLDS.indexOf(w) + 1].id + ":entry",
+          ),
       ).length,
     veteran: save.local.stats.stages,
     level: characterLevel(save.xp).level,

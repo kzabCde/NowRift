@@ -6,6 +6,7 @@ import type { CharacterAppearance } from "../presentation/appearance";
 import type { ActionVisualReceipt } from "../presentation/action-feedback";
 import type { CityMilestones } from "./city";
 export type HavenStart = {
+  questStates?: import("../quests/presentation").QuestGiverStates;
   milestones?: CityMilestones;
   session: string;
   position: Point;
@@ -30,6 +31,7 @@ export type HavenCommand =
     }
   | {
       type: "haven-equipment";
+      questStates?: import("../quests/presentation").QuestGiverStates;
       milestones?: CityMilestones;
       character: CharacterId;
       weapon: WeaponSnapshot | null;

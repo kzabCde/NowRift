@@ -92,7 +92,7 @@ async function settle(id = "stage-run", run?: RunOwner) {
     run,
     stageId: "forest-1",
     difficulty: "normal",
-    seed: 34,
+    seed: run ? 32 : 34,
     victory: true,
     enemies: 120,
     elites: 2,

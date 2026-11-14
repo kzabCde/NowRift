@@ -1,0 +1,539 @@
+{
+  "schema": 1,
+  "notes": "Existing original asset registry entries, reused by Story. Runtime quest glyphs are editable 12×18 canvas definitions in haven-city.ts; no generated illustration or Figma output is claimed.",
+  "assets": [
+    {
+      "key": "boss",
+      "path": "/assets/forest/boss.png",
+      "frame": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "bytes": 7353,
+      "sha256": "b54fca05d7b93b56134e4c079b25bf67ef0573a85bd5d1bc9c0b9593f8b6b39c"
+    },
+    {
+      "key": "caster",
+      "path": "/assets/forest/caster.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2341,
+      "sha256": "579a941ad5f9a3e68793a982528631cfc607ee097e7d46700f4298194f772195"
+    },
+    {
+      "key": "elite",
+      "path": "/assets/forest/elite.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2478,
+      "sha256": "34074a5f6accc8203ca1da714560d7b0d4910ebb5d2921eb583b6df3e2891d22"
+    },
+    {
+      "key": "goblin",
+      "path": "/assets/forest/goblin.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2108,
+      "sha256": "83d8fe20096434727c7911bcb41903c6229260a1ad385b4268a57709a2c5c372"
+    },
+    {
+      "key": "ground",
+      "path": "/assets/forest/ground.png",
+      "frame": [
+        256,
+        256
+      ],
+      "frames": 1,
+      "bytes": 1789,
+      "sha256": "216095f9dbdee20a7efbb1598cce3c90d5f0a8fba8e978c6521ab0dec9960ade"
+    },
+    {
+      "key": "rock",
+      "path": "/assets/forest/rock.png",
+      "frame": [
+        32,
+        24
+      ],
+      "frames": 1,
+      "bytes": 368,
+      "sha256": "0c80388c2da43c53a7054975ad77da5442d4d6295544a5c037c77188ef7eb7ce"
+    },
+    {
+      "key": "slime",
+      "path": "/assets/forest/slime.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1705,
+      "sha256": "fa057cc184e02ae013f32e2700e096d97f11516a541de587552ff65b7d4cf181"
+    },
+    {
+      "key": "tree",
+      "path": "/assets/forest/tree.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 1438,
+      "sha256": "d6682c684d38e1e67c0d7a850d3670db50125eb57f2cbec0258207e769c0072d"
+    },
+    {
+      "key": "wolf",
+      "path": "/assets/forest/wolf.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2076,
+      "sha256": "c7974cb20b2bba9be968d2b8d59c10efcadc00128f24372ddf437640127ff153"
+    },
+    {
+      "key": "haven-city-props",
+      "path": "/assets/haven/city-props.png",
+      "frame": [
+        32,
+        48
+      ],
+      "frames": 64,
+      "bytes": 10422,
+      "sha256": "b20940947f1bfcbaf773751c7198b0a91247c803859977f19c7e25816fb36bae"
+    },
+    {
+      "key": "haven-city-residents",
+      "path": "/assets/haven/city-residents.png",
+      "frame": [
+        48,
+        48
+      ],
+      "frames": 288,
+      "bytes": 46110,
+      "sha256": "9d8f63b442dc534d42bcf738ec858156b9feaed13503d633aaf13bfc6c6eba00"
+    },
+    {
+      "key": "items",
+      "path": "/assets/items/atlas.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 48,
+      "bytes": 10498,
+      "sha256": "9862dde8660b27dd2983ceeceda729c69483bf3342094be7d92eef092534434c"
+    },
+    {
+      "key": "desert-boss",
+      "path": "/assets/worlds/desert/boss.png",
+      "frame": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "bytes": 4559,
+      "sha256": "5126885acdbe4547cdecead9113eefd1d36c93d5e5e272dcc877c80e4390430a"
+    },
+    {
+      "key": "desert-caster",
+      "path": "/assets/worlds/desert/caster.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2438,
+      "sha256": "788a7cae5bfaf1bca23932cfdf7b7f95d0d49b9f5640b347cb06861f1bd96413"
+    },
+    {
+      "key": "desert-elite",
+      "path": "/assets/worlds/desert/elite.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1843,
+      "sha256": "05694f7c8dd2ab932ea8928ed79054b266546842c8d1622b342bbcdb2a33ee7f"
+    },
+    {
+      "key": "desert-goblin",
+      "path": "/assets/worlds/desert/goblin.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2292,
+      "sha256": "d6be425b54ed45f118b820cbe37ed3b6df25d82412018fa002080bec151968ef"
+    },
+    {
+      "key": "desert-rock",
+      "path": "/assets/worlds/desert/rock.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 616,
+      "sha256": "b1e6fb9721286561e9394e738f0fba047d1f85140040021cbe6ce8f088482a66"
+    },
+    {
+      "key": "desert-slime",
+      "path": "/assets/worlds/desert/slime.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2025,
+      "sha256": "002f8ce444f7e495ddb5d5944f71c97ab7b07451afe0ce889ad241faa18128fb"
+    },
+    {
+      "key": "desert-tiles",
+      "path": "/assets/worlds/desert/tiles.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 3,
+      "bytes": 549,
+      "sha256": "2e68f87e03b679cde5f2500d19efb417c3125661678ce5b0e991f1ac95ea36b2"
+    },
+    {
+      "key": "desert-tree",
+      "path": "/assets/worlds/desert/tree.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 594,
+      "sha256": "a31971796510cce927367f95766734f5f96f71cf875be1a55caaaca31f302f5d"
+    },
+    {
+      "key": "desert-wolf",
+      "path": "/assets/worlds/desert/wolf.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2293,
+      "sha256": "fc0828718017799b63a678fd7a3a1aa0fd7bdde27b1a24eadd156c2704fdf868"
+    },
+    {
+      "key": "forest-boss",
+      "path": "/assets/worlds/forest/boss.png",
+      "frame": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "bytes": 7353,
+      "sha256": "b54fca05d7b93b56134e4c079b25bf67ef0573a85bd5d1bc9c0b9593f8b6b39c"
+    },
+    {
+      "key": "forest-caster",
+      "path": "/assets/worlds/forest/caster.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2341,
+      "sha256": "579a941ad5f9a3e68793a982528631cfc607ee097e7d46700f4298194f772195"
+    },
+    {
+      "key": "forest-elite",
+      "path": "/assets/worlds/forest/elite.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2478,
+      "sha256": "34074a5f6accc8203ca1da714560d7b0d4910ebb5d2921eb583b6df3e2891d22"
+    },
+    {
+      "key": "forest-goblin",
+      "path": "/assets/worlds/forest/goblin.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2108,
+      "sha256": "83d8fe20096434727c7911bcb41903c6229260a1ad385b4268a57709a2c5c372"
+    },
+    {
+      "key": "forest-rock",
+      "path": "/assets/worlds/forest/rock.png",
+      "frame": [
+        32,
+        24
+      ],
+      "frames": 1,
+      "bytes": 368,
+      "sha256": "0c80388c2da43c53a7054975ad77da5442d4d6295544a5c037c77188ef7eb7ce"
+    },
+    {
+      "key": "forest-slime",
+      "path": "/assets/worlds/forest/slime.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1705,
+      "sha256": "fa057cc184e02ae013f32e2700e096d97f11516a541de587552ff65b7d4cf181"
+    },
+    {
+      "key": "forest-tiles",
+      "path": "/assets/worlds/forest/tiles.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 3,
+      "bytes": 1288,
+      "sha256": "d6699fa799a10180f455bcf25b87efbc20804eb37a49cd3f0ea26fd6adb94524"
+    },
+    {
+      "key": "forest-tree",
+      "path": "/assets/worlds/forest/tree.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 1438,
+      "sha256": "d6682c684d38e1e67c0d7a850d3670db50125eb57f2cbec0258207e769c0072d"
+    },
+    {
+      "key": "forest-wolf",
+      "path": "/assets/worlds/forest/wolf.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2076,
+      "sha256": "c7974cb20b2bba9be968d2b8d59c10efcadc00128f24372ddf437640127ff153"
+    },
+    {
+      "key": "frozen-boss",
+      "path": "/assets/worlds/frozen/boss.png",
+      "frame": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "bytes": 5032,
+      "sha256": "4b94f99cefd8a8cadea2a0c114b85f27c399d994e12e0d03af351614421976a8"
+    },
+    {
+      "key": "frozen-caster",
+      "path": "/assets/worlds/frozen/caster.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2075,
+      "sha256": "1c81b9fa9a74a61f9631d2d2f3afcb97ff9dc46eb3b0e75a17c612ba20e0fa57"
+    },
+    {
+      "key": "frozen-elite",
+      "path": "/assets/worlds/frozen/elite.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1498,
+      "sha256": "af1a41b342a6b094a8fda9cb3615edeae321fe90a9ba899cea5e12269c756cf1"
+    },
+    {
+      "key": "frozen-goblin",
+      "path": "/assets/worlds/frozen/goblin.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2207,
+      "sha256": "1fa1359cb00be7acf0237764308101b44b9ca3b98c3fe31d0557d5a54f81a8ab"
+    },
+    {
+      "key": "frozen-rock",
+      "path": "/assets/worlds/frozen/rock.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 639,
+      "sha256": "a0a62247c4fc5031b6e8b93005268d59723188459694e58dcf8ec87a631a32bb"
+    },
+    {
+      "key": "frozen-slime",
+      "path": "/assets/worlds/frozen/slime.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 1705,
+      "sha256": "2f92da62b8dd18f2b4cc516bc07a33f4a5e59eab14db4d99a487dea8688edf0e"
+    },
+    {
+      "key": "frozen-tiles",
+      "path": "/assets/worlds/frozen/tiles.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 3,
+      "bytes": 1140,
+      "sha256": "102e94a75839dc34bcc1c8f95210cbe917f665767671347e1989b7d88946fb55"
+    },
+    {
+      "key": "frozen-tree",
+      "path": "/assets/worlds/frozen/tree.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 736,
+      "sha256": "060117f87faf1cc898bb751325f9b5b3d3ce35d21a1ca705dae6b8cac3e66401"
+    },
+    {
+      "key": "frozen-wolf",
+      "path": "/assets/worlds/frozen/wolf.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2138,
+      "sha256": "daa41ba2478bb1b57ceb79dc6c785f4edb1f4138672a89ec135e43908c58f557"
+    },
+    {
+      "key": "infernal-boss",
+      "path": "/assets/worlds/infernal/boss.png",
+      "frame": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "bytes": 6272,
+      "sha256": "b41bd4ab0f097961a55dad044893923faa873c786b9b1fd800c38a109fff2f17"
+    },
+    {
+      "key": "infernal-caster",
+      "path": "/assets/worlds/infernal/caster.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2444,
+      "sha256": "988f66c183fdb3ea54d0243b196d109606c37f385bbfe965cc24ba4106432f6f"
+    },
+    {
+      "key": "infernal-elite",
+      "path": "/assets/worlds/infernal/elite.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2075,
+      "sha256": "fc6e5e3e7fc4b0d3daa4ebbed3e3b5a90d610c4fa432d7f1108b1c57dbc5b136"
+    },
+    {
+      "key": "infernal-goblin",
+      "path": "/assets/worlds/infernal/goblin.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2305,
+      "sha256": "574e0871d65303aa3d1dbf341c7db2c793eb625ef9fc257e93ade71dd42a2182"
+    },
+    {
+      "key": "infernal-rock",
+      "path": "/assets/worlds/infernal/rock.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 554,
+      "sha256": "ad9bc2aae6426a883a15c55725b987a05ba1d85b765b6b96a60099c84ea6e689"
+    },
+    {
+      "key": "infernal-slime",
+      "path": "/assets/worlds/infernal/slime.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2598,
+      "sha256": "07ea87e5fcf3297117b9962ed0029fb7c14c82b319140c833a4182bfa82a532f"
+    },
+    {
+      "key": "infernal-tiles",
+      "path": "/assets/worlds/infernal/tiles.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 3,
+      "bytes": 1209,
+      "sha256": "05aca5abb760144a1f633a98e84138c8323c6e4c4c9cc5701be99107186eefc5"
+    },
+    {
+      "key": "infernal-tree",
+      "path": "/assets/worlds/infernal/tree.png",
+      "frame": [
+        64,
+        80
+      ],
+      "frames": 1,
+      "bytes": 736,
+      "sha256": "20723a8f1254644635a5599429d9a88cda5177464f559687a2c4674ca860ebb2"
+    },
+    {
+      "key": "infernal-wolf",
+      "path": "/assets/worlds/infernal/wolf.png",
+      "frame": [
+        32,
+        32
+      ],
+      "frames": 10,
+      "bytes": 2417,
+      "sha256": "22b4a039a2e28702be9f49b49a46e508bbc8d8f10a9eb3d1099ec9db4c70066c"
+    }
+  ],
+  "remaining": [
+    "Distinct sprite/portrait sets for the four new chapter finales (current realm guardian art is reused)",
+    "Dedicated cast portraits and occupational sprites (current original resident atlas is reused)",
+    "Voiced dialogue and cinematic audio (text/dialogue fallback is implemented)"
+  ]
+}

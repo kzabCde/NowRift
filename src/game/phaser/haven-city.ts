@@ -13,12 +13,15 @@ import {
 import { validPosition } from "../world/content";
 import type { Preferences } from "../../state/settings";
 import { onSceneEnd } from "./lifecycle";
+import type { QuestGiverStates } from "../quests/presentation";
 
 /** World presentation only. Economy, collisions, rewards and session ownership stay authoritative elsewhere. */
 export class HavenCity {
   readonly labels: { id: string; text: Phaser.GameObjects.Text }[] = [];
   readonly sprites: Phaser.GameObjects.Image[] = [];
   readonly landmarks = new Map<string, Phaser.GameObjects.Image>();
+  private questMarkers = new Map<string, Phaser.GameObjects.Image>();
+  private questStates: QuestGiverStates = {};
   private maps: Phaser.Tilemaps.Tilemap[] = [];
   private trees: { image: Phaser.GameObjects.Image; variant: number }[] = [];
   private residents: {
@@ -44,6 +47,55 @@ export class HavenCity {
   private frames = 0;
   private dayBanner: Phaser.GameObjects.Image;
   constructor(private scene: Phaser.Scene) {
+    // Native 12 × 18 original pixel glyphs, shared by every giver. No font blur.
+    for (const [kind, rows] of Object.entries({
+      available: [
+        "0011100",
+        "0011100",
+        "0011100",
+        "0011100",
+        "0011100",
+        "0000000",
+        "0011100",
+      ],
+      ready: [
+        "0111110",
+        "1100011",
+        "0000011",
+        "0001110",
+        "0011000",
+        "0000000",
+        "0011000",
+      ],
+      active: [
+        "0000000",
+        "0000000",
+        "0000000",
+        "1101101",
+        "1101101",
+        "0000000",
+        "0000000",
+      ],
+    })) {
+      const key = "quest-marker-" + kind;
+      if (scene.textures.exists(key)) continue;
+      const texture = scene.textures.createCanvas(key, 12, 18)!;
+      const ctx = texture.context;
+      ctx.fillStyle = "#172a2d";
+      ctx.fillRect(0, 0, 12, 18);
+      ctx.fillStyle =
+        kind === "ready"
+          ? "#9ee2cf"
+          : kind === "active"
+            ? "#a0aea0"
+            : "#ffe095";
+      rows.forEach((row, y) =>
+        [...row].forEach((v, x) => {
+          if (v === "1") ctx.fillRect(x + 2, y * 2 + 2, 1, 2);
+        }),
+      );
+      texture.refresh();
+    }
     const depths = {
       ground: -10000,
       terrain: -9990,
@@ -197,6 +249,27 @@ export class HavenCity {
       .get("cache")
       ?.setTint(milestones.cacheClaimed ? 0x829485 : 0xffffff);
   }
+  setQuestStates(states: QuestGiverStates) {
+    this.questStates = states;
+    for (const [id, state] of Object.entries(states)) {
+      const landmark = LANDMARKS.find((l) => l.id === id);
+      if (!landmark) continue;
+      let image = this.questMarkers.get(id);
+      if (!image) {
+        image = this.scene.add
+          .image(
+            landmark.entrance.x,
+            landmark.entrance.y - 62,
+            "quest-marker-available",
+          )
+          .setScale(2)
+          .setDepth(landmark.y + 4);
+        this.questMarkers.set(id, image);
+      }
+      image.setVisible(state !== "none");
+      if (state !== "none") image.setTexture("quest-marker-" + state);
+    }
+  }
   setTime(phase: number) {
     if (!Number.isFinite(phase) || phase < 0 || phase >= 1)
       throw new Error("Invalid city clock");
@@ -208,6 +281,12 @@ export class HavenCity {
       lighting: { ...this.lighting },
       tileLayers: this.maps.length,
       sprites: this.sprites.length,
+      questMarkers: [...this.questMarkers].map(([id, image]) => ({
+        id,
+        state: this.questStates[id],
+        visible: image.visible,
+        texture: image.texture.key,
+      })),
       visibleSprites: this.sprites.filter((s) => s.visible).length,
       motes: this.visibleMotes,
       moteLimit: 72,
@@ -252,6 +331,10 @@ export class HavenCity {
       this.lastClock = time;
       this.frames++;
       this.lighting = cityLighting(clock);
+      for (const [id, image] of this.questMarkers)
+        image.setVisible(
+          this.questStates[id] !== "none" && view.contains(image.x, image.y),
+        );
       for (const { image, variant } of this.trees)
         image.setFrame(
           variant * 4 + (prefs.reducedEffects ? 0 : Math.floor(time / 470) % 4),

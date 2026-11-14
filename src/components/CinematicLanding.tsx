@@ -29,7 +29,7 @@ const FEATURES = [
     description:
       "Enter dangerous regions, overcome challenges and defeat powerful guardians.",
     alt: "Forest Guardian encounter",
-    note: "FOUR WORLDS · TWENTY STAGES",
+    note: "FOUR WORLDS · FORTY STAGES",
     width: 900,
     height: 480,
   },
@@ -212,6 +212,9 @@ export default function CinematicLanding({
   const muted = useSettings((s) => s.muted),
     particles = useSettings((s) => s.particles);
   const { root, hero } = useCinematicMotion(reduced, quality);
+  const [interactive, setInteractive] = useState(false);
+  // SSR can display these buttons before their client handlers are attached.
+  useEffect(() => setInteractive(true), []);
   const [artFailed, setArtFailed] = useState(false);
   const explore = (event: MouseEvent<HTMLAnchorElement>) => {
     const target = document.getElementById("worlds-beyond");
@@ -234,6 +237,7 @@ export default function CinematicLanding({
       ref={root}
       className={styles.root}
       data-landing
+      aria-busy={!interactive}
       data-motion={reduced || quality === "low" ? "off" : "on"}
     >
       <a className={styles.skip} href="#start-adventure">
@@ -337,6 +341,7 @@ export default function CinematicLanding({
               aria-label={t("landing", muted ? "Unmute sound" : "Mute sound")}
               aria-pressed={muted}
               onClick={() => useSettings.getState().set({ muted: !muted })}
+              disabled={!interactive}
               type="button"
             >
               <SoundIcon muted={muted} />
@@ -346,6 +351,7 @@ export default function CinematicLanding({
               className={styles.settings}
               aria-label={t("main", "Settings")}
               onClick={onSettings}
+              disabled={!interactive}
               type="button"
             >
               <svg
@@ -397,6 +403,7 @@ export default function CinematicLanding({
                 id="start-adventure"
                 className={styles.play}
                 onClick={onPlay}
+                disabled={!interactive}
                 type="button"
               >
                 <span className={styles.playRune} aria-hidden="true" />
@@ -482,7 +489,12 @@ export default function CinematicLanding({
             {t("landing", "THE RIFT IS WAITING")}
           </span>
           <h2>{t("landing", "Your next chapter begins here.")}</h2>
-          <button className={styles.journey} onClick={onPlay} type="button">
+          <button
+            className={styles.journey}
+            onClick={onPlay}
+            disabled={!interactive}
+            type="button"
+          >
             {t("landing", "BEGIN YOUR JOURNEY")}{" "}
             <span aria-hidden="true">→</span>
           </button>
@@ -501,10 +513,10 @@ export default function CinematicLanding({
           </p>
         </div>
         <div className={styles.footerLinks}>
-          <button onClick={onManual} type="button">
+          <button onClick={onManual} disabled={!interactive} type="button">
             {t("landing", "Field manual")}
           </button>
-          <button onClick={onPractice} type="button">
+          <button onClick={onPractice} disabled={!interactive} type="button">
             {t("journey", "Practice & legacy tools")}
           </button>
           <PwaControls />

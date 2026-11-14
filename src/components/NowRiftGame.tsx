@@ -3,9 +3,16 @@ import SaveIndicator from "./SaveIndicator";
 import RiftTransition from "./RiftTransition";
 import { shortcutAllowed } from "@/game/navigation/flow";
 import { profileRepository } from "@/game/persistence/repository";
+import QuestNotice from "./QuestNotice";
+import QuestJournal, { QuestTracker } from "./QuestJournal";
+import { projectQuestJournal } from "@/game/quests/presentation";
+import type { QuestCommand } from "@/game/quests/commands";
+import type { SaveData } from "@/game/persistence/model";
 import type { RunOwner } from "@/game/persistence/model";
 import type { RunCheckpoint } from "@/game/persistence/checkpoint";
 import type { ExpeditionPrompt } from "@/game/world/farming";
+import { missionById } from "@/game/story/content";
+import type { LocalizedText } from "@/game/quests/types";
 import { travelReason } from "@/game/world/content";
 import { expeditionLayout } from "@/game/world/farming";
 import { ITEMS } from "@/game/rpg/content";
@@ -37,6 +44,7 @@ import {
 import { stageById, worldById, DIFFICULTIES } from "@/game/campaign/content";
 import type { StageSelection } from "@/game/campaign/loader";
 import { campaignRepository } from "@/game/campaign/persistence";
+import { newlyUnlockedStages } from "@/game/campaign/progression";
 import { campaignLoadout } from "@/game/rpg/stats";
 import type { Rewards } from "@/game/campaign/rewards";
 import { runRepository } from "@/game/services/saves";
@@ -80,11 +88,21 @@ export default function NowRiftGame({
   const pendingResult = useRef<Promise<void> | null>(null),
     startGuard = useRef(false);
   const [starting, setStarting] = useState(false);
+  const [questSave, setQuestSave] = useState<SaveData | null>(null),
+    [journalOpen, setJournalOpen] = useState(false);
+  const journalResume = useRef(false);
   const [saveBlocked, setSaveBlocked] = useState(false);
   const [expedition, setExpedition] = useState<ExpeditionPrompt | null>(null);
+  const [storyDialogue, setStoryDialogue] = useState<{
+    id: string;
+    title: LocalizedText;
+    text: LocalizedText;
+  } | null>(null);
   const farming = stage?.activity === "farming";
   const supplyNodes = farming ? expeditionLayout(stage!.stageId).nodes : [];
   const [reward, setReward] = useState<Rewards | null>(null);
+  const beforeClears = useRef<string[]>([]);
+  const [newStageUnlocked, setNewStageUnlocked] = useState(false);
   const [tonics, setTonics] = useState<Record<string, number>>({}),
     [tonicBusy, setTonicBusy] = useState(false);
   const tonicGuard = useRef(false);
@@ -103,6 +121,48 @@ export default function NowRiftGame({
   const resume = useRef(false),
     currentHud = useRef(hud);
   currentHud.current = hud;
+  const mission = hud.mission ? missionById(hud.mission.stageId) : undefined;
+  const missionStep = mission?.objectives[hud.mission?.step ?? 0];
+  const missionObject = missionStep?.objects.find(
+    (o) => o.id === hud.mission?.prompt,
+  );
+  const evidenceKey = hud.questEvidence
+    ? `${Math.floor(hud.questEvidence.seconds)}:${hud.questEvidence.events.length}:${Object.values(hud.questEvidence.kills).join(",")}`
+    : "";
+  const liveJournal = useMemo(
+    () =>
+      questSave ? projectQuestJournal(questSave, hud.questEvidence) : null,
+    [questSave, evidenceKey],
+  );
+  const openJournal = () => {
+    if (
+      !questSave ||
+      storyDialogue ||
+      hud.mission?.phase === "INTRO_DIALOGUE" ||
+      !["playing", "paused"].includes(hud.phase)
+    )
+      return;
+    journalResume.current = hud.phase === "playing";
+    if (journalResume.current) bridge.emit("command", { type: "pause" });
+    bridge.emit("command", { type: "transition-lock", locked: true });
+    setJournalOpen(true);
+  };
+  const closeJournal = () => {
+    setJournalOpen(false);
+    bridge.emit("command", { type: "transition-lock", locked: false });
+    if (journalResume.current && currentHud.current.phase === "paused")
+      bridge.emit("command", { type: "pause" });
+  };
+  const journalCommand = async (command: QuestCommand) => {
+    if (!questSave || command.type !== "track") return;
+    try {
+      bridge.emit("command", { type: "checkpoint" });
+      await pendingCheckpoint.current;
+      setQuestSave(await profileRepository.quest(questSave.local.id, command));
+    } catch (e) {
+      setError(String(e));
+    }
+  };
   useEffect(() => {
     const off = [
       bridge.on("hud", setHud),
@@ -116,6 +176,7 @@ export default function NowRiftGame({
       }),
       bridge.on("touch", setTouch),
       bridge.on("expedition", setExpedition),
+      bridge.on("mission-dialogue", setStoryDialogue),
       bridge.on("ready", (value) => {
         setReady(value);
         if (value && autoStart) bootStart.current();
@@ -123,7 +184,8 @@ export default function NowRiftGame({
       bridge.on("checkpoint", (checkpoint) => {
         pendingCheckpoint.current = profileRepository
           .checkpoint(checkpoint)
-          .then(() => {
+          .then((saved) => {
+            setQuestSave(saved);
             setSaveBlocked(false);
             setError((message) =>
               message.startsWith("Checkpoint save failed.") ? "" : message,
@@ -141,6 +203,12 @@ export default function NowRiftGame({
       }),
       bridge.on("result", (run) => {
         resultRun.current = run.id;
+        if (run.campaign?.mission)
+          bridge.emit("command", {
+            type: "mission-lifecycle",
+            runId: run.id,
+            phase: "REWARD_SETTLEMENT",
+          });
         setSave("Saving run record…");
         pendingResult.current = (async () => {
           await pendingCheckpoint.current;
@@ -149,7 +217,17 @@ export default function NowRiftGame({
             try {
               const settled = await campaignRepository.settle(run.campaign);
               recordedGold = settled.reward?.gold ?? 0;
-              if (resultRun.current === run.id) setReward(settled.reward);
+              if (resultRun.current === run.id) {
+                setReward(settled.reward);
+                setNewStageUnlocked(
+                  newlyUnlockedStages(
+                    beforeClears.current,
+                    settled.progress.clears,
+                    settled.progress.local.journal?.legacyAccess,
+                  ).length > 0,
+                );
+                setQuestSave(settled.progress);
+              }
             } catch (e) {
               recordedGold = 0;
               if (resultRun.current === run.id)
@@ -174,11 +252,20 @@ export default function NowRiftGame({
     ];
     return () => {
       resultRun.current = null;
+      setStoryDialogue(null);
       off.forEach((fn) => fn());
     };
   }, [autoStart, bridge, weapon, stage, loadout]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() === "q" &&
+        shortcutAllowed(event, event.target)
+      ) {
+        event.preventDefault();
+        if (journalOpen) closeJournal();
+        else openJournal();
+      }
       if (
         event.key.toLowerCase() === "h" &&
         shortcutAllowed(event, event.target)
@@ -192,7 +279,7 @@ export default function NowRiftGame({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [t]);
+  }, [t, journalOpen, questSave, hud.phase, storyDialogue, hud.mission?.phase]);
   useEffect(() => {
     document.body.classList.toggle("nowrift-immersive", immersive);
     return () => document.body.classList.remove("nowrift-immersive");
@@ -255,7 +342,11 @@ export default function NowRiftGame({
       );
       const recovering = !!recovery && !didRecover.current;
       if (stage) {
-        const reason = travelReason(stage, p.clears);
+        const reason = travelReason(
+          stage,
+          p.clears,
+          p.local.journal?.legacyAccess,
+        );
         if (reason) throw new Error(reason);
       }
       const prepared = await profileRepository.beginRun(
@@ -263,16 +354,22 @@ export default function NowRiftGame({
         recovering,
         runContext.current?.id,
         !!stage,
+        stage,
       );
       runContext.current = prepared.run;
       didRecover.current = true;
       const c = prepared.checkpoint;
       const canonical = prepared.save;
+      beforeClears.current = [...canonical.clears];
+      setNewStageUnlocked(false);
+      setQuestSave(canonical);
       const selection =
         c?.stage ??
         (stage
           ? {
               ...stage,
+              missionVersion:
+                canonical.local.activeRun?.stage?.missionVersion ?? 0,
               ...(stage.activity === "farming"
                 ? {
                     startingHp: canonical.local.world!.hp,
@@ -282,6 +379,7 @@ export default function NowRiftGame({
               outfit: canonical.local.world!.outfit,
               startingXp: canonical.xp,
               clears: canonical.clears,
+              legacyAccess: canonical.local.journal?.legacyAccess,
               ...campaignLoadout(canonical),
             }
           : undefined);
@@ -349,6 +447,12 @@ export default function NowRiftGame({
             String(error);
       }
     }
+    if (stage && currentHud.current.phase === "victory" && run)
+      bridge.emit("command", {
+        type: "mission-lifecycle",
+        runId: run.id,
+        phase: "RETURN_TO_HAVEN",
+      });
     bridge.emit("command", { type: "exit" });
     onExitToMenu?.(warning);
   };
@@ -456,6 +560,10 @@ export default function NowRiftGame({
               t(
                 "haven",
                 "Extraction requires 20 seconds and 5 kills. Return to the portal near your starting point.",
+              )
+            ) : mission ? (
+              text(
+                "Story objectives replace the survival timer in this mission.",
               )
             ) : definition && stage ? (
               `${text(definition.name)} · ${text(stage.difficulty.toUpperCase())} · ${clock(Math.round(definition.clear.seconds * DIFFICULTIES[stage.difficulty].duration))} ${definition.clear.kind === "boss" ? t("game", "then defeat the guardian") : t("game", "survival")}`
@@ -585,6 +693,145 @@ export default function NowRiftGame({
             </div>
           </div>
           <div className="arena">
+            {liveJournal && <QuestNotice journal={liveJournal} />}
+            {liveJournal?.tracked &&
+              liveJournal.tracked !== `main-${hud.mission?.stageId}` && (
+                <QuestTracker journal={liveJournal} onOpen={openJournal} />
+              )}
+            {revealed && journalOpen && liveJournal && (
+              <DialogSurface
+                className="arena-overlay quest-overlay"
+                title={text("Quest Journal")}
+                onClose={closeJournal}
+              >
+                <QuestJournal
+                  journal={liveJournal}
+                  busy={saveBlocked}
+                  onCommand={(c) => void journalCommand(c)}
+                  onClose={closeJournal}
+                />
+              </DialogSurface>
+            )}
+            {mission && hud.mission && (
+              <aside
+                className="mission-hud"
+                aria-label={text("Mission objectives")}
+                aria-live="polite"
+              >
+                <small>
+                  {text("The Shattered Rift")} ·{" "}
+                  {Math.min(hud.mission.step + 1, hud.mission.total)} /{" "}
+                  {hud.mission.total}
+                </small>
+                <strong>{text(mission.questTitle.en)}</strong>
+                <p>
+                  {hud.mission.phase === "OBJECTIVE_COMPLETED"
+                    ? text("Objective completed")
+                    : missionStep
+                      ? text(missionStep.text.en)
+                      : text("Mission complete")}
+                </p>
+                {missionStep && (
+                  <small>
+                    {hud.mission.progress} / {hud.mission.goal}
+                  </small>
+                )}
+                {missionStep && (
+                  <progress
+                    max={hud.mission.goal}
+                    value={hud.mission.progress}
+                    aria-label={text(missionStep.text.en)}
+                  />
+                )}
+                {hud.mission.direction && (
+                  <small className="mission-direction">
+                    <i
+                      aria-hidden="true"
+                      style={{
+                        transform: `rotate(${hud.mission.direction.angle}rad)`,
+                      }}
+                    >
+                      ➜
+                    </i>
+                    {text("Mission landmark")} · {hud.mission.direction.tiles}{" "}
+                    {text("tiles")}
+                  </small>
+                )}
+                {hud.mission.ally && (
+                  <small>
+                    {text("Protect your companion")} · {hud.mission.ally.hp} /{" "}
+                    {hud.mission.ally.maxHp} HP
+                  </small>
+                )}
+                {hud.mission.feedback === "mechanism-order" && (
+                  <small>{text("Follow the rune sequence.")}</small>
+                )}
+              </aside>
+            )}
+            {missionObject && hud.phase === "playing" && (
+              <div className="expedition-context">
+                <button
+                  onClick={() =>
+                    bridge.emit("command", { type: "mission-interact" })
+                  }
+                >
+                  {text(
+                    missionObject.kind === "npc"
+                      ? "Speak"
+                      : missionObject.kind === "item"
+                        ? "Collect"
+                        : missionObject.kind === "rescue"
+                          ? "Rescue"
+                          : "Activate",
+                  )}{" "}
+                  · {text(missionObject.label.en)} <kbd>E</kbd>
+                </button>
+              </div>
+            )}
+            {revealed &&
+              mission &&
+              hud.mission?.phase === "INTRO_DIALOGUE" &&
+              hud.phase === "playing" && (
+                <DialogSurface
+                  className="arena-overlay mission-dialogue"
+                  title={text("Mission briefing")}
+                >
+                  <span className="eyebrow">{text("The Shattered Rift")}</span>
+                  <h2>{text(mission.title.en)}</h2>
+                  <p>{text(mission.briefing.en)}</p>
+                  <ol>
+                    {mission.objectives.map((o) => (
+                      <li key={o.id}>{text(o.text.en)}</li>
+                    ))}
+                  </ol>
+                  <button
+                    className="primary-button"
+                    onClick={() =>
+                      bridge.emit("command", { type: "mission-begin" })
+                    }
+                  >
+                    {text("Begin mission")}
+                  </button>
+                </DialogSurface>
+              )}
+            {revealed && storyDialogue && (
+              <DialogSurface
+                className="arena-overlay mission-dialogue"
+                title={text(storyDialogue.title.en)}
+              >
+                <h2>{text(storyDialogue.title.en)}</h2>
+                <p>{text(storyDialogue.text.en)}</p>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    setStoryDialogue(null);
+                    bridge.emit("command", { type: "mission-dialogue-close" });
+                  }}
+                >
+                  {text("Continue")}
+                </button>
+              </DialogSurface>
+            )}
             {farming && expedition && hud.phase === "playing" && (
               <div className="expedition-context">
                 {expedition.target ? (
@@ -656,18 +903,29 @@ export default function NowRiftGame({
                 {error && <p role="alert">{text(error)}</p>}
               </div>
             )}
+            {revealed && mission && hud.phase === "victory" && (
+              <p className="story-result-notice" role="status">
+                {text("Mission complete")}
+                {newStageUnlocked ? ` · ${text("New stage unlocked")}` : ""}
+              </p>
+            )}
             {hud.boss && (
               <div
                 className="boss-hud"
-                aria-label={`${text(world?.boss.name ?? "Forest Guardian")} ${t("game", "health")}`}
+                aria-label={`${text(mission?.finale?.name.en ?? world?.boss.name ?? "Forest Guardian")} ${t("game", "health")}`}
               >
                 <span>
-                  {world?.boss.name.toUpperCase() ??
-                    t("game", "FOREST GUARDIAN")}{" "}
+                  {text(
+                    mission?.finale?.name.en ??
+                      world?.boss.name ??
+                      "Forest Guardian",
+                  )}{" "}
                   <small>
-                    {hud.boss.phase === 2
-                      ? t("game", "ENRAGED · PHASE II")
-                      : t("game", "THE ANCIENT WARDEN")}
+                    {hud.boss.phase === 3
+                      ? text("FRACTURE · PHASE III")
+                      : hud.boss.phase === 2
+                        ? t("game", "ENRAGED · PHASE II")
+                        : t("game", "THE ANCIENT WARDEN")}
                   </small>
                 </span>
                 <div className="bar-track">
@@ -703,6 +961,8 @@ export default function NowRiftGame({
             )}
             {revealed &&
               hud.phase === "paused" &&
+              !storyDialogue &&
+              !journalOpen &&
               !confirmLeave &&
               !settings && (
                 <DialogSurface
@@ -711,6 +971,11 @@ export default function NowRiftGame({
                   onClose={pause}
                 >
                   <span className="eyebrow">{t("game", "TAKE A BREATH")}</span>
+                  {questSave && (
+                    <button className="quiet-button" onClick={openJournal}>
+                      {text("Quest Journal")} · Q
+                    </button>
+                  )}
                   <h2>{t("game", "Paused")}</h2>
                   <p>{t("game", "The forest will wait.")}</p>
                   {stage && (

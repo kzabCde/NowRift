@@ -1,3 +1,4 @@
+import { missionFixture, playMission } from "../story/testing/driver";
 import { describe, test, expect } from "vitest";
 import "fake-indexeddb/auto";
 import { STAGES, WORLDS, DIFFICULTIES, ITEM_IDS } from "./content";
@@ -15,6 +16,23 @@ function result(
   difficulty: "normal" | "hard" | "nightmare" = "normal",
 ): CampaignResult {
   const stage = STAGES.find((s) => s.id === stageId)!;
+  if (stage.number > 5) {
+    const { g } = missionFixture(stageId, difficulty),
+      mission = playMission(g);
+    return {
+      id: stageId + difficulty,
+      stageId,
+      difficulty,
+      seed: 42,
+      victory: true,
+      seconds: g.time,
+      enemies: g.campaign!.enemies,
+      elites: g.campaign!.elites,
+      bosses: g.campaign!.bosses,
+      enemyKills: g.campaign!.enemyKills,
+      mission,
+    };
+  }
   return {
     id: stageId + difficulty,
     stageId,
@@ -28,9 +46,9 @@ function result(
   };
 }
 describe("campaign definitions and actual simulation", () => {
-  test("20 unique stages, valid references, all loot IDs and five enemies per world", () => {
-    expect(STAGES).toHaveLength(20);
-    expect(new Set(STAGES.map((s) => s.id)).size).toBe(20);
+  test("40 unique stages, valid references, all loot IDs and five enemies per world", () => {
+    expect(STAGES).toHaveLength(40);
+    expect(new Set(STAGES.map((s) => s.id)).size).toBe(40);
     for (const w of WORLDS) {
       expect(w.enemies).toHaveLength(5);
       expect(w.boss.patterns).toHaveLength(3);
@@ -43,7 +61,8 @@ describe("campaign definitions and actual simulation", () => {
       }
     }
   });
-  for (const s of STAGES)
+  // Legacy 1–5 checkpoints retain their timer model. Fresh objective missions are covered in story/content.test.ts.
+  for (const s of STAGES.filter((s) => s.number <= 5))
     for (const difficulty of ["normal", "hard", "nightmare"] as const)
       test(`${s.id} / ${difficulty}: enters, fights, hazards, clears`, () => {
         const g = loadStage({
@@ -101,7 +120,7 @@ describe("campaign definitions and actual simulation", () => {
           ).toBeGreaterThan(90);
       hashes.add(JSON.stringify(map));
     }
-    expect(hashes.size).toBe(20);
+    expect(hashes.size).toBe(40);
   });
   test("difficulty changes composition pressure, movement and projectile counts", () => {
     const normal = loadStage({
@@ -188,7 +207,7 @@ describe("unlocks and atomic farming rewards", () => {
       }
     }
     expect(lockedReason("desert-1", "normal", p.clears)).toBeNull();
-    expect(p.clears).toHaveLength(15);
+    expect(p.clears).toHaveLength(30);
     expect(lockedReason("desert-2", "normal", p.clears)).not.toBeNull();
   });
   test("defeat never unlocks, first clear once, repeat farming, duplicate receipts", () => {

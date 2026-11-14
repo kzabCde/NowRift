@@ -34,16 +34,21 @@ export function lockedReason(
   stageId: string,
   difficulty: DifficultyId,
   clears: readonly string[],
+  legacyAccess: readonly string[] = [],
 ): string | null {
   const s = stageById(stageId),
     worldStages = STAGES.filter((x) => x.worldId === s.worldId),
     wi = WORLDS.findIndex((w) => w.id === s.worldId);
-  if (difficulty !== "normal") {
+  if (clears.includes(clearKey(stageId, difficulty))) return null;
+  if (
+    difficulty !== "normal" &&
+    !legacyAccess.includes(s.worldId + ":" + difficulty)
+  ) {
     const prerequisite = difficulty === "hard" ? "normal" : "hard";
     if (
       !worldStages.every((x) => clears.includes(clearKey(x.id, prerequisite)))
     )
-      return `Clear all five ${prerequisite.toUpperCase()} stages in this world.`;
+      return `Clear all ${worldStages.length} ${prerequisite.toUpperCase()} stages in this world.`;
   }
   if (
     s.number > 1 &&
@@ -53,10 +58,26 @@ export function lockedReason(
   if (
     s.number === 1 &&
     wi > 0 &&
-    !clears.includes(clearKey(`${WORLDS[wi - 1].id}-5`, "normal"))
+    !legacyAccess.includes(s.worldId + ":entry") &&
+    !clears.includes(clearKey(`${WORLDS[wi - 1].id}-10`, "normal"))
   )
     return "Defeat the previous world’s Normal final boss.";
   return null;
+}
+export function newlyUnlockedStages(
+  before: readonly string[],
+  after: readonly string[],
+  legacyAccess: readonly string[] = [],
+): string[] {
+  const unlocked: string[] = [];
+  for (const stage of STAGES)
+    for (const difficulty of ["normal", "hard", "nightmare"] as const)
+      if (
+        lockedReason(stage.id, difficulty, before, legacyAccess) &&
+        !lockedReason(stage.id, difficulty, after, legacyAccess)
+      )
+        unlocked.push(clearKey(stage.id, difficulty));
+  return unlocked;
 }
 export function validProgress(p: unknown): p is Progress {
   if (!p || typeof p !== "object") return false;

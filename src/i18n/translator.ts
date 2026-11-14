@@ -82,15 +82,18 @@ export function translateText(locale: Locale, source: string): string {
   }
   // Existing progression messages keep their stable English return values for saved-state compatibility.
   const all =
-    /^Clear all five (NORMAL|HARD|NIGHTMARE) stages in this world\.$/.exec(
+    /^Clear all (five|\d+) (NORMAL|HARD|NIGHTMARE) stages in this world\.$/.exec(
       source,
     );
   if (all)
     return translate(
       locale,
       "world",
-      "Clear all five {difficulty} stages in this world.",
-      { difficulty: content[all[1]] ?? all[1] },
+      "Clear all {count} {difficulty} stages in this world.",
+      {
+        count: all[1] === "five" ? "5" : all[1],
+        difficulty: content[all[2]] ?? all[2],
+      },
     );
   const stage = /^Clear Stage (\d+) on (NORMAL|HARD|NIGHTMARE)\.$/.exec(source);
   if (stage)

@@ -6,11 +6,14 @@ import { lockedReason, clearKey, type Progress } from "./progression";
 import { resolveRewards, type CampaignResult } from "./rewards";
 import { DIFFICULTIES, stageById } from "./content";
 import { farmingRewards } from "../world/farming";
+import { validMissionReceipt } from "../story/validation";
 export function applyResult(progress: Progress, run: CampaignResult) {
   if (
     typeof run.id !== "string" ||
     !run.id.length ||
     typeof run.victory !== "boolean" ||
+    (run.mode !== undefined && !["story", "free"].includes(run.mode)) ||
+    (run.activity === "farming" && run.mode === "story") ||
     !Number.isInteger(run.seed) ||
     run.seed < 0 ||
     run.seed > 4294967295 ||
@@ -23,14 +26,51 @@ export function applyResult(progress: Progress, run: CampaignResult) {
     )
   )
     throw new Error("Invalid result");
+  if (
+    run.enemyKills !== undefined &&
+    (!run.enemyKills ||
+      typeof run.enemyKills !== "object" ||
+      Array.isArray(run.enemyKills) ||
+      Object.entries(run.enemyKills).some(
+        ([kind, n]) =>
+          !["slime", "goblin", "wolf", "caster", "elite", "boss"].includes(
+            kind,
+          ) ||
+          !Number.isSafeInteger(n) ||
+          n < 0 ||
+          n > 50000,
+      ) ||
+      Object.values(run.enemyKills).reduce((a, b) => a + b, 0) >
+        run.enemies + run.elites + run.bosses)
+  )
+    throw new Error("Invalid enemy evidence.");
   const stage = stageById(run.stageId),
-    reason =
-      run.mode === "free"
-        ? null
-        : lockedReason(stage.id, run.difficulty, progress.clears);
+    reason = lockedReason(
+      stage.id,
+      run.difficulty,
+      progress.clears,
+      progress.local?.journal?.legacyAccess,
+    );
   if (reason) throw new Error(reason);
   if (
+    stage.number > 5 &&
+    run.mode !== "free" &&
+    !run.activity &&
     run.victory &&
+    !run.mission
+  )
+    throw new Error("Complete the Story mission objectives first.");
+  if (
+    run.mission &&
+    (run.mode === "free" ||
+      run.activity ||
+      !run.victory ||
+      !validMissionReceipt(run.mission, run.stageId))
+  )
+    throw new Error("Invalid Story mission completion.");
+  if (
+    run.victory &&
+    !run.mission &&
     !run.activity &&
     (run.seconds <
       stage.clear.seconds * DIFFICULTIES[run.difficulty].duration ||
@@ -54,6 +94,8 @@ export function applyResult(progress: Progress, run: CampaignResult) {
       run,
       run.mode !== "free" && !progress.clears.includes(key),
     );
+  for (const [id, n] of Object.entries(run.mission?.gathered ?? {}))
+    reward.materials[id] = (reward.materials[id] ?? 0) + n;
   reward.xp += Math.max(0, Math.floor(run.earnedXp ?? 0));
   const settled = settleRpg(progress, run, reward),
     next = settled.progress;

@@ -1,4 +1,5 @@
 import { cityTh } from "./city-th";
+import { storyTh, storyStageTh } from "./story-th";
 import { profileTh } from "./profile-th";
 import { landingTh } from "./landing-th";
 import { visualTh } from "./visual-th";
@@ -9,6 +10,7 @@ import { rpgTh } from "./rpg-th";
 import { outfittersTh } from "./outfitters-th";
 /** Translations are keyed by canonical English text and grouped by feature. */
 export const th = {
+  story: storyTh,
   city: cityTh,
   outfitters: outfittersTh,
   landing: landingTh,
@@ -67,7 +69,7 @@ export const th = {
     "ENEMY ARCHETYPES": "ประเภทศัตรู",
     "ANCIENT GUARDIAN": "ผู้พิทักษ์โบราณ",
     "N 48° 12′ · THE FIRST BREACH": "N 48° 12′ · รอยแยกแรก",
-    "OPEN WORLD MAP · 20 STAGES →": "เปิดแผนที่โลก · 20 ด่าน →",
+    "OPEN WORLD MAP · 40 STAGES →": "เปิดแผนที่โลก · 40 ด่าน →",
     "YOUR STARTING COMPANION": "อาวุธคู่ใจเริ่มต้น",
     "Choose your weapon": "เลือกอาวุธของคุณ",
     "Each path plays differently.": "แต่ละสายมีสไตล์การเล่นต่างกัน",
@@ -333,6 +335,8 @@ export const th = {
     GOLD: "ทอง",
     "PROFILE XP": "XP โปรไฟล์",
     "START STAGE →": "เริ่มด่าน →",
+    "Clear all {count} {difficulty} stages in this world.":
+      "ต้องผ่านด่านระดับ {difficulty} ทั้ง {count} ด่านของโลกนี้ก่อน",
     "Clear all five {difficulty} stages in this world.":
       "ต้องผ่านด่านระดับ {difficulty} ทั้งห้าด่านของโลกนี้ก่อน",
     "Clear Stage {stage} on {difficulty}.":
@@ -448,6 +452,7 @@ export const th = {
       "ข้อมูลเซฟแคมเปญเสียหาย ระบบเก็บข้อมูลเดิมไว้ แต่ปิดการเข้าเล่นด่านชั่วคราว",
   },
   content: {
+    ...storyStageTh,
     "Blade Slash": "ฟันดาบ",
     "A close sword technique. Cuts enemies in a forward arc.":
       "วิชาดาบระยะประชิด ฟันศัตรูในส่วนโค้งด้านหน้า",
