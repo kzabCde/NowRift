@@ -98,6 +98,7 @@ export class PreloadScene extends Phaser.Scene {
       this,
       selected as AssetWorld,
       appearanceAssets(look).map((asset) => asset.path),
+      selected === "haven" ? (haven?.region ?? "central") : undefined,
     );
     this.load.once("complete", () => warmSceneAssets(queued));
     // Farming portal uses the hub portal art in a combat world.

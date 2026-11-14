@@ -67,10 +67,13 @@ export function insidePolygon(p: Point, polygon: readonly Point[]) {
   }
   return inside;
 }
-export function districtAt(p: Point): District {
+export function districtAt(
+  p: Point,
+  districts: readonly District[] = DISTRICTS,
+): District {
   return (
-    DISTRICTS.find((d) => insidePolygon(p, d.polygon)) ??
-    DISTRICTS.reduce((a, b) =>
+    districts.find((d) => insidePolygon(p, d.polygon)) ??
+    districts.reduce((a, b) =>
       Math.hypot(p.x - a.center.x, p.y - a.center.y) <
       Math.hypot(p.x - b.center.x, p.y - b.center.y)
         ? a

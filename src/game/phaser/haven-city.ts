@@ -2,8 +2,6 @@ import Phaser from "phaser";
 import mapData from "../../../public/assets/haven/city-map.json";
 import {
   CITY,
-  DISTRICTS,
-  LANDMARKS,
   cityLighting,
   districtAt,
   npcPosition,
@@ -13,6 +11,9 @@ import {
 import { validPosition } from "../world/content";
 import type { Preferences } from "../../state/settings";
 import { onSceneEnd } from "./lifecycle";
+import { regionalCity, type CityLayout } from "../world/regional-city";
+import { regionalTerrain } from "../world/regional-terrain";
+import type { RegionId } from "../world/regions";
 import type { QuestGiverStates } from "../quests/presentation";
 
 /** World presentation only. Economy, collisions, rewards and session ownership stay authoritative elsewhere. */
@@ -46,7 +47,12 @@ export class HavenCity {
   private visibleMotes = 0;
   private frames = 0;
   private dayBanner: Phaser.GameObjects.Image;
-  constructor(private scene: Phaser.Scene) {
+  private layout: CityLayout;
+  constructor(
+    private scene: Phaser.Scene,
+    private region: RegionId = "central",
+  ) {
+    this.layout = regionalCity(region);
     // Native 12 × 18 original pixel glyphs, shared by every giver. No font blur.
     for (const [kind, rows] of Object.entries({
       available: [
@@ -103,11 +109,14 @@ export class HavenCity {
       foreground: -9970,
       collision: -9960,
     };
-    for (const [name, data] of Object.entries(mapData.layers)) {
+    for (const [name, data] of Object.entries(
+      (region === "central" ? mapData : regionalTerrain(this.layout, region))
+        .layers,
+    )) {
       const map = scene.make.tilemap({ data, tileWidth: 16, tileHeight: 16 });
       const set = map.addTilesetImage(
-        "haven-city-tiles",
-        "haven-city-tiles",
+        this.texture("city-tiles"),
+        this.texture("city-tiles"),
         16,
         16,
         0,
@@ -123,13 +132,13 @@ export class HavenCity {
       this.maps.push(map);
     }
     const masonry = scene.add.graphics().setDepth(-9950);
-    for (const wall of CITY.boundaries)
+    for (const wall of this.layout.boundaries)
       masonry
         .fillStyle(0x596e67)
         .fillRect(wall.x, wall.y, wall.w, wall.h)
         .lineStyle(4, 0xb5b99a)
         .lineBetween(wall.x, wall.y, wall.x + wall.w, wall.y);
-    for (const rail of CITY.rails) {
+    for (const rail of this.layout.rails) {
       masonry
         .fillStyle(0x69533d)
         .fillRect(rail.x, rail.y, rail.w, rail.h)
@@ -146,7 +155,7 @@ export class HavenCity {
             22,
           );
     }
-    for (const bridge of CITY.bridges) {
+    for (const bridge of this.layout.bridges) {
       masonry
         .lineStyle(4, 0xc4aa7d)
         .lineBetween(bridge.x, bridge.y, bridge.x + bridge.w, bridge.y)
@@ -157,11 +166,11 @@ export class HavenCity {
           bridge.y + bridge.h,
         );
     }
-    for (const arcade of CITY.arcades)
+    for (const arcade of this.layout.arcades)
       this.image(arcade.x, arcade.y, "haven-" + arcade.art);
-    for (const structure of CITY.structures)
+    for (const structure of this.layout.structures)
       this.image(structure.x, structure.y, "haven-" + structure.art);
-    for (const landmark of LANDMARKS) {
+    for (const landmark of this.layout.landmarks) {
       const image = this.image(landmark.x, landmark.y, "haven-" + landmark.art);
       if (landmark.kind === "npc") image.setScale(1.6);
       this.landmarks.set(landmark.id, image);
@@ -180,7 +189,7 @@ export class HavenCity {
             .setDepth(landmark.y + 2),
         });
     }
-    for (const prop of CITY.props) {
+    for (const prop of this.layout.props) {
       const tree = prop.frame >= 56;
       const image = this.image(
         prop.x,
@@ -190,7 +199,7 @@ export class HavenCity {
       );
       if (tree) this.trees.push({ image, variant: prop.frame - 56 });
     }
-    for (const effect of CITY.effects) {
+    for (const effect of this.layout.effects) {
       const image = this.image(
         effect.x,
         effect.y,
@@ -201,7 +210,7 @@ export class HavenCity {
         .setDepth(effect.depth);
       this.loops.push({ image, kind: effect.kind });
     }
-    for (const npc of CITY.npcs) {
+    for (const npc of this.layout.npcs) {
       const image = this.image(
         npc.home.x,
         npc.home.y,
@@ -212,17 +221,17 @@ export class HavenCity {
         .setScale(1.6);
       this.residents.push({ image, data: npc });
     }
-    for (const point of CITY.guardianSeals)
+    for (const point of this.layout.guardianSeals)
       this.seals.push(
         this.image(point.x, point.y, "haven-city-props", 33).setVisible(false),
       );
-    for (const point of CITY.gardenBlooms)
+    for (const point of this.layout.gardenBlooms)
       this.blooms.push(
         this.image(point.x, point.y, "haven-city-props", 30).setVisible(false),
       );
     this.dayBanner = this.image(
-      CITY.questBanner.x,
-      CITY.questBanner.y,
+      this.layout.questBanner.x,
+      this.layout.questBanner.y,
       "haven-city-props",
       44,
     ).setVisible(false);
@@ -231,9 +240,18 @@ export class HavenCity {
     this.light = scene.add.graphics().setDepth(1e7 + 1);
     onSceneEnd(scene, () => this.maps.forEach((map) => map.destroy()));
   }
+  private texture(art: string) {
+    const key = `region-${this.region}-${art}`;
+    return this.scene.textures.exists(key) ? key : `haven-${art}`;
+  }
   private image(x: number, y: number, key: string, frame = 0) {
     const image = this.scene.add
-      .image(x, y, key, frame)
+      .image(
+        x,
+        y,
+        key.startsWith("haven-") ? this.texture(key.slice(6)) : key,
+        frame,
+      )
       .setOrigin(0.5, 1)
       .setScale(2)
       .setDepth(y);
@@ -252,7 +270,7 @@ export class HavenCity {
   setQuestStates(states: QuestGiverStates) {
     this.questStates = states;
     for (const [id, state] of Object.entries(states)) {
-      const landmark = LANDMARKS.find((l) => l.id === id);
+      const landmark = this.layout.landmarks.find((l) => l.id === id);
       if (!landmark) continue;
       let image = this.questMarkers.get(id);
       if (!image) {
@@ -275,9 +293,21 @@ export class HavenCity {
       throw new Error("Invalid city clock");
     this.cameraTime = phase * 1_200_000;
   }
+  navigation(position: Point) {
+    return {
+      district: districtAt(position, this.layout.districts).id,
+      night: this.lighting.night,
+      npcs: this.residents.map(({ data, image }) => ({
+        id: data.id,
+        name: data.name,
+        x: image.x,
+        y: image.y,
+      })),
+    };
+  }
   describe(position: Point) {
     return {
-      district: districtAt(position).id,
+      district: districtAt(position, this.layout.districts).id,
       lighting: { ...this.lighting },
       tileLayers: this.maps.length,
       sprites: this.sprites.length,
@@ -348,7 +378,7 @@ export class HavenCity {
         );
       for (const { image, data } of this.residents) {
         const pose = npcPosition(data, prefs.reducedEffects ? 300_000 : clock);
-        if (validPosition(pose))
+        if (validPosition(pose, this.region))
           image
             .setPosition(Math.round(pose.x), Math.round(pose.y))
             .setDepth(pose.y);
@@ -413,7 +443,7 @@ export class HavenCity {
       .fillStyle(0x18233a, this.lighting.darkness)
       .fillRect(view.x - 96, view.y - 96, view.width + 192, view.height + 192);
     this.light.clear();
-    for (const prop of CITY.props)
+    for (const prop of this.layout.props)
       if (
         prop.light &&
         prop.x > view.left - 90 &&
@@ -432,7 +462,7 @@ export class HavenCity {
           .fillRect(prop.x + 7, prop.y - 54, 10, 16);
       }
     if (this.lighting.night)
-      for (const point of CITY.windowLights)
+      for (const point of this.layout.windowLights)
         if (
           point.x > view.left &&
           point.x < view.right &&
@@ -447,7 +477,7 @@ export class HavenCity {
     if (prefs.reducedEffects) return;
     const cap = prefs.quality === "low" ? 18 : 72;
     for (let i = 0; i < cap; i++) {
-      const d = DISTRICTS[i % DISTRICTS.length],
+      const d = this.layout.districts[i % this.layout.districts.length],
         x = Math.round(
           d.center.x +
             Math.sin(i * 31.7) * 150 +

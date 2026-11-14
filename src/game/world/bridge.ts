@@ -6,6 +6,9 @@ import type { CharacterAppearance } from "../presentation/appearance";
 import type { ActionVisualReceipt } from "../presentation/action-feedback";
 import type { CityMilestones } from "./city";
 export type HavenStart = {
+  region?: import("./regions").RegionId;
+  explored?: string;
+  destination?: import("./exploration").MapDestination | null;
   questStates?: import("../quests/presentation").QuestGiverStates;
   milestones?: CityMilestones;
   session: string;
@@ -17,7 +20,11 @@ export type HavenStart = {
   visualAppearance?: CharacterAppearance;
 };
 export type HavenSnapshot = {
+  region?: import("./regions").RegionId;
+  facing?: "down" | "up" | "left" | "right";
+  explored?: string;
   position: Point;
+  npcs?: { id: string; name: string; x: number; y: number }[];
   near: string | null;
   paused: boolean;
   moving: boolean;
@@ -47,4 +54,4 @@ export type HavenCommand =
     }
   | { type: "haven-interact" }
   | { type: "haven-look"; outfit: Outfit }
-  | { type: "haven-locate"; id: string };
+  | { type: "haven-locate"; id: string | null };

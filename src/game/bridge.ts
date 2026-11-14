@@ -55,7 +55,11 @@ export type GameEvents = {
   };
   haven: import("./world/bridge").HavenSnapshot;
   interaction: { id: string; position: import("./world/content").Point };
-  "haven-save": { position: import("./world/content").Point; epoch: number };
+  "haven-save": {
+    position: import("./world/content").Point;
+    epoch: number;
+    explored?: string;
+  };
   "haven-shortcut": "inventory" | "map" | "quests" | "pause";
   expedition: import("./world/farming").ExpeditionPrompt;
   command: Command;

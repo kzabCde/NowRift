@@ -12,14 +12,10 @@ import {
 } from "../presentation/action-feedback";
 import { facingFromAngle, type Facing } from "../presentation/character";
 import { GameBridge, type Command } from "../bridge";
-import {
-  HAVEN,
-  LANDMARKS,
-  move,
-  nearest,
-  validPosition,
-  type Point,
-} from "../world/content";
+import { move, nearest, validPosition, type Point } from "../world/content";
+import { cityBounds, regionalCity } from "../world/regional-city";
+import { emptyFog, validFog, revealFog } from "../world/exploration";
+import { regionById } from "../world/regions";
 import type { HavenStart } from "../world/bridge";
 import { translateText } from "../../i18n/translator";
 import { useLocale } from "../../state/locale";
@@ -35,6 +31,23 @@ import {
   type Game,
 } from "../engine";
 export class HavenScene extends Phaser.Scene {
+  get region() {
+    return this.startData?.region ?? "central";
+  }
+  get bounds() {
+    return cityBounds(this.region);
+  }
+  get landmarks() {
+    return regionalCity(this.region).landmarks;
+  }
+  private validPoint(value: unknown): value is Point {
+    return validPosition(value, this.region);
+  }
+  private nearest(point: Point) {
+    return nearest(point, this.region);
+  }
+  explored = "";
+  fogCell = "";
   city!: HavenCity;
   bridge!: GameBridge;
   startData!: HavenStart;
@@ -45,7 +58,7 @@ export class HavenScene extends Phaser.Scene {
   trainingVfx!: CombatVfx;
   trainingGame: Game | null = null;
   trainingShots: Phaser.GameObjects.Image[] = [];
-  position: Point = { ...HAVEN.spawn };
+  position: Point = { ...this.bounds.spawn };
   positionEpoch = 0;
   locked = false;
   moving = false;
@@ -78,9 +91,9 @@ export class HavenScene extends Phaser.Scene {
   create() {
     this.bridge = this.registry.get("bridge");
     this.startData = structuredClone(this.registry.get("haven"));
-    this.position = validPosition(this.startData.position)
+    this.position = this.validPoint(this.startData.position)
       ? { ...this.startData.position }
-      : { ...HAVEN.spawn };
+      : { ...this.bounds.spawn };
     this.positionEpoch = this.startData.positionEpoch ?? 0;
     this.locked = true;
     this.pointer = null;
@@ -99,7 +112,14 @@ export class HavenScene extends Phaser.Scene {
     this.didEnter = false;
     this.lastHud = 0;
     this.lastFrameAt = performance.now();
-    this.city = new HavenCity(this);
+    this.explored = revealFog(
+      validFog(this.startData.explored, this.region)
+        ? this.startData.explored
+        : emptyFog(this.region),
+      this.region,
+      this.position,
+    );
+    this.city = new HavenCity(this, this.region);
     if (this.startData.questStates)
       this.city.setQuestStates(this.startData.questStates);
     this.labels = this.city.labels;
@@ -126,7 +146,7 @@ export class HavenScene extends Phaser.Scene {
         ),
       );
       for (const label of this.labels) {
-        const l = LANDMARKS.find((l) => l.id === label.id)!;
+        const l = this.landmarks.find((l) => l.id === label.id)!;
         label.text.setText(translateText(useLocale.getState().locale, l.name));
       }
     };
@@ -138,7 +158,7 @@ export class HavenScene extends Phaser.Scene {
     ) as typeof this.keys;
     const interact = () => {
       if (this.locked) return;
-      const target = nearest(this.position);
+      const target = this.nearest(this.position);
       if (target) {
         audio.play("press");
         this.bridge.emit("interaction", {
@@ -216,6 +236,7 @@ export class HavenScene extends Phaser.Scene {
       this.bridge.emit("haven-save", {
         position: { ...this.position },
         epoch: this.positionEpoch,
+        explored: this.explored,
       });
       if (!this.locked) this.bridge.emit("haven-shortcut", "pause");
     };
@@ -275,6 +296,7 @@ export class HavenScene extends Phaser.Scene {
           locked: this.locked,
           session: this.startData.session,
           epoch: this.positionEpoch,
+          explored: this.explored,
         }),
         appearance: () => this.rig.describe(),
         city: () => this.city.describe(this.position),
@@ -288,13 +310,18 @@ export class HavenScene extends Phaser.Scene {
           lastReceipt: this.lastReceipt,
         }),
         place: (p) => {
-          if (!validPosition(p)) throw new Error("Blocked test position");
+          if (!this.validPoint(p)) throw new Error("Blocked test position");
           this.position = { ...p };
           this.actor.setPosition(p.x, p.y);
           this.cameras.main.centerOn(p.x, p.y);
           this.publish();
         },
       };
+    const destination = this.startData.destination;
+    if (destination?.region === this.region) {
+      const l = this.landmarks.find((l) => l.id === destination.landmarkId);
+      if (l) this.marker.setPosition(l.entrance.x, l.entrance.y - 35);
+    }
     this.publish();
     this.bridge.emit("ready", true);
   }
@@ -308,16 +335,20 @@ export class HavenScene extends Phaser.Scene {
       bottom = (this.scale.width < 650 ? 174 : 94) / zoom;
     this.cameras.main
       .setZoom(zoom)
-      .setBounds(0, -top, HAVEN.width, HAVEN.height + top + bottom);
+      .setBounds(0, -top, this.bounds.width, this.bounds.height + top + bottom);
   }
   command(c: Command, interact: () => void) {
     if (
       c.type === "haven-test" &&
       this.startData.weapon &&
-      nearest(this.position)?.id === "training"
+      this.nearest(this.position)?.id === "training"
     ) {
       const equipped = this.startData.weapon;
-      const g = makeGame(HAVEN.width, HAVEN.height, equipped.attackId);
+      const g = makeGame(
+        this.bounds.width,
+        this.bounds.height,
+        equipped.attackId,
+      );
       g.equippedWeapon = structuredClone(equipped);
       g.character = this.startData.character;
       applyBuild(g, equipped.stats, true);
@@ -328,7 +359,7 @@ export class HavenScene extends Phaser.Scene {
       g.enemies = [];
       g.obstacles = [];
       g.spawnCooldown = 1e6;
-      const training = LANDMARKS.find((l) => l.id === "training")!;
+      const training = this.landmarks.find((l) => l.id === "training")!;
       const e = spawnEnemy(g, "elite", training.x, training.y)!;
       e.hp = e.maxHp = 1e9;
       e.speed = 0;
@@ -338,9 +369,10 @@ export class HavenScene extends Phaser.Scene {
       audio.play("attack");
     }
     if (c.type === "haven-teleport") {
-      if (c.epoch > this.positionEpoch && validPosition(c.position)) {
+      if (c.epoch > this.positionEpoch && this.validPoint(c.position)) {
         this.positionEpoch = c.epoch;
         this.position = { ...c.position };
+        this.explored = revealFog(this.explored, this.region, c.position);
         this.facing = c.facing;
         this.drag = null;
         this.pointer = null;
@@ -366,7 +398,7 @@ export class HavenScene extends Phaser.Scene {
     }
     if (c.type === "haven-feedback") this.present(c.receipt);
     if (c.type === "haven-lock") {
-      audio.setScene("exploration", "forest", c.locked);
+      audio.setScene("exploration", regionById(this.region).worldId, c.locked);
       this.locked = c.locked;
       this.input.keyboard?.resetKeys();
       if (!c.locked) {
@@ -398,14 +430,15 @@ export class HavenScene extends Phaser.Scene {
       this.startData.outfit = c.outfit;
     }
     if (c.type === "haven-locate") {
-      const l = LANDMARKS.find((l) => l.id === c.id);
+      const l = this.landmarks.find((l) => l.id === c.id);
       if (l) this.marker.setPosition(l.entrance.x, l.entrance.y - 35);
+      else this.marker.setPosition(-100, -100);
     }
   }
   present(receipt: ActionVisualReceipt) {
     if (!commitVisualAction(this.visualAction, receipt)) return;
     this.lastReceipt = structuredClone(receipt);
-    const station = nearest(this.position),
+    const station = this.nearest(this.position),
       point =
         receipt.pose === "craft" &&
         station &&
@@ -436,19 +469,20 @@ export class HavenScene extends Phaser.Scene {
     );
   }
   publish() {
-    this.nearId = nearest(this.position)?.id ?? null;
+    this.nearId = this.nearest(this.position)?.id ?? null;
+    const navigation = this.city?.navigation(this.position);
     this.bridge.emit("haven", {
+      region: this.region,
+      facing: this.facing,
+      explored: this.explored,
       position: { ...this.position },
       near: this.nearId,
       paused: this.locked,
       moving: this.moving,
       training: this.training,
-      district: this.city
-        ? this.city.describe(this.position).district
-        : "plaza",
-      night: this.city
-        ? this.city.describe(this.position).lighting.night
-        : false,
+      district: navigation?.district ?? "plaza",
+      night: navigation?.night ?? false,
+      npcs: navigation?.npcs,
     });
   }
   update(_time: number, _delta: number) {
@@ -462,7 +496,10 @@ export class HavenScene extends Phaser.Scene {
           : prefs.quality === "low"
             ? 30
             : 60;
-    const district = districtAt(this.position);
+    const district = districtAt(
+      this.position,
+      regionalCity(this.region).districts,
+    );
     audio.setDistrict(district.id, district.ambience);
     this.city.update(time, this.position, prefs);
     if (targetFps !== this.fpsLimit) {
@@ -475,7 +512,7 @@ export class HavenScene extends Phaser.Scene {
     if (this.trainingGame) {
       const g = this.trainingGame;
       for (const e of g.enemies) {
-        const training = LANDMARKS.find((l) => l.id === "training")!;
+        const training = this.landmarks.find((l) => l.id === "training")!;
         e.x = training.x;
         e.y = training.y;
         e.speed = 0;
@@ -527,8 +564,23 @@ export class HavenScene extends Phaser.Scene {
         Number((w && k.W?.isDown) || (a && k.UP?.isDown)) +
         (this.drag?.dy ?? 0);
     this.moving = !this.locked && Math.hypot(x, y) > 0.05;
-    if (!this.locked) this.position = move(this.position, x, y, delta / 1000);
-    if (this.moving) this.facing = facingFromAngle(Math.atan2(y, x));
+    if (!this.locked)
+      this.position = move(
+        this.position,
+        x,
+        y,
+        delta / 1000,
+        this.bounds.speed,
+        this.region,
+      );
+    if (this.moving) {
+      this.facing = facingFromAngle(Math.atan2(y, x));
+      const cell = `${Math.floor(this.position.x / 64)},${Math.floor(this.position.y / 64)}`;
+      if (cell !== this.fogCell) {
+        this.explored = revealFog(this.explored, this.region, this.position);
+        this.fogCell = cell;
+      }
+    }
     const active = this.trainingGame;
     this.rig.update({
       x: this.position.x,
@@ -555,7 +607,7 @@ export class HavenScene extends Phaser.Scene {
       this.lastStep = time;
     }
     this.ring.clear();
-    const target = nearest(this.position);
+    const target = this.nearest(this.position);
     if (target && !this.locked)
       this.ring
         .lineStyle(1, 0xc9d6a2, 0.6)
@@ -579,6 +631,7 @@ export class HavenScene extends Phaser.Scene {
       this.bridge.emit("haven-save", {
         position: { ...this.position },
         epoch: this.positionEpoch,
+        explored: this.explored,
       });
       this.lastSave = time;
     }

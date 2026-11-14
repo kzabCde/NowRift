@@ -2,7 +2,9 @@ import { expect, test } from "vitest";
 import { QUEST_CATALOG } from "./catalog";
 import { validateQuestDefinitions, validJournal } from "./validation";
 import { ITEMS } from "../rpg/content";
-import { LANDMARKS } from "../world/content";
+import { REGION_IDS } from "../world/regions";
+import { regionalCity } from "../world/regional-city";
+const LANDMARKS = REGION_IDS.flatMap((r) => regionalCity(r).landmarks);
 import { STAGES, WORLDS } from "../campaign/content";
 import { MISSIONS } from "../story/content";
 import { createJournal } from "./engine";
@@ -10,8 +12,8 @@ import { migrateJournal } from "./save";
 import { lockedReason, newlyUnlockedStages } from "../campaign/progression";
 import { translateText } from "../../i18n/translator";
 
-test("120 authored quests have valid items, unique identities, real givers and bilingual text", () => {
-  expect(QUEST_CATALOG).toHaveLength(120);
+test("124 authored quests have valid items, unique identities, real givers and bilingual text", () => {
+  expect(QUEST_CATALOG).toHaveLength(124);
   expect(validateQuestDefinitions(QUEST_CATALOG, Object.keys(ITEMS))).toEqual(
     [],
   );
@@ -22,8 +24,8 @@ test("120 authored quests have valid items, unique identities, real givers and b
         QUEST_CATALOG.filter((q) => q.category === c).length,
       ]),
     ),
-  ).toEqual({ main: 40, side: 40, guild: 24, npc: 16 });
-  expect(new Set(QUEST_CATALOG.map((q) => q.title.en)).size).toBe(120);
+  ).toEqual({ main: 40, side: 40, guild: 24, npc: 20 });
+  expect(new Set(QUEST_CATALOG.map((q) => q.title.en)).size).toBe(124);
   for (const d of QUEST_CATALOG) {
     expect(
       LANDMARKS.some((l) => l.id === d.giver),
