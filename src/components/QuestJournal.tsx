@@ -10,7 +10,9 @@ import type {
 } from "@/game/quests/types";
 import { WORLDS, STAGES } from "@/game/campaign/content";
 import { ITEMS } from "@/game/rpg/content";
-import { LANDMARKS } from "@/game/world/content";
+import { REGION_IDS } from "@/game/world/regions";
+import { regionalCity } from "@/game/world/regional-city";
+const LANDMARKS = REGION_IDS.flatMap((r) => regionalCity(r).landmarks);
 
 const statusLabels = {
   LOCKED: "Locked",

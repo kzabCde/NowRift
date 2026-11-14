@@ -272,7 +272,7 @@ test("failed world assets remain gated and Retry recreates only the renderer wit
   const page = await context.newPage();
   try {
     let fail = true;
-    await page.route("**/assets/haven/terrain.png", (route) =>
+    await page.route("**/assets/haven/city-tiles.png", (route) =>
       fail ? route.abort() : route.continue(),
     );
     await creation(page);
@@ -426,7 +426,7 @@ test("loading waits for actual assets before initializing or revealing the world
     release = resolve;
   });
   try {
-    await page.route("**/assets/haven/terrain.png", async (route) => {
+    await page.route("**/assets/haven/city-tiles.png", async (route) => {
       requested = true;
       await gate;
       await route.continue();

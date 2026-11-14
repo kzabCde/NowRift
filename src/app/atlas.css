@@ -1,0 +1,413 @@
+.regional-minimap {
+  position: fixed;
+  top: 124px;
+  right: max(20px, env(safe-area-inset-right));
+  z-index: 14;
+  width: 192px;
+  color: #eadab0;
+  filter: drop-shadow(0 3px 5px #0b1e25aa);
+}
+.regional-minimap-open {
+  width: 100%;
+  padding: 4px;
+  border: 2px solid #af9c6c;
+  background: #1c3937;
+  text-align: left;
+}
+.regional-minimap-open:disabled {
+  opacity: 0.65;
+}
+.regional-minimap-open > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 3px 2px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.regional-minimap-open kbd {
+  font-size: 11px;
+  color: #e8cd89;
+}
+.minimap-destination {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  padding: 7px;
+  background: #193431ed;
+  font-size: 11px;
+  border: 1px solid #756f50;
+}
+.minimap-destination i {
+  font-size: 22px;
+  font-style: normal;
+  color: #e8c678;
+}
+.minimap-destination small {
+  display: block;
+  color: #b5c0a7;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.unified-atlas {
+  color: #e4dfc4;
+}
+.town-map.unified-atlas {
+  display: block;
+}
+.town-map.unified-atlas .town-map-overview {
+  position: relative;
+  top: auto;
+  overflow: hidden;
+  margin: 0 auto;
+  border: 3px double #b8a577;
+}
+.unified-atlas .atlas-player {
+  color: #fff6ca;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  font: 18px/1 monospace;
+  z-index: 10;
+  box-shadow: none;
+}
+.unified-atlas > p {
+  max-width: 62ch;
+}
+.atlas-mode-tabs {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.atlas-mode-tabs button {
+  padding: 10px 17px;
+  border: 1px solid #7e8e78;
+  background: #253d35;
+}
+.atlas-mode-tabs button[aria-pressed="true"] {
+  color: #26382e;
+  background: #d8c79c;
+  border-color: #f0dab0;
+}
+.atlas-viewport-wrap {
+  margin-bottom: 18px;
+}
+.atlas-viewport {
+  user-select: none;
+  -webkit-user-select: none;
+  width: 100%;
+  margin-inline: auto;
+  position: relative;
+  overflow: hidden;
+  border: 3px double #b8a577;
+  background: #34534d;
+  touch-action: none;
+  cursor: grab;
+  isolation: isolate;
+}
+.atlas-viewport:active {
+  cursor: grabbing;
+}
+.atlas-viewport:focus-visible {
+  outline: 3px solid #e4ce8f;
+  outline-offset: 4px;
+}
+.atlas-viewport-content {
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+}
+.atlas-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.atlas-surface > svg,
+.thailand-overview > svg {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.atlas-mini-surface {
+  height: auto;
+  pointer-events: none;
+}
+.unified-atlas .atlas-marker {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  min-width: 22px;
+  width: 22px;
+  min-height: 22px;
+  height: 22px;
+  border: 1px solid #3c4f41;
+  background: #dfd0a5;
+  color: #2b463e;
+  line-height: 1;
+  box-shadow: 1px 2px #213a32a3;
+  font-family: monospace;
+  border-radius: 0;
+}
+.atlas-marker b {
+  font-size: 12px;
+}
+.unified-atlas .atlas-marker[data-unlocked="false"] {
+  background: #a6aa8b;
+  color: #4a5c50;
+  border-style: dashed;
+}
+.unified-atlas .atlas-marker-quest {
+  background: #e6c77c;
+  color: #4a352c;
+  z-index: 6;
+}
+.unified-atlas .atlas-marker-npc {
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  min-height: 12px;
+  background: #d5b79a;
+}
+.unified-atlas .atlas-marker[aria-pressed="true"],
+.atlas-marker:focus-visible {
+  outline: 2px solid #fff0bb;
+  outline-offset: 3px;
+  z-index: 8;
+}
+.unified-atlas .atlas-marker span {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  max-width: 220px;
+  color: #f3e6c3;
+  padding: 5px;
+  background: #203c35;
+  border: 1px solid #c2ae79;
+}
+.atlas-marker:hover span,
+.atlas-marker:focus-visible span,
+.atlas-marker[aria-pressed="true"] span {
+  display: block;
+}
+.atlas-player {
+  position: absolute;
+  z-index: 10;
+  color: #fff6ca;
+  font-size: 18px;
+  line-height: 1;
+  font-style: normal;
+  text-shadow:
+    1px 1px #173d3c,
+    -1px -1px #173d3c;
+  pointer-events: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  width: auto;
+  height: auto;
+}
+.atlas-map-controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.atlas-map-controls button {
+  min-height: 36px;
+  padding: 6px 12px;
+  background: #243e36;
+  border: 1px solid #879474;
+  font-size: 12px;
+}
+.atlas-map-controls button:disabled {
+  opacity: 0.4;
+}
+.atlas-map-controls output {
+  min-width: 48px;
+  text-align: center;
+  font: 12px monospace;
+}
+.atlas-gesture-hint {
+  text-align: center;
+  color: #a9b6a0;
+  font-size: 11px;
+}
+.atlas-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 14px 0;
+  font-size: 11px;
+  color: #c6cdad;
+}
+.atlas-legend .fog-visible::before,
+.atlas-legend .fog-explored::before,
+.atlas-legend .fog-unknown::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #8a9d7e;
+  margin-right: 5px;
+}
+.fog-visible::before {
+  background: #a2ae7f;
+}
+.fog-explored::before {
+  background: #72806a;
+}
+.fog-unknown::before {
+  background: #2d483e;
+}
+.thailand-overview {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.atlas-region-marker {
+  position: absolute;
+  transform: translate(-50%, -35%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 32%;
+  max-width: 180px;
+  border: none;
+  color: #f2e3b6;
+  background: #243c35ee;
+  padding: 6px;
+  font-size: 12px;
+  box-shadow: 0 0 0 1px #b6a878;
+  line-height: 1.3;
+}
+.atlas-region-marker > span {
+  color: #f0ce86;
+  font-size: 16px;
+}
+.atlas-region-marker small,
+.atlas-region-marker i {
+  font-size: 9px;
+  font-style: normal;
+}
+.atlas-region-marker[data-region-locked="true"] {
+  color: #c2c2a5;
+  background: #3d4d40eb;
+}
+.atlas-region-marker[aria-pressed="true"] {
+  outline: 3px solid #e9d69f;
+  z-index: 3;
+}
+.atlas-region-detail {
+  padding: 18px;
+  border: 1px solid #798a6d;
+  background: #203b32;
+}
+.atlas-region-detail h3 {
+  font-size: 23px;
+  color: #e9d3a0;
+  margin: 8px 0;
+}
+.atlas-region-detail small,
+.town-waypoint-detail small {
+  display: block;
+  margin-top: 12px;
+  color: #b4c2aa;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.atlas-region-detail button {
+  margin: 6px 8px 6px 0;
+}
+.atlas-current-destination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid #62795e;
+  padding-top: 14px;
+  margin-top: 16px;
+  font-size: 13px;
+}
+@media (max-width: 650px) {
+  .regional-minimap {
+    top: 135px;
+    right: max(9px, env(safe-area-inset-right));
+    width: 116px;
+  }
+  .regional-minimap-open > span {
+    font-size: 8px;
+    gap: 2px;
+  }
+  .regional-minimap-open kbd {
+    display: none;
+  }
+  .minimap-destination {
+    padding: 4px;
+    font-size: 9px;
+  }
+  .minimap-destination small {
+    font-size: 8px;
+  }
+  .atlas-mode-tabs button {
+    flex: 1;
+    min-height: 44px;
+    padding: 10px 7px;
+  }
+  .unified-atlas .town-map-content {
+    display: block;
+  }
+  .unified-atlas .town-waypoint-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 12px;
+  }
+  .unified-atlas .atlas-marker {
+    width: 22px;
+    height: 22px;
+  }
+  .atlas-map-controls button {
+    min-height: 44px;
+  }
+  .atlas-region-marker {
+    font-size: 10px;
+    padding: 5px 2px;
+  }
+  .atlas-region-marker i {
+    display: none;
+  }
+  .atlas-region-detail h3 {
+    font-size: 20px;
+  }
+}
+@media (max-height: 500px) and (min-width: 651px) {
+  .regional-minimap {
+    top: 92px;
+    width: 116px;
+  }
+  .regional-minimap-open > span {
+    font-size: 8px;
+  }
+  .minimap-destination {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-viewport-content {
+    transition: none;
+  }
+}

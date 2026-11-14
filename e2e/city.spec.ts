@@ -97,7 +97,7 @@ test.describe("expanded city and authoritative town travel", () => {
     await expect(
       map.getByRole("button", { name: "Fast Travel", exact: false }),
     ).toBeDisabled();
-    await map.getByRole("button", { name: /Mark walking route/ }).click();
+    await map.getByRole("button", { name: /Set destination/ }).click();
     await waitForHavenInput(page);
     expect(
       (await page.evaluate(() => window.__NOWRIFT_HAVEN__!.state())).position,

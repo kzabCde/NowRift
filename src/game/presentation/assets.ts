@@ -1,5 +1,6 @@
 import { ASSET_SOURCES } from "./asset-index";
 import { ANIMATIONS, ANIMATION_DIRECTIONS } from "./animation";
+import type { RegionId } from "../world/regions";
 
 export type AssetPath = (typeof ASSET_SOURCES)[number]["path"];
 export type AssetStatus = "READY" | "REFINE" | "REPLACE" | "MISSING" | "UNUSED";
@@ -31,7 +32,7 @@ export type PixelAsset = {
   version: string;
   kind: "image" | "spritesheet" | "tileset";
   category: AssetCategory;
-  bundle: AssetWorld | "common" | "shell" | "appearance";
+  bundle: AssetWorld | `region-${RegionId}` | "common" | "shell" | "appearance";
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
@@ -125,6 +126,34 @@ function definition(source: (typeof ASSET_SOURCES)[number]): PixelAsset {
     bundle = "common";
     key = name === "outfitters" ? "outfitters-items" : "items";
     frameWidth = frameHeight = 32;
+  } else if (
+    /^\/assets\/regions\/(north|northeast|central|south)\//.test(path)
+  ) {
+    const region = path.split("/")[3] as RegionId;
+    key = `region-${region}-${name}`;
+    bundle = `region-${region}`;
+    pivot = [0.5, 1];
+    scale = 2;
+    if (name === "city-tiles") {
+      kind = "spritesheet";
+      category = "terrain";
+      frameWidth = frameHeight = 16;
+      pivot = [0, 0];
+    } else if (name === "city-residents") {
+      kind = "spritesheet";
+      category = "character";
+      frameWidth = frameHeight = 48;
+      pivot = [0.5, 0.75];
+    } else if (name === "city-trees") {
+      kind = "spritesheet";
+      category = "prop";
+      frameWidth = 96;
+      frameHeight = 128;
+    } else if (name === "props") {
+      kind = "spritesheet";
+      frameWidth = 32;
+      frameHeight = 48;
+    }
   } else if (path.startsWith("/assets/haven/")) {
     key = `haven-${name}`;
     bundle = "haven";

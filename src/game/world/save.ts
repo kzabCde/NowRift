@@ -1,6 +1,20 @@
 import { CITY } from "./city";
-import { INITIAL_WAYPOINTS, WAYPOINTS, legacyTownPosition } from "./waypoints";
-import { HAVEN, LANDMARKS, validPosition, type Point } from "./content";
+import {
+  INITIAL_WAYPOINTS,
+  WAYPOINTS,
+  allWaypoints,
+  legacyTownPosition,
+} from "./waypoints";
+import { HAVEN, validPosition, type Point } from "./content";
+import {
+  defaultExploration,
+  currentRegion,
+  validExploration,
+  type ExplorationSave,
+  type MapDestination,
+} from "./exploration";
+import { cityBounds, regionalCity } from "./regional-city";
+import { REGION_IDS } from "./regions";
 import {
   validCustomization,
   type AppearanceCustomization,
@@ -9,6 +23,7 @@ export const OUTFITS = ["moss", "ember", "tide"] as const;
 export type Outfit = (typeof OUTFITS)[number];
 export type WorldSave = {
   schema: 2;
+  atlas?: ExplorationSave;
   layoutRevision: 3;
   positionEpoch: number;
   waypoints: string[];
@@ -27,6 +42,7 @@ export type WorldSave = {
 };
 export const defaultWorld = (): WorldSave => ({
   schema: 2,
+  atlas: defaultExploration(HAVEN.spawn),
   layoutRevision: 3,
   positionEpoch: 0,
   waypoints: [...INITIAL_WAYPOINTS],
@@ -53,9 +69,15 @@ export function validWorld(value: unknown): value is WorldSave {
     Array.isArray(w.waypoints) &&
     new Set(w.waypoints).size === w.waypoints.length &&
     INITIAL_WAYPOINTS.every((id) => w.waypoints.includes(id)) &&
-    w.waypoints.every((id) => WAYPOINTS.some((p) => p.id === id)) &&
+    w.waypoints.every((id) => allWaypoints().some((p) => p.id === id)) &&
     !!w.position &&
-    validPosition(w.position) &&
+    (w.atlas === undefined ||
+      (validExploration(w.atlas) &&
+        (!w.atlas.destination ||
+          regionalCity(w.atlas.destination.region).landmarks.some(
+            (l) => l.id === w.atlas!.destination!.landmarkId,
+          )))) &&
+    validPosition(w.position, currentRegion(w)) &&
     OUTFITS.includes(w.outfit) &&
     (w.customization === undefined || validCustomization(w.customization)) &&
     Number.isFinite(w.hp) &&
@@ -71,7 +93,11 @@ export function validWorld(value: unknown): value is WorldSave {
     w.extractions >= 0 &&
     Array.isArray(w.discoveries) &&
     new Set(w.discoveries).size === w.discoveries.length &&
-    w.discoveries.every((id) => LANDMARKS.some((l) => l.id === id)) &&
+    w.discoveries.every((id) =>
+      REGION_IDS.some((r) =>
+        regionalCity(r).landmarks.some((l) => l.id === id),
+      ),
+    ) &&
     typeof w.cacheClaimed === "boolean"
   );
 }
@@ -92,15 +118,26 @@ export function migrateWorld(value: unknown): WorldSave | null {
           p.unlocksFrom.some((id) => old.discoveries?.includes(id)),
       ).map((p) => p.id),
     };
-    return validWorld(next) ? next : null;
+    return migrateWorld(next);
   }
   if (old.schema !== 2 || old.layoutRevision !== 3) return null;
-  const next = validPosition(old.position)
-    ? old
-    : {
-        ...structuredClone(old),
-        position: { ...HAVEN.spawn },
-      };
+  if (old.atlas !== undefined && !validExploration(old.atlas)) return null;
+  const next =
+    validPosition(old.position, currentRegion(old)) && old.atlas
+      ? old
+      : {
+          ...structuredClone(old),
+          position: validPosition(old.position, currentRegion(old))
+            ? { ...old.position }
+            : { ...cityBounds(currentRegion(old)).spawn },
+          atlas:
+            old.atlas ??
+            defaultExploration(
+              old.position && validPosition(old.position)
+                ? old.position
+                : HAVEN.spawn,
+            ),
+        };
   return validWorld(next) ? next : null;
 }
 export type WorldCommand =
@@ -116,13 +153,22 @@ export type WorldCommand =
       sequence: number;
       position: Point;
       epoch?: number;
+      explored?: string;
     }
   | {
       type: "fast-travel";
       writer: string;
       waypointId: string;
       expectedEpoch: number;
+      viaGate?: boolean;
     }
+  | {
+      type: "mark-location";
+      writer: string;
+      expectedEpoch: number;
+      destination: MapDestination | null;
+    }
+  | { type: "treasure"; writer: string; landmarkId?: string }
   | { type: "visit"; writer: string; id: string; position: Point }
   | { type: "outfit"; writer: string; outfit: Outfit }
   | {
@@ -132,6 +178,6 @@ export type WorldCommand =
       customization: AppearanceCustomization;
     }
   | {
-      type: "accept" | "claim" | "rest" | "treasure" | "tutorial" | "travel";
+      type: "accept" | "claim" | "rest" | "tutorial" | "travel";
       writer: string;
     };

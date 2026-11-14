@@ -2,6 +2,7 @@ import { MISSIONS, words } from "../story/content";
 import { SIDE_QUESTS } from "./side-content";
 import { GUILD_QUESTS } from "./guild-content";
 import { NPC_QUESTS } from "./npc-content";
+import { REGIONAL_QUESTS } from "./regional-content";
 import type { QuestDefinition } from "./types";
 
 const materials = {
@@ -73,5 +74,6 @@ export const QUEST_CATALOG: QuestDefinition[] = [
   ...SIDE_QUESTS,
   ...GUILD_QUESTS,
   ...NPC_QUESTS,
+  ...REGIONAL_QUESTS,
 ];
 export const questById = (id: string) => QUEST_CATALOG.find((q) => q.id === id);

@@ -3,11 +3,24 @@ import { STAGES, DIFFICULTIES } from "../campaign/content";
 import { lockedReason } from "../campaign/progression";
 import type { StageSelection } from "../campaign/loader";
 import { CollisionIndex } from "./spatial";
-import { HAVEN, LANDMARKS, SOLIDS } from "./city";
+import { HAVEN, SOLIDS } from "./city";
 export { HAVEN, LANDMARKS, SOLIDS } from "./city";
 export type { Point, Solid, Landmark, InteractionKind } from "./city";
 import type { Point, Landmark } from "./city";
+import { cityBounds, citySolids, regionalCity } from "./regional-city";
+import type { RegionId } from "./regions";
 export const cityCollision = new CollisionIndex(SOLIDS);
+const regionalCollisions = new Map<RegionId, CollisionIndex>([
+  ["central", cityCollision],
+]);
+export function collisionFor(region: RegionId) {
+  let index = regionalCollisions.get(region);
+  if (!index) {
+    index = new CollisionIndex(citySolids(region));
+    regionalCollisions.set(region, index);
+  }
+  return index;
+}
 export const FARM = {
   id: "forest-gathering",
   stageId: "forest-1",
@@ -49,10 +62,13 @@ export function travelReason(
     legacyAccess,
   );
 }
-export function nearest(p: Point): Landmark | null {
+export function nearest(
+  p: Point,
+  region: RegionId = "central",
+): Landmark | null {
   let found: Landmark | null = null,
     distance = HAVEN.range ** 2;
-  for (const landmark of LANDMARKS) {
+  for (const landmark of regionalCity(region).landmarks as Landmark[]) {
     const n =
       (p.x - landmark.entrance.x) ** 2 + (p.y - landmark.entrance.y) ** 2;
     if (n <= distance) {
@@ -62,18 +78,22 @@ export function nearest(p: Point): Landmark | null {
   }
   return found;
 }
-export function validPosition(value: unknown): value is Point {
+export function validPosition(
+  value: unknown,
+  region: RegionId = "central",
+): value is Point {
   if (!value || typeof value !== "object") return false;
   const p = value as Point;
-  const r = HAVEN.radius;
+  const bounds = cityBounds(region),
+    r = bounds.radius;
   return (
     Number.isFinite(p.x) &&
     Number.isFinite(p.y) &&
     p.x >= r &&
     p.y >= r &&
-    p.x <= HAVEN.width - r &&
-    p.y <= HAVEN.height - r &&
-    ![...cityCollision.near(p, r)].some(
+    p.x <= bounds.width - r &&
+    p.y <= bounds.height - r &&
+    ![...collisionFor(region).near(p, r)].some(
       (s) =>
         p.x + r > s.x &&
         p.x - r < s.x + s.w &&
@@ -87,7 +107,8 @@ export function move(
   x: number,
   y: number,
   seconds: number,
-  speed = HAVEN.speed,
+  speed: number = HAVEN.speed,
+  region: RegionId = "central",
 ): Point {
   const length = Math.hypot(x, y),
     dt = Math.max(0, Math.min(seconds, 0.05));
@@ -97,8 +118,8 @@ export function move(
   }
   const next = { ...p };
   const a = { x: p.x + x * speed * dt, y: p.y };
-  if (validPosition(a)) next.x = a.x;
+  if (validPosition(a, region)) next.x = a.x;
   const b = { x: next.x, y: p.y + y * speed * dt };
-  if (validPosition(b)) next.y = b.y;
+  if (validPosition(b, region)) next.y = b.y;
   return next;
 }

@@ -46,7 +46,8 @@ import { validCheckpoint, type RunCheckpoint } from "./checkpoint";
 import { applyWorldCommand } from "../world/actions";
 import { districtAt } from "../world/city";
 import type { WorldCommand } from "../world/save";
-import { HAVEN } from "../world/content";
+import { cityBounds, regionalCity } from "../world/regional-city";
+import { currentRegion } from "../world/exploration";
 import { characterName } from "./identity";
 import { OUTFITS, type Outfit } from "../world/save";
 import { calculateStats, resolveEquippedWeapon } from "../rpg/stats";
@@ -282,8 +283,18 @@ export const profileRepository = {
         ? structuredClone(p)
         : null;
       applyWorldCommand(p, command, at);
-      if (command.type === "visit")
-        havenQuestVisit(p, command.id, districtAt(command.position).id);
+      if (command.type === "visit") {
+        const region = currentRegion(p.local.world),
+          district = districtAt(
+            command.position,
+            regionalCity(region).districts,
+          ).id;
+        havenQuestVisit(
+          p,
+          command.id,
+          region === "central" ? district : `${region}-${district}`,
+        );
+      }
       if (before) inventoryQuestGains(before, p, { mode: "haven" });
       put(store, root, p, at);
       return p;
@@ -827,7 +838,9 @@ export const profileRepository = {
       p.local.activeRun = null;
       if (p.local.world?.location === "expedition") {
         p.local.world.location = "haven";
-        p.local.world.position = { ...HAVEN.return };
+        p.local.world.position = {
+          ...cityBounds(currentRegion(p.local.world)).return,
+        };
       }
       put(store, root, p, at);
       return p;
@@ -901,7 +914,7 @@ export const profileRepository = {
       if (result.activity === "farming" && next.local.world) {
         const w = next.local.world;
         w.location = "haven";
-        w.position = { ...HAVEN.return };
+        w.position = { ...cityBounds(currentRegion(w)).return };
         w.hp = Math.max(1, Math.min(5000, result.hp ?? 1));
         if (result.victory) {
           w.extractions++;

@@ -1,9 +1,11 @@
 import type { SaveData } from "../persistence/model";
-import { LANDMARKS, near, validPosition, type Point } from "../world/content";
+import { near, validPosition, type Point } from "../world/content";
 import { grantGift, recordMetrics } from "../persistence/daily";
 import { addEquipment, findEntry, removeEntry } from "../rpg/inventory";
 import { seededEquipment } from "../rpg/items";
 import { ITEMS } from "../rpg/content";
+import { currentRegion } from "../world/exploration";
+import { regionalCity } from "../world/regional-city";
 import { questById } from "./catalog";
 import {
   acceptQuest,
@@ -50,8 +52,13 @@ export function applyQuestCommand(p: SaveData, c: QuestCommand, at: number) {
     w.positionEpoch !== c.epoch
   )
     throw new Error("Return to this quest giver in Rift Haven.");
-  const giver = LANDMARKS.find((l) => l.id === d.giver);
-  if (!giver || !validPosition(c.position) || !near(c.position, giver.entrance))
+  const region = currentRegion(w),
+    giver = regionalCity(region).landmarks.find((l) => l.id === d.giver);
+  if (
+    !giver ||
+    !validPosition(c.position, region) ||
+    !near(c.position, giver.entrance)
+  )
     throw new Error("Move closer to the quest giver.");
   const q = j.quests[d.id];
   if (c.type === "accept") {

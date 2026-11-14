@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "targetArea": 20800000,
+  "cityLayoutRevision": 3,
+  "method": "16-unit whole-cell collision-free flood fill from each real spawn; one canonical Free expedition per legacy biome, no decorative cells, disconnected islands or repeated instances.",
+  "regions": [
+    {
+      "id": "north",
+      "name": "Mistbound Highlands",
+      "city": {
+        "cellSize": 16,
+        "reachableCells": 5200,
+        "reachableArea": 1331200,
+        "grossArea": 1884160,
+        "width": 1280,
+        "height": 1472
+      },
+      "wilderness": {
+        "cellSize": 16,
+        "reachableCells": 8196,
+        "reachableArea": 2098176,
+        "grossArea": 2520000,
+        "width": 1800,
+        "height": 1400,
+        "stageId": "frozen-1",
+        "seed": 309
+      },
+      "boss": {
+        "stageId": "frozen-5",
+        "additionalCountedArea": 0,
+        "note": "Guardian instances reuse the regional biome footprint; no repeated stage, seed or difficulty area is added."
+      }
+    },
+    {
+      "id": "northeast",
+      "name": "Sandstone Kingdom",
+      "city": {
+        "cellSize": 16,
+        "reachableCells": 5270,
+        "reachableArea": 1349120,
+        "grossArea": 1884160,
+        "width": 1472,
+        "height": 1280
+      },
+      "wilderness": {
+        "cellSize": 16,
+        "reachableCells": 8356,
+        "reachableArea": 2139136,
+        "grossArea": 2520000,
+        "width": 1800,
+        "height": 1400,
+        "stageId": "desert-1",
+        "seed": 209
+      },
+      "boss": {
+        "stageId": "desert-5",
+        "additionalCountedArea": 0,
+        "note": "Guardian instances reuse the regional biome footprint; no repeated stage, seed or difficulty area is added."
+      }
+    },
+    {
+      "id": "central",
+      "name": "River Kingdom",
+      "city": {
+        "cellSize": 16,
+        "reachableCells": 33587,
+        "reachableArea": 8598272,
+        "grossArea": 10780672,
+        "width": 3584,
+        "height": 3008
+      },
+      "wilderness": {
+        "cellSize": 16,
+        "reachableCells": 8132,
+        "reachableArea": 2081792,
+        "grossArea": 2520000,
+        "width": 1800,
+        "height": 1400,
+        "stageId": "infernal-1",
+        "seed": 409
+      },
+      "boss": {
+        "stageId": "infernal-5",
+        "additionalCountedArea": 0,
+        "note": "Guardian instances reuse the regional biome footprint; no repeated stage, seed or difficulty area is added."
+      }
+    },
+    {
+      "id": "south",
+      "name": "Azure Coast",
+      "city": {
+        "cellSize": 16,
+        "reachableCells": 5018,
+        "reachableArea": 1284608,
+        "grossArea": 1892352,
+        "width": 1408,
+        "height": 1344
+      },
+      "wilderness": {
+        "cellSize": 16,
+        "reachableCells": 8036,
+        "reachableArea": 2057216,
+        "grossArea": 2520000,
+        "width": 1800,
+        "height": 1400,
+        "stageId": "forest-1",
+        "seed": 109
+      },
+      "boss": {
+        "stageId": "forest-5",
+        "additionalCountedArea": 0,
+        "note": "Guardian instances reuse the regional biome footprint; no repeated stage, seed or difficulty area is added."
+      }
+    }
+  ],
+  "totalReachableArea": 20939520,
+  "targetRatio": 1.0067076923076923
+}
